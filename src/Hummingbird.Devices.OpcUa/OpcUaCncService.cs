@@ -7,6 +7,13 @@ namespace Hummingbird.Devices.OpcUa;
 
 /// <summary>
 /// SINUMERIK 828D 数控服务（OPC UA，端口4840，需 Access MyMachine /OPC UA 授权）。
+///
+/// 连接流程（ConnectAsync 内部按此顺序记日志，出问题时对照日志定位卡在哪一步）：
+///   1. 组装客户端配置（应用名/证书存储目录 %LocalApplicationData%\Hummingbird\pki）
+///   2. 校验配置 + 生成本机自签名证书（首次运行会生成，828D 端需信任该证书）
+///   3. SelectEndpoint 发现服务器端点（此步不通 = 网络不通/IP错/服务未开）
+///   4. 建立会话（此步不通 = 证书未被 828D 信任，需在 828D 上信任客户端证书）
+///
 /// 节点映射（ns=3，Siemens AMM 标准）——现场需用 UaExpert 核对后微调节点表。
 /// </summary>
 public sealed class OpcUaCncService : ICncService
@@ -14,24 +21,38 @@ public sealed class OpcUaCncService : ICncService
     /// <summary>程序下发用的网络共享路径（如 \\192.168.214.1\nc），由 App 配置注入。</summary>
     public string? ProgramSharePath { get; set; }
 
+    private readonly IAppLogger _log;
     private Session? _session;
     private ApplicationConfiguration _config = null!;
     private Timer? _poll;
     private event Action<AxisPosition>? _posChanged;
 
+    public OpcUaCncService(IAppLogger? log = null)
+    {
+        _log = log ?? new SilentLogger();
+    }
+
     public string Endpoint { get; private set; } = "";
     public bool IsConnected => _session is { Connected: true };
 
-    // ---- 节点映射（现场核对 TODO）----
+    // ---- 节点映射（现场用 UaExpert 核对 TODO）----
+    /// <summary>R 参数节点：/Channel/Parameter/R[u1, n]，u1=通道1。写 R 参数供 NC 参数化子程序读取。</summary>
     private static NodeId R(int n) => new($"/Channel/Parameter/R[u1, {n}]", 3);
+    /// <summary>X 轴实际位置（只读），ns=3 = Siemens AMM 命名空间。</summary>
     private static readonly NodeId NodeX = new("/Channel/MachineAxis/aaPos[u1, X]", 3);
     private static readonly NodeId NodeY = new("/Channel/MachineAxis/aaPos[u1, Y]", 3);
     private static readonly NodeId NodeZ = new("/Channel/MachineAxis/aaPos[u1, Z1]", 3);
 
 #pragma warning disable CS0618 // Validate/CreateAsync 系列新旧 API 混用，先按 1.5.378 可用形态实现
+
     public async Task<bool> ConnectAsync(string endpoint, CancellationToken ct = default)
     {
         Endpoint = endpoint;
+        _log.Info($"[数控] 连接步骤1/4：组装客户端配置 → {endpoint}");
+
+        // ---- 步骤1：客户端应用配置 ----
+        // 证书存在本机 %LocalApplicationData%\Hummingbird\pki，首次连接自动生成，
+        // 之后要在 828D 的"调试→OPC UA→受信任的客户端"里信任它（一次性操作）。
         _config = new ApplicationConfiguration
         {
             ApplicationName = "Hummingbird",
@@ -48,7 +69,7 @@ public sealed class OpcUaCncService : ICncService
                 TrustedIssuerCertificates = new CertificateTrustList { StoreType = @"Directory", StorePath = @"%LocalApplicationData%\Hummingbird\pki\issuer" },
                 TrustedPeerCertificates = new CertificateTrustList { StoreType = @"Directory", StorePath = @"%LocalApplicationData%\Hummingbird\pki\trusted" },
                 RejectedCertificateStore = new CertificateTrustList { StoreType = @"Directory", StorePath = @"%LocalApplicationData%\Hummingbird\pki\rejected" },
-                AutoAcceptUntrustedCertificates = true
+                AutoAcceptUntrustedCertificates = true   // 现场调试期自动信任服务器证书；正式产线可改 false 收紧
             },
             TransportConfigurations = new TransportConfigurationCollection(),
             TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
@@ -56,15 +77,23 @@ public sealed class OpcUaCncService : ICncService
         };
         await _config.Validate(ApplicationType.Client);
 
+        _log.Info("[数控] 连接步骤2/4：生成/检查本机证书");
         var app = new ApplicationInstance
         { ApplicationName = "Hummingbird", ApplicationType = ApplicationType.Client, ApplicationConfiguration = _config };
         await app.CheckApplicationInstanceCertificatesAsync(false, null, ct);
 
+        _log.Info("[数控] 连接步骤3/4：发现服务器端点（不通=检查网线/IP/4840端口）");
         var epDesc = CoreClientUtils.SelectEndpoint(_config, endpoint, false, 15000);
+        _log.Info($"[数控] 端点确认：{epDesc.EndpointUrl} 安全策略={epDesc.SecurityPolicyUri}");
+
+        _log.Info("[数控] 连接步骤4/4：建立会话（不通=在828D上信任客户端证书）");
         var configured = new ConfiguredEndpoint(null, epDesc, EndpointConfiguration.Create(_config));
         _session = await Session.CreateAsync(_config, (ReverseConnectManager?)null, configured, false, false, "Hummingbird",
             60000, new UserIdentity(new AnonymousIdentityToken()), null, ct);
-        return IsConnected;
+
+        bool ok = IsConnected;
+        _log.Info(ok ? "[数控] 会话建立成功" : "[数控] 会话建立失败（返回未连接）");
+        return ok;
     }
 
     public async Task DisconnectAsync()
@@ -72,12 +101,15 @@ public sealed class OpcUaCncService : ICncService
         _poll?.Dispose(); _poll = null;
         if (_session != null)
         {
-            try { await _session.CloseAsync(ct: default); } catch { /* 会话已断 */ }
+            try { await _session.CloseAsync(ct: default); }
+            catch { /* 会话已断开，无需处理 */ }
             _session = null;
+            _log.Info("[数控] 已断开连接");
         }
     }
 #pragma warning restore CS0618
 
+    /// <summary>读一次机床状态（模式/程序/三轴位置）。读取失败时 Message 带原因，不抛异常。</summary>
     public async Task<MachineStatus> GetStatusAsync(CancellationToken ct = default)
     {
         if (!IsConnected) return new MachineStatus(false, "-", "-", 0, 0, 0, "未连接");
@@ -90,13 +122,19 @@ public sealed class OpcUaCncService : ICncService
         }
         catch (Exception ex)
         {
+            _log.Warn($"[数控] 状态读取失败：{ex.Message}");
             return new MachineStatus(true, "?", "-", 0, 0, 0, "读取失败：" + ex.Message);
         }
     }
 
+    /// <summary>写 R 参数（如 R1=25.3）。逐条写并记日志，返回是否成功。</summary>
     public Task<bool> WriteRAsync(int rNumber, double value, CancellationToken ct = default)
     {
-        if (!IsConnected) return Task.FromResult(false);
+        if (!IsConnected)
+        {
+            _log.Warn($"[数控] 写 R{rNumber} 失败：未连接");
+            return Task.FromResult(false);
+        }
         var wv = new WriteValue
         {
             NodeId = R(rNumber),
@@ -104,25 +142,35 @@ public sealed class OpcUaCncService : ICncService
             Value = new DataValue(new Variant(value))
         };
         _session!.Write(null, new WriteValueCollection { wv }, out var statuses, out _);
-        return Task.FromResult(statuses.Count == 1 && StatusCode.IsGood(statuses[0]));
+        bool ok = statuses.Count == 1 && StatusCode.IsGood(statuses[0]);
+        if (ok) _log.Info($"[数控] R{rNumber} = {value} 写入成功");
+        else _log.Error($"[数控] R{rNumber} = {value} 写入失败（状态码 {statuses.FirstOrDefault()}）");
+        return Task.FromResult(ok);
     }
 
+    /// <summary>
+    /// 下发刻孔程序。当前走 SMB 网络共享盘（最简可靠），路径由 ProgramSharePath 配置。
+    /// TODO：现场也可改用 OPC UA 文件对象传输（828D 支持），当前不启用。
+    /// </summary>
     public Task<bool> UploadProgramAsync(string name, string content, CancellationToken ct = default)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(ProgramSharePath))
-                throw new InvalidOperationException("未配置程序共享路径（CncProgramShare）");
-            // TODO：现场也可改用 OPC UA 文件对象传输（828D 支持），当前走 SMB 共享盘最简
-            File.WriteAllText(Path.Combine(ProgramSharePath, name), content);
+                throw new InvalidOperationException("未配置程序共享路径（config.json 的 CncProgramShare）");
+            string full = Path.Combine(ProgramSharePath, name);
+            File.WriteAllText(full, content);
+            _log.Info($"[数控] 程序已写入共享盘：{full}（{content.Length} 字符）");
             return Task.FromResult(true);
         }
-        catch
+        catch (Exception ex)
         {
+            _log.Error($"[数控] 程序下发失败：{ex.Message}（检查共享路径/账号权限）");
             return Task.FromResult(false);
         }
     }
 
+    /// <summary>订阅轴位置（UI 实时显示用）。内部定时轮询读节点，读失败静默跳过本次。</summary>
     public IDisposable SubscribePosition(Action<AxisPosition> onChange, int intervalMs = 200)
     {
         _posChanged += onChange;
@@ -136,11 +184,12 @@ public sealed class OpcUaCncService : ICncService
                 double z = await ReadDoubleAsync(NodeZ, default);
                 _posChanged?.Invoke(new AxisPosition(x, y, z));
             }
-            catch { /* 读取失败不中断订阅 */ }
+            catch { /* 单次读取失败不中断订阅，也不刷屏 */ }
         }, null, intervalMs, intervalMs);
         return new Unsubscriber(() => _posChanged -= onChange);
     }
 
+    /// <summary>读一个节点并转 double（828D 数值节点可能是 Float/Double/Int32，统一转）。</summary>
     private async Task<double> ReadDoubleAsync(NodeId id, CancellationToken ct)
     {
         var dv = await _session!.ReadValueAsync(id, ct);
@@ -149,8 +198,20 @@ public sealed class OpcUaCncService : ICncService
 
     public void Dispose() => DisconnectAsync().GetAwaiter().GetResult();
 
+    /// <summary>取消订阅的句柄（SubscribePosition 返回值 Dispose 即退订）。</summary>
     private sealed class Unsubscriber(Action act) : IDisposable
     {
         public void Dispose() => act();
+    }
+
+    /// <summary>静默日志器：调用方不传 logger 时用（单元测试/SmokeTest）。</summary>
+    private sealed class SilentLogger : IAppLogger
+    {
+        public void Info(string m) { }
+        public void Warn(string m) { }
+        public void Error(string m) { }
+#pragma warning disable CS0067
+        public event Action<string, string>? LineAdded;
+#pragma warning restore CS0067
     }
 }

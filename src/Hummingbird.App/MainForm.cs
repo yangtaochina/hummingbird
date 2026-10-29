@@ -5,13 +5,19 @@ using Hummingbird.Devices.LaserRtu;
 using Hummingbird.Devices.OpcUa;
 using Hummingbird.Devices.Sim;
 using Hummingbird.Vision;
+#if HAS_PYLON
+using Hummingbird.Devices.Basler;
+#endif
 
 namespace Hummingbird.App;
 
-/// <summary>主窗体：自动加工 / 标定 / 设备调试 三个页签 + 底部日志。</summary>
+/// <summary>
+/// 主窗体：自动加工 / 标定（九点） / 设备调试 三个页签 + 底部日志区。
+/// 日志器由 Program.cs 传入（全局同一份，界面显示 + 文件落盘）。
+/// </summary>
 public sealed class MainForm : Form
 {
-    private readonly IAppLogger _log = new MemoryLogger();
+    private readonly IAppLogger _log;
     private readonly AppConfig _cfg;
     private readonly ICameraService? _camera;
     private readonly ICncService _cnc;
@@ -44,18 +50,25 @@ public sealed class MainForm : Form
     private readonly NumericUpDown _numR = Num(1, 999, 1, 1);
     private readonly NumericUpDown _numRval = Num(-100000, 100000, 0, 1);
 
-    public MainForm()
+    /// <param name="logger">全局日志器；不传则自建（设计器/单元测试场景）。</param>
+    public MainForm(IAppLogger? logger = null)
     {
+        _log = logger ?? new MemoryLogger();
+
         Text = "蜂鸟 · 表盘激光打孔工作站";
         Font = new Font("Microsoft YaHei UI", 9F);
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(1280, 820);
 
         _cfg = AppConfig.LoadOrDefault("config.json");
+        _log.Info($"读取配置 config.json：DeviceMode={_cfg.DeviceMode} 数控端点={_cfg.CncEndpoint} 串口={_cfg.LaserComPort}@{_cfg.LaserBaud}");
+
         var template = HolePatternTemplate.LoadJson("templates/dial_25holes.json");
+        _log.Info($"加载孔位模板：{template.PartName}（{template.Holes.Count}孔）");
 
         if (_cfg.DeviceMode == "Sim")
         {
+            // ---- Sim 模式：三件套全模拟，无硬件可跑通全流程 ----
             var simCam = new SimCameraService { Template = template };
             var simCnc = new SimCncService(m => _log.Info(m));
             var simLaser = new SimLaserService(m => _log.Info(m));
@@ -63,13 +76,19 @@ public sealed class MainForm : Form
         }
         else
         {
-            // 相机真机实现需安装 pylon SDK 后启用（见 Hummingbird.Devices.Basler/README.md）
+            // ---- Real 模式：真机三件套 ----
+            _cnc = new OpcUaCncService(_log) { ProgramSharePath = _cfg.CncProgramShare };
+            _laser = new ModbusRtuLaserService(_log);
+#if HAS_PYLON
+            // pylon SDK 已装（csproj 探测到 Basler.Pylon.dll）→ 启用真机相机
+            _camera = new BaslerCameraService(_cfg.CameraSerialNumber, _log);
+#else
+            // 本机没探测到 pylon SDK：相机不可用，但数控/激光仍可调试
             _camera = null;
-            _cnc = new OpcUaCncService { ProgramSharePath = _cfg.CncProgramShare };
-            _laser = new ModbusRtuLaserService();
+#endif
         }
 
-        _wf = new AutoRunWorkflow(_log, _camera, new DialPositioning(), _cnc, _laser)
+        _wf = new AutoRunWorkflow(_log, _camera, new DialPositioning(_log), _cnc, _laser)
         {
             Template = template,
             VisionOptions = new VisionOptions
@@ -93,8 +112,13 @@ public sealed class MainForm : Form
         }, 200);
 
         _log.Info($"模式：{_cfg.DeviceMode} | 模板：{template.PartName}（{template.Holes.Count}孔）");
-        if (_camera is null)
-            _log.Warn("相机真机待接入：安装 pylon SDK 后按 Hummingbird.Devices.Basler/README.md 启用（当前可调试数控/激光）");
+#if HAS_PYLON
+        if (_cfg.DeviceMode == "Real")
+            _log.Info($"相机真机已启用：Basler pylon（序列号配置：\"{_cfg.CameraSerialNumber}\" 空=第一台）");
+#else
+        if (_cfg.DeviceMode == "Real" && _camera is null)
+            _log.Warn("相机不可用：本机未探测到 pylon SDK（重装 pylon 或见 Hummingbird.Devices.Basler/README.md），当前可调试数控/激光");
+#endif
     }
 
     // ================= UI 构建 =================
@@ -247,7 +271,7 @@ public sealed class MainForm : Form
     {
         try
         {
-            if (_camera is null) { _log.Warn("相机不可用（Real 模式待接入 pylon SDK）"); return; }
+            if (_camera is null) { _log.Warn("相机不可用（未探测到 pylon SDK，见 Hummingbird.Devices.Basler/README.md）"); return; }
             if (_camera is SimCameraService sc) sc.FreezePose = _chkFreeze.Checked;
             var (pose, frame) = await _wf.GrabAndLocateAsync();
             _lastPose = pose; _lastFrame = frame;

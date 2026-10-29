@@ -1,23 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Hummingbird.Devices.Basler</RootNamespace>
-    <Description>Basler pylon 相机实现 —— 需安装 pylon SDK 后才能编译，见 README.md</Description>
-    <!-- pylon 默认安装路径，可被 -p:PylonDll=... 覆盖 -->
-    <PylonDll Condition="'$(PylonDll)' == ''">C:\Program Files\Basler\pylon 7\bin\Basler.Pylon.dll</PylonDll>
+    <Description>Basler pylon 相机实现 —— 需安装 pylon SDK（本机：E:\Program Files\Basler\pylon 7）</Description>
+    <!-- pylon .NET 程序集在 x64 目录，且 P/Invoke 原生库，强制 x64 避免加载错位数 -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <!--
+    pylon DLL 自动探测：命令行 -p:PylonDll=... 优先，其次按常见安装路径逐个探测。
+    找到 → 定义 HAS_PYLON（BaslerCameraService 才参与编译），App 工程做同样判断。
+    没找到 → 本工程退化为空壳，解决方案在任何机器上都能编译。
+  -->
+  <PropertyGroup>
+    <!-- 本机实际安装路径（用户 2026-10-29 安装） -->
+    <PylonDll Condition="'$(PylonDll)' == '' and Exists('E:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll')">E:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll</PylonDll>
+    <!-- pylon 默认安装路径（英文/中文系统） -->
+    <PylonDll Condition="'$(PylonDll)' == '' and Exists('C:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll')">C:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll</PylonDll>
+    <DefineConstants Condition="'$(PylonDll)' != ''">$(DefineConstants);HAS_PYLON</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Hummingbird.Core\Hummingbird.Core.csproj" />
   </ItemGroup>
 
-  <!-- 安装 pylon SDK 后，此引用自动生效（DLL 存在才编译） -->
-  <ItemGroup Condition="Exists('$(PylonDll)')">
+  <!-- 探测到 SDK 后，此引用才生效 -->
+  <ItemGroup Condition="'$(PylonDll)' != ''">
     <Reference Include="Basler.Pylon">
       <HintPath>$(PylonDll)</HintPath>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
 

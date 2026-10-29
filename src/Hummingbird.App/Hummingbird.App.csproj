@@ -8,6 +8,19 @@
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Hummingbird.App</RootNamespace>
     <Description>表盘激光打孔上位机（WinForms 主程序）</Description>
+    <!-- 与 Basler.Pylon.dll（x64 + P/Invoke 原生库）保持一致，避免 32/64 位加载失败 -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <!--
+    pylon SDK 探测（与 Hummingbird.Devices.Basler.csproj 保持完全一致的路径与顺序）。
+    找到 → HAS_PYLON，MainForm 的 Real 模式启用 BaslerCameraService；
+    没找到 → Real 模式相机置空（日志提示），Sim 模式不受影响。
+  -->
+  <PropertyGroup>
+    <PylonDll Condition="'$(PylonDll)' == '' and Exists('E:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll')">E:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll</PylonDll>
+    <PylonDll Condition="'$(PylonDll)' == '' and Exists('C:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll')">C:\Program Files\Basler\pylon 7\Development\Assemblies\Basler.Pylon\x64\Basler.Pylon.dll</PylonDll>
+    <DefineConstants Condition="'$(PylonDll)' != ''">$(DefineConstants);HAS_PYLON</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +29,7 @@
     <ProjectReference Include="..\Hummingbird.Devices.Sim\Hummingbird.Devices.Sim.csproj" />
     <ProjectReference Include="..\Hummingbird.Devices.OpcUa\Hummingbird.Devices.OpcUa.csproj" />
     <ProjectReference Include="..\Hummingbird.Devices.LaserRtu\Hummingbird.Devices.LaserRtu.csproj" />
+    <ProjectReference Include="..\Hummingbird.Devices.Basler\Hummingbird.Devices.Basler.csproj" />
   </ItemGroup>
 
   <ItemGroup>

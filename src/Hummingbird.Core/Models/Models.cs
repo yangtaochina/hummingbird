@@ -3,6 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace Hummingbird.Core;
 
+/// <summary>
+/// 应用日志接口：Info（正常流程）/ Warn（可恢复异常）/ Error（失败，需要人处理）。
+/// 所有模块统一走它，实现方决定输出到哪里（界面、文件……）。
+/// </summary>
 public interface IAppLogger
 {
     void Info(string message);
@@ -12,11 +16,42 @@ public interface IAppLogger
     event Action<string, string>? LineAdded;
 }
 
+/// <summary>
+/// 默认日志器：界面事件（LineAdded）+ 文件落盘 双输出。
+/// 文件位置：exe 目录下 logs\hummingbird_yyyy-MM-dd.log（每天一个，追加写）。
+/// 文件写失败（磁盘满/权限）只吞掉异常——日志不能把主程序搞崩。
+/// </summary>
 public sealed class MemoryLogger : IAppLogger
 {
     private readonly object _gate = new();
     public event Action<string, string>? LineAdded;
-    private void Emit(string lvl, string msg) { lock (_gate) LineAdded?.Invoke(lvl, msg); }
+
+    // 惰性初始化的日志文件路径（首次写日志时确定，exe 目录\logs\）
+    private string? _logFile;
+
+    private void Emit(string lvl, string msg)
+    {
+        string line = $"[{DateTime.Now:HH:mm:ss.fff}] [{lvl,-5}] {msg}";
+        lock (_gate)
+        {
+            try { WriteFile(line); } catch { /* 磁盘问题不影响运行 */ }
+            LineAdded?.Invoke(lvl, msg);
+        }
+    }
+
+    /// <summary>追加写入日志文件（调用方已持锁）。文件按天滚动，方便按日期回溯现场问题。</summary>
+    private void WriteFile(string line)
+    {
+        if (_logFile is null)
+        {
+            string dir = Path.Combine(AppContext.BaseDirectory, "logs");
+            Directory.CreateDirectory(dir);
+            _logFile = Path.Combine(dir, $"hummingbird_{DateTime.Now:yyyy-MM-dd}.log");
+            File.AppendAllText(_logFile, $"===== 蜂鸟上位机启动 {DateTime.Now:yyyy-MM-dd HH:mm:ss} ====={Environment.NewLine}");
+        }
+        File.AppendAllText(_logFile, line + Environment.NewLine);
+    }
+
     public void Info(string m) => Emit("INFO", m);
     public void Warn(string m) => Emit("WARN", m);
     public void Error(string m) => Emit("ERROR", m);
