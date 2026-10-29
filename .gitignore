@@ -8,5 +8,8 @@ sourcedoc/
 **/obj/
 *.user
 
+# IDE 缓存
+.vs/
+
 # 运行时生成
 calibration.json
