@@ -1,0 +1,185 @@
+{
+ "partName": "表盘25孔（数字化）",
+ "units": "mm",
+ "origin": "表盘中心；+Y=12H（正上方），+X=3H；角度顺时针",
+ "note": "来源：《表盘开孔位置(20261029)》图3数字化，取整参考值；待客户核对",
+ "nominalDatumAngleDeg": 0.0,
+ "datumFeature": "外圈缺口（现场确认）",
+ "holes": [
+  {
+   "id": 1,
+   "x_mm": -7.3,
+   "y_mm": 12.644,
+   "diameter_mm": 0.3,
+   "clock": "11H00"
+  },
+  {
+   "id": 2,
+   "x_mm": 7.275,
+   "y_mm": 12.6007,
+   "diameter_mm": 0.3,
+   "clock": "1H00"
+  },
+  {
+   "id": 3,
+   "x_mm": 1.6185,
+   "y_mm": 12.2939,
+   "diameter_mm": 0.3,
+   "clock": "12H15"
+  },
+  {
+   "id": 4,
+   "x_mm": -1.6185,
+   "y_mm": 12.2939,
+   "diameter_mm": 0.3,
+   "clock": "11H45"
+  },
+  {
+   "id": 5,
+   "x_mm": 6.5,
+   "y_mm": 11.2583,
+   "diameter_mm": 0.3,
+   "clock": "1H00"
+  },
+  {
+   "id": 6,
+   "x_mm": -6.45,
+   "y_mm": 11.1717,
+   "diameter_mm": 0.3,
+   "clock": "11H00"
+  },
+  {
+   "id": 7,
+   "x_mm": 12.6007,
+   "y_mm": 7.275,
+   "diameter_mm": 0.3,
+   "clock": "2H00"
+  },
+  {
+   "id": 8,
+   "x_mm": -12.6007,
+   "y_mm": 7.275,
+   "diameter_mm": 0.3,
+   "clock": "10H00"
+  },
+  {
+   "id": 9,
+   "x_mm": 11.3882,
+   "y_mm": 6.575,
+   "diameter_mm": 0.3,
+   "clock": "2H00"
+  },
+  {
+   "id": 10,
+   "x_mm": 11.4512,
+   "y_mm": 1.5076,
+   "diameter_mm": 0.3,
+   "clock": "2H45"
+  },
+  {
+   "id": 11,
+   "x_mm": 12.8392,
+   "y_mm": 1.6903,
+   "diameter_mm": 0.3,
+   "clock": "2H45"
+  },
+  {
+   "id": 12,
+   "x_mm": -13.6,
+   "y_mm": 0.0,
+   "diameter_mm": 0.3,
+   "clock": "9H00"
+  },
+  {
+   "id": 13,
+   "x_mm": -11.35,
+   "y_mm": 0.0,
+   "diameter_mm": 0.3,
+   "clock": "9H00"
+  },
+  {
+   "id": 14,
+   "x_mm": 13.5,
+   "y_mm": 0.0,
+   "diameter_mm": 0.3,
+   "clock": "3H00"
+  },
+  {
+   "id": 15,
+   "x_mm": 11.05,
+   "y_mm": 0.0,
+   "diameter_mm": 0.3,
+   "clock": "3H00"
+  },
+  {
+   "id": 16,
+   "x_mm": 11.215,
+   "y_mm": -6.475,
+   "diameter_mm": 0.3,
+   "clock": "4H00"
+  },
+  {
+   "id": 17,
+   "x_mm": -11.215,
+   "y_mm": -6.475,
+   "diameter_mm": 0.3,
+   "clock": "8H00"
+  },
+  {
+   "id": 18,
+   "x_mm": -12.5141,
+   "y_mm": -7.225,
+   "diameter_mm": 0.3,
+   "clock": "8H00"
+  },
+  {
+   "id": 19,
+   "x_mm": 12.5574,
+   "y_mm": -7.25,
+   "diameter_mm": 0.3,
+   "clock": "4H00"
+  },
+  {
+   "id": 20,
+   "x_mm": 6.425,
+   "y_mm": -11.1284,
+   "diameter_mm": 0.3,
+   "clock": "5H00"
+  },
+  {
+   "id": 21,
+   "x_mm": -6.525,
+   "y_mm": -11.3016,
+   "diameter_mm": 0.3,
+   "clock": "7H00"
+  },
+  {
+   "id": 22,
+   "x_mm": -1.5728,
+   "y_mm": -11.9469,
+   "diameter_mm": 0.3,
+   "clock": "6H15"
+  },
+  {
+   "id": 23,
+   "x_mm": -7.275,
+   "y_mm": -12.6007,
+   "diameter_mm": 0.3,
+   "clock": "7H00"
+  },
+  {
+   "id": 24,
+   "x_mm": 7.25,
+   "y_mm": -12.5574,
+   "diameter_mm": 0.3,
+   "clock": "5H00"
+  },
+  {
+   "id": 25,
+   "x_mm": 1.6838,
+   "y_mm": -12.7896,
+   "diameter_mm": 0.3,
+   "clock": "5H45"
+  }
+ ]
+}

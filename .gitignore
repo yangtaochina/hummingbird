@@ -1,0 +1,12 @@
+# 客户原始资料（大文件，不入库）
+sourcedoc/
+激光器协议说明_copy.xls
+电气原理图-高清渲染.png
+
+# 构建产物
+**/bin/
+**/obj/
+*.user
+
+# 运行时生成
+calibration.json

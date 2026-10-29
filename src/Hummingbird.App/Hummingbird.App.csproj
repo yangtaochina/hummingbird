@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Hummingbird.App</RootNamespace>
+    <Description>表盘激光打孔上位机（WinForms 主程序）</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hummingbird.Core\Hummingbird.Core.csproj" />
+    <ProjectReference Include="..\Hummingbird.Vision\Hummingbird.Vision.csproj" />
+    <ProjectReference Include="..\Hummingbird.Devices.Sim\Hummingbird.Devices.Sim.csproj" />
+    <ProjectReference Include="..\Hummingbird.Devices.OpcUa\Hummingbird.Devices.OpcUa.csproj" />
+    <ProjectReference Include="..\Hummingbird.Devices.LaserRtu\Hummingbird.Devices.LaserRtu.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\templates\dial_25holes.json" Link="templates\dial_25holes.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

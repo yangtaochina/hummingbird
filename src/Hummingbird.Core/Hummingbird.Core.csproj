@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Hummingbird.Core</RootNamespace>
+    <Description>表盘激光打孔上位机 - 核心层：接口、模型、流程编排</Description>
+  </PropertyGroup>
+
+</Project>

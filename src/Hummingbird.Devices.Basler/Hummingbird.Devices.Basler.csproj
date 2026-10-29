@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Hummingbird.Devices.Basler</RootNamespace>
+    <Description>Basler pylon 相机实现 —— 需安装 pylon SDK 后才能编译，见 README.md</Description>
+    <!-- pylon 默认安装路径，可被 -p:PylonDll=... 覆盖 -->
+    <PylonDll Condition="'$(PylonDll)' == ''">C:\Program Files\Basler\pylon 7\bin\Basler.Pylon.dll</PylonDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hummingbird.Core\Hummingbird.Core.csproj" />
+  </ItemGroup>
+
+  <!-- 安装 pylon SDK 后，此引用自动生效（DLL 存在才编译） -->
+  <ItemGroup Condition="Exists('$(PylonDll)')">
+    <Reference Include="Basler.Pylon">
+      <HintPath>$(PylonDll)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

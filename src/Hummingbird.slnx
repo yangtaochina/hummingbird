@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Hummingbird.App/Hummingbird.App.csproj" />
+  <Project Path="Hummingbird.Core/Hummingbird.Core.csproj" />
+  <Project Path="Hummingbird.Devices.LaserRtu/Hummingbird.Devices.LaserRtu.csproj" />
+  <Project Path="Hummingbird.Devices.OpcUa/Hummingbird.Devices.OpcUa.csproj" />
+  <Project Path="Hummingbird.Devices.Sim/Hummingbird.Devices.Sim.csproj" />
+  <Project Path="Hummingbird.SmokeTest/Hummingbird.SmokeTest.csproj" />
+  <Project Path="Hummingbird.Vision/Hummingbird.Vision.csproj" />
+</Solution>
