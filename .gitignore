@@ -13,3 +13,7 @@ sourcedoc/
 
 # 运行时生成
 calibration.json
+
+# 打印产物
+现场核实清单-*.html
+现场核实清单-*.pdf
