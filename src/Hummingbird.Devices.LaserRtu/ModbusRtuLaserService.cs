@@ -65,14 +65,73 @@ public sealed class ModbusRtuLaserService : ILaserService
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// 写单个寄存器（功能码06）。所有控制动作的底层出口。
-    /// 写失败（超时/CRC错/异常码）会抛 Modbus 异常，上层捕获后能从日志看出是哪条指令失败。
-    /// </summary>
+    /// <summary>写单个寄存器（功能码06）。所有控制动作的底层出口。
+    /// 写失败（超时/CRC错/异常码）会抛 Modbus 异常，上层捕获后能从日志看出是哪条指令失败。</summary>
     private async Task WriteRegAsync(byte slave, ushort reg, ushort value)
     {
         if (_master is null) throw new InvalidOperationException("[激光] 串口未打开（请先\"连接设备\"）");
         await _master.WriteSingleRegisterAsync(slave, reg, value);
+    }
+
+    // ------------------------------------------------------------------
+    // 连接测试（只读，绝不出光）
+    // ------------------------------------------------------------------
+
+    /// <summary>读保持寄存器（功能码03）。仅诊断用：读任何寄存器都不会让激光出光。</summary>
+    public async Task<ushort[]> ReadRegsAsync(byte slave, ushort start, ushort count)
+    {
+        if (_master is null) throw new InvalidOperationException("[激光] 串口未打开");
+        return await _master.ReadHoldingRegistersAsync(slave, start, count);
+    }
+
+    /// <summary>
+    /// 连接探测（只读不出光）：按三套"从站+寄存器"组合读寄存器，分辨现场到底哪套协议是真的。
+    ///   ① 说明书V3.0（RS485/115200）：从站01 读 1540~1544（软急停/故障/功率0~1000/出光）
+    ///   ② Excel V1.0（RS232）      ：从站01 读 0x0001~0x0008（控制模式/功率模式/出光…）
+    ///   ③ Excel V1.0 功率从站      ：从站09 读 0x0172（功率0~10000）
+    /// 返回：命中描述（哪套协议+读到的值）；全部无应答返回 ""。
+    /// 注：SlaveException = 设备回了"地址非法"——设备在线，只是寄存器表不匹配，也算半个命中。
+    /// </summary>
+    public async Task<string> ProbeAsync()
+    {
+        if (_master is null) throw new InvalidOperationException("[激光] 串口未打开");
+        var notes = new List<string>();   // SlaveException = 设备在线但地址非法，记录后继续试其他表
+
+        // ① 说明书 V3.0 寄存器表
+        try
+        {
+            var v = await ReadRegsAsync(1, 1540, 5);
+            string s = $"★ 说明书V3.0 命中：软急停1540={v[0]} 故障1541={v[1]} 功率1542={v[2]}/1000 出光1543={v[3]} → 功率走1542(0~1000)、出光走1543";
+            _log.Info("[激光] " + s);
+            return s;
+        }
+        catch (SlaveException ex) { _log.Warn($"[激光] V3.0表：设备应答但地址非法（{ex.Message}）"); notes.Add("V3.0地址非法"); }
+        catch (Exception ex) { _log.Info($"[激光] V3.0表无应答（{ex.GetType().Name}）"); }
+
+        // ② Excel V1.0 常规寄存器
+        try
+        {
+            var v = await ReadRegsAsync(1, 0x0001, 8);
+            string s = $"★ ExcelV1.0 命中：控制模式={v[0]} 功率模式={v[1]} 出光0x0007={v[6]} → 功率走从站09/0x0172(0~10000)、出光走0x0007";
+            _log.Info("[激光] " + s);
+            return s;
+        }
+        catch (SlaveException ex) { _log.Warn($"[激光] V1.0表：设备应答但地址非法（{ex.Message}）"); notes.Add("V1.0地址非法"); }
+        catch (Exception ex) { _log.Info($"[激光] V1.0表无应答（{ex.GetType().Name}）"); }
+
+        // ③ Excel V1.0 功率从站09
+        try
+        {
+            var v = await ReadRegsAsync(9, 0x0172, 1);
+            string s = $"★ 功率从站09 命中：功率={v[0]}/10000 → 确认 Excel V1.0 协议";
+            _log.Info("[激光] " + s);
+            return s;
+        }
+        catch (Exception ex) { _log.Info($"[激光] 从站09无应答（{ex.GetType().Name}）"); }
+
+        if (notes.Count > 0)
+            return $"⚠ 设备在线但所有寄存器表都不匹配（{string.Join("；", notes)}）——波特率对，寄存器地址需再核";
+        return "";
     }
 
     /// <summary>设定功率 0~10000。⚠ 走从站09/寄存器0x0172，与其他指令不同。</summary>

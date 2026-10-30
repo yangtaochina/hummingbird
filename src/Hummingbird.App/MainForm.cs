@@ -1,3 +1,4 @@
+using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Hummingbird.Core;
@@ -49,6 +50,8 @@ public sealed class MainForm : Form
     private readonly NumericUpDown _numPulse = Num(1, 10, 5, 1);
     private readonly NumericUpDown _numR = Num(1, 999, 1, 1);
     private readonly NumericUpDown _numRval = Num(-100000, 100000, 0, 1);
+    private readonly TextBox _txtCom = new() { Width = 80, Text = "COM3" };
+    private readonly ComboBox _cmbBaud = new() { Width = 90, DropDownStyle = ComboBoxStyle.DropDownList };
 
     /// <param name="logger">全局日志器；不传则自建（设计器/单元测试场景）。</param>
     public MainForm(IAppLogger? logger = null)
@@ -180,10 +183,16 @@ public sealed class MainForm : Form
         // ---- 页签3：设备调试 ----
         var tabDbg = new TabPage("设备调试");
         var gbCam = GroupBoxOf("相机",
+            Btn("打开相机", async (_, _) => await OpenCamera()),
+            Btn("关闭相机", async (_, _) => { if (_camera != null) await _camera.CloseAsync(); _log.Info("相机关闭"); }),
             Lbl("曝光us"), _numExp, Lbl("增益"), _numGain,
             Btn("应用参数", async (_, _) => await ApplyCameraParams()),
             Btn("拍照(显示在自动页)", async (_, _) => await GrabLocateShow()));
         var gbLaser = GroupBoxOf("激光器",
+            Lbl("串口"), _txtCom, Lbl("波特率"), _cmbBaud,
+            Btn("打开串口", async (_, _) => await OpenLaserPort()),
+            Btn("读寄存器测试(不出光)", async (_, _) => await LaserProbe()),
+            Btn("扫描全部串口(不出光)", async (_, _) => await LaserScan()),
             Lbl("功率0-10000"), _numPower, Lbl("重频kHz"), _numFreq, Lbl("脉冲数"), _numPulse,
             Btn("设置参数", async (_, _) => await ApplyLaserParams()),
             Btn("出光一次", async (_, _) => { await _laser.FireBurstAsync(); _log.Info("已出光一次"); }),
@@ -197,6 +206,11 @@ public sealed class MainForm : Form
             Btn("写入R参数", async (_, _) => { var ok = await _cnc.WriteRAsync((int)_numR.Value, (double)_numRval.Value); _log.Info(ok ? $"R{(int)_numR.Value}={_numRval.Value} 已写入" : "写入失败"); }),
             _lblPos);
         _txtEndpoint.Text = _cfg.CncEndpoint;
+        _txtCom.Text = string.IsNullOrEmpty(_cfg.LaserComPort) ? "COM3" : _cfg.LaserComPort;
+        _cmbBaud.Items.AddRange(new object[] { 9600, 19200, 38400, 57600, 115200, 230400 });
+        int ib = _cmbBaud.Items.IndexOf(_cfg.LaserBaud > 0 ? _cfg.LaserBaud : 115200);
+        _cmbBaud.SelectedIndex = ib < 0 ? _cmbBaud.Items.IndexOf(115200) : ib;
+
 
         var dbgRoot = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, Padding = new Padding(8) };
         dbgRoot.Controls.Add(gbCam);
@@ -232,22 +246,30 @@ public sealed class MainForm : Form
 
     private async Task ConnectDevices()
     {
+        // 三台设备各自独立连接：机床网络不通时，相机/激光照常可测（现场调试常用）
         try
         {
             bool ok = await _cnc.ConnectAsync(_cfg.CncEndpoint);
             _log.Info(ok ? $"数控已连接：{_cfg.CncEndpoint}" : "数控连接失败");
-            await _laser.OpenAsync(_cfg.LaserComPort, _cfg.LaserBaud);
+        }
+        catch (Exception ex) { _log.Error("数控连接失败：" + ex.Message + "（不影响相机/激光调试）"); }
+
+        try
+        {
+            await _laser.OpenAsync(_txtCom.Text.Trim(), (int)(_cmbBaud.SelectedItem ?? 115200));
             await ApplyLaserParams();
-            _log.Info($"激光器已打开：{_cfg.LaserComPort}@{_cfg.LaserBaud}");
-            if (_camera != null)
+            _log.Info($"激光器串口已打开：{_txtCom.Text.Trim()}@{_cmbBaud.SelectedItem}");
+        }
+        catch (Exception ex) { _log.Error("激光器串口打开失败：" + ex.Message + "（检查USB转232是否插好、口是否被占用）"); }
+
+        if (_camera != null)
+        {
+            try
             {
                 await _camera.OpenAsync();
                 _log.Info("相机已打开：" + _camera.DeviceName);
             }
-        }
-        catch (Exception ex)
-        {
-            _log.Error("连接设备失败：" + ex.Message);
+            catch (Exception ex) { _log.Error("相机打开失败：" + ex.Message + "（检查USB3线、相机供电）"); }
         }
     }
 
@@ -265,6 +287,98 @@ public sealed class MainForm : Form
         await _laser.SetFrequencyKhzAsync((int)_numFreq.Value);
         await _laser.SetPulseCountAsync((int)_numPulse.Value);
         _log.Info($"激光参数：功率{_numPower.Value}/10000 重频{_numFreq.Value}kHz 脉冲{_numPulse.Value}");
+    }
+
+    // ---------- 相机/激光 单机连接测试（现场调试用） ----------
+
+    /// <summary>单独打开相机（不依赖机床/激光）。USB 相机：检查 USB3 线、不能被 pylon Viewer 占用。</summary>
+    private async Task OpenCamera()
+    {
+        if (_camera == null) { _log.Warn("相机不可用（本机未探测到 pylon SDK，见 Hummingbird.Devices.Basler/README.md）"); return; }
+        try
+        {
+            await _camera.OpenAsync();
+            _log.Info("相机已打开：" + _camera.DeviceName);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("相机打开失败：" + ex.Message + "（检查：USB3线是否插好、相机电源、是否被 pylon Viewer 占用）");
+        }
+    }
+
+    /// <summary>按界面上的 串口+波特率 打开激光器串口。</summary>
+    private async Task OpenLaserPort()
+    {
+        try
+        {
+            await _laser.OpenAsync(_txtCom.Text.Trim(), (int)(_cmbBaud.SelectedItem ?? 115200));
+            _log.Info($"激光器串口已打开：{_txtCom.Text.Trim()}@{_cmbBaud.SelectedItem} 8N1");
+        }
+        catch (Exception ex)
+        {
+            _log.Error("串口打开失败：" + ex.Message + "（检查 USB转232 是否插好、口是否被其他软件占用）");
+        }
+    }
+
+    /// <summary>在当前串口上做只读探测（绝不出光），分辨两套协议哪套是真的。</summary>
+    private async Task LaserProbe()
+    {
+        if (_laser is not ModbusRtuLaserService rtu)
+        {
+            _log.Warn("仅 Real 模式（串口 Modbus RTU）可用");
+            return;
+        }
+        if (!rtu.IsOpen) { _log.Warn("串口未打开，先点\"打开串口\"或\"扫描全部串口\""); return; }
+        _log.Info($"开始只读探测 {_txtCom.Text.Trim()}@{_cmbBaud.SelectedItem}（读寄存器，不出光）...");
+        var r = await rtu.ProbeAsync();
+        _log.Info(r.Length > 0 ? $"探测结果：{r}" : "无应答 → 换个波特率再试，或直接点\"扫描全部串口\"");
+    }
+
+    /// <summary>
+    /// 全自动扫描：发现的所有串口 × 常用波特率，逐组只读探测（不出光）。
+    /// 用于现场一次性搞清楚：哪个口、哪个波特率、哪套寄存器表。
+    /// </summary>
+    private async Task LaserScan()
+    {
+        if (_laser is not ModbusRtuLaserService rtu)
+        {
+            _log.Warn("仅 Real 模式（串口 Modbus RTU）可用");
+            return;
+        }
+        string[] ports = SerialPort.GetPortNames();
+        if (ports.Length == 0)
+        {
+            _log.Error("未发现任何串口：检查 USB 转 232（或485）是否插到电脑、驱动是否装好（设备管理器→端口 COM和LPT）");
+            return;
+        }
+        int[] bauds = { 9600, 19200, 38400, 57600, 115200 };
+        _log.Info($"发现串口：{string.Join("  ", ports)}；开始扫描 ×{bauds.Length} 档波特率（每组约3秒，只读不出光）...");
+        bool any = false;
+        foreach (var port in ports)
+        {
+            foreach (var baud in bauds)
+            {
+                try
+                {
+                    await rtu.OpenAsync(port, baud);
+                    var r = await rtu.ProbeAsync();
+                    if (r.Length > 0)
+                    {
+                        _log.Info($"✓✓✓ {port}@{baud}：{r}");
+                        _txtCom.Text = port;
+                        _cmbBaud.SelectedIndex = Math.Max(0, _cmbBaud.Items.IndexOf(baud));
+                        any = true;
+                    }
+                    else _log.Info($"  {port}@{baud}：无应答");
+                }
+                catch (Exception ex)
+                {
+                    _log.Info($"  {port}@{baud}：{ex.GetType().Name}（{ex.Message}）");
+                }
+            }
+        }
+        if (any) _log.Info("扫描完成：命中项见上（串口/波特率已自动回填到界面）");
+        else _log.Warn("扫描完成：全部无应答。若线确实已接好且激光器已上电 → 大概率电平不匹配：说明书V3.0是RS485，客户说RS232；若拿到的是USB转232而激光器是485口，需要换 USB转485");
     }
 
     private async Task GrabLocateShow()
