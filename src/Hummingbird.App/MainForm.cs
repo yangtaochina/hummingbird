@@ -97,7 +97,9 @@ public sealed class MainForm : Form
             VisionOptions = new VisionOptions
             {
                 ExpectedOuterDiameterMm = _cfg.ExpectedOuterDiameterMm,
-                NominalDatumAngleDeg = template.NominalDatumAngleDeg
+                NominalDatumAngleDeg = template.NominalDatumAngleDeg,
+                DatumMode = template.DatumMode,
+                DatumCircleDiameterMm = template.DatumCircleDiameterMm
             },
             Convention = new TransformConvention
             {

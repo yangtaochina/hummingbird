@@ -64,7 +64,19 @@ public sealed record VisionOptions
 {
     /// <summary>表盘外缘预期直径（mm），用于轮廓校验</summary>
     public double ExpectedOuterDiameterMm { get; init; } = 34.5;
-    /// <summary>零位特征（缺口）的名义时钟角：0=12H</summary>
+
+    /// <summary>
+    /// 角向基准模式（现场 2026-10-30 核实结论）：
+    ///   "notch"       = 外圈缺口定角向（旧方案，留作兼容）
+    ///   "offsetCircle" = 盘面既有偏心小圆定角向：中心→小圆方向 = 12H（实物无 12H 标记，
+    ///                    客户以偏心小圆自定义 12 点方向；表盘对称，靠它消解角向歧义）
+    /// </summary>
+    public string DatumMode { get; init; } = "notch";
+
+    /// <summary>基准小圆预期直径（mm），0=未知（检测时仅按形状/尺寸范围找，现场量得后填模板）</summary>
+    public double DatumCircleDiameterMm { get; init; } = 0.0;
+
+    /// <summary>零位特征的名义时钟角：0=12H</summary>
     public double NominalDatumAngleDeg { get; init; } = 0.0;
     /// <summary>像素尺寸（mm/px），仅用于预期尺寸校验</summary>
     public double PixelSizeMm { get; init; } = 0.02;
@@ -140,6 +152,12 @@ public sealed class HolePatternTemplate
     [JsonPropertyName("partName")] public string PartName { get; set; } = "";
     [JsonPropertyName("note")] public string Note { get; set; } = "";
     [JsonPropertyName("nominalDatumAngleDeg")] public double NominalDatumAngleDeg { get; set; }
+    /// <summary>角向基准模式：notch=外圈缺口 / offsetCircle=偏心小圆（默认 notch 兼容旧模板）</summary>
+    [JsonPropertyName("datumMode")] public string DatumMode { get; set; } = "notch";
+    /// <summary>基准小圆预期直径（mm），0=未知</summary>
+    [JsonPropertyName("datumCircleDiameterMm")] public double DatumCircleDiameterMm { get; set; }
+    /// <summary>基准特征的人类可读说明（写进模板便于现场人员理解）</summary>
+    [JsonPropertyName("datumFeature")] public string DatumFeature { get; set; } = "";
     [JsonPropertyName("holes")] public List<HoleTemplate> Holes { get; set; } = new();
 
     private static readonly JsonSerializerOptions Opt = new() { PropertyNameCaseInsensitive = true };

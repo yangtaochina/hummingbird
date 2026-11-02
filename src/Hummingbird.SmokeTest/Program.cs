@@ -12,7 +12,13 @@ var laser = new SimLaserService();
 var wf = new AutoRunWorkflow(log, cam, new DialPositioning(), cnc, laser)
 {
     Template = template,
-    VisionOptions = new VisionOptions { ExpectedOuterDiameterMm = 34.5, NominalDatumAngleDeg = 0 },
+    VisionOptions = new VisionOptions
+    {
+        ExpectedOuterDiameterMm = 34.5,
+        NominalDatumAngleDeg = template.NominalDatumAngleDeg,
+        DatumMode = template.DatumMode,               // 模板指向 offsetCircle（现场确认的 12H 基准）
+        DatumCircleDiameterMm = template.DatumCircleDiameterMm
+    },
 };
 
 int fails = 0;

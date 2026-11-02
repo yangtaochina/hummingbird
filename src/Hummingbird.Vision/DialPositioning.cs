@@ -5,14 +5,18 @@ using OpenCvSharp;
 namespace Hummingbird.Vision;
 
 /// <summary>
-/// 表盘定位（OpenCV），实现 IVisionService。算法三遍式：
+/// 表盘定位（OpenCV），实现 IVisionService。三遍式：
 ///
-///   第一遍：全体外轮廓 → 椭圆拟合 粗定心；建"半径-角度"剖面找出缺口扇区
-///   第二遍：剔除缺口 ±25° 扇区后重新拟合 → 精定心（缺口会把拟合中心拉偏，必须剔）
-///   第三遍：全体轮廓点 + 精修中心重建剖面 → 缺口深度加权质心定角向（亚度级）
+///   第一遍：全体外轮廓 → 椭圆拟合 粗定心；建"半径-角度"剖面找出**全部**凹陷扇区
+///           （现场核实 2026-10-30：外缘有 8 个渠口、不均匀分布——不止一个）
+///   第二遍：剔除全部渠口扇区后重新拟合 → 精定心（任何一个渠口都会把拟合中心拉偏，必须全剔）
+///   第三遍：角向基准，按 DatumMode 二选一：
+///     - offsetCircle（现场确认的正解）：检测盘面既有偏心小圆，中心→小圆方向 = 12H。
+///       实物上没有"12H"印刷标记——12H 是客户自定义方向，靠这个偏心小圆定义。
+///     - notch（旧方案兼容）：全体点剖面重建，最长凹陷带深度加权质心定角向。
 ///
 /// 为什么这么绕（一个坑的教训）：
-///   - 直接拿全体轮廓拟合：缺口那 3° 的"缺口弦"把中心拉偏 3~4px（约 0.07mm）→ 超差
+///   - 直接拿全体轮廓拟合：缺口那几度的"缺口弦"把中心拉偏 3~4px（约 0.07mm）→ 超差
 ///   - 剔除缺口后在剩余点上找缺口：缺口区域没数据，凹陷检测跑到别处 → 角度全错
 ///   - 所以：剔缺口只为定心，找缺口必须回到全体点
 ///
@@ -31,6 +35,8 @@ public sealed class DialPositioning : IVisionService
         await Task.Yield();
         try
         {
+            bool useOffsetCircle = !string.Equals(opt.DatumMode, "notch", StringComparison.OrdinalIgnoreCase);
+
             // ---- 预处理：去噪（5x5 高斯）→ Otsu 自动二值化（盘亮/背景暗自动分）----
             using var src = new Mat(frame.Height, frame.Width, MatType.CV_8UC1);
             Marshal.Copy(frame.Gray, 0, src.Data, frame.Gray.Length);
@@ -47,43 +53,75 @@ public sealed class DialPositioning : IVisionService
                 return Fail("画面中未找到工件轮廓（检查光源/曝光/视野）");
             _log?.Info($"[视觉] 外轮廓 {contour.Length} 点");
 
-            // ---- 第一遍：全体轮廓粗定心 + 找缺口扇区 ----
+            // ---- 第一遍：全体轮廓粗定心 + 找全部渠口扇区 ----
             var fit1 = FitCircle(contour);
             var (bins1, mean1, std1) = BuildProfile(contour, fit1.Cx, fit1.Cy);
-            var run1 = FindDipRun(bins1, mean1, std1);
-            if (run1 is null)
-                return Fail("未找到可靠的零位缺口（外缘无凹陷带），请确认缺口可见");
-            _log?.Info($"[视觉] 一遍：粗中心=({fit1.Cx:F1},{fit1.Cy:F1}) 缺口扇区@{(run1.Value.Start + run1.Value.Len / 2.0) % 360:F0}° 宽{run1.Value.Len}°");
+            var dips = FindDipRuns(bins1, mean1, std1);
+            _log?.Info($"[视觉] 一遍：粗中心=({fit1.Cx:F1},{fit1.Cy:F1}) 找到 {dips.Count} 个渠口扇区" +
+                        string.Concat(dips.Select(d => $" [{d.Start}°+{d.Len}°]")));
+            if (dips.Count == 0 && !useOffsetCircle)
+                return Fail("未找到任何外缘缺口（渠口不可见？），角向基准无法建立");
 
-            // ---- 第二遍：剔除缺口 ±25° 扇区后精定心（仅用于椭圆拟合）----
-            double notchApprox = (run1.Value.Start + run1.Value.Len / 2.0) % 360;
+            // ---- 第二遍：剔除全部渠口扇区后精定心（仅用于椭圆拟合）----
+            // 每段渠口外扩 2°+半宽（弦过渡区也带偏差）。8 段渠口下用旧的 ±25° 会把整圈剔光。
             var kept = contour.Where(p =>
             {
                 double clock = ClockAngle(p.X - fit1.Cx, p.Y - fit1.Cy);
-                return AngleDist(clock, notchApprox) > 25;
+                foreach (var d in dips)
+                {
+                    double center = (d.Start + d.Len / 2.0) % 360;
+                    if (AngleDist(clock, center) < d.Len / 2.0 + 2 + d.Len * 0.1)
+                        return false;
+                }
+                return true;
             }).ToArray();
-            var fit = kept.Length > contour.Length / 2 ? FitCircle(kept) : fit1;
-            _log?.Info($"[视觉] 二遍：精中心=({fit.Cx:F1},{fit.Cy:F1})（剔除缺口后用 {kept.Length}/{contour.Length} 点）");
+            // 8 渠口最多可剔掉 ~25% 轮廓点；剩余太少说明渠道异常宽，宁可退回粗定心并警告
+            var fit = kept.Length > contour.Length / 3 ? FitCircle(kept) : fit1;
+            if (kept.Length <= contour.Length / 3 && dips.Count > 0)
+                _log?.Warn($"[视觉] 渠口扇区剔除后仅剩 {kept.Length}/{contour.Length} 点，精定心退回粗拟合（渠口是否异常宽？）");
+            _log?.Info($"[视觉] 二遍：精中心=({fit.Cx:F1},{fit.Cy:F1})（剔除渠口后用 {kept.Length}/{contour.Length} 点）");
 
-            // ---- 第三遍：全体轮廓点 + 精修中心重建剖面，凹陷深度加权质心定角向 ----
-            var (bins, mean, std) = BuildProfile(contour, fit.Cx, fit.Cy);
-            var run = FindDipRun(bins, mean, std) ?? run1;
-            double notchFrom = run.Value.Start, notchTo = run.Value.Start + run.Value.Len;
-            double wSum = 0, sSin = 0, sCos = 0;
-            for (double a = notchFrom; a <= notchTo; a += 0.25)
+            // ---- 第三遍：角向基准 ----
+            double datumClock, datumQuality;
+            if (useOffsetCircle)
             {
-                double r = BinAt(bins, a);
-                double w = r > 0 ? Math.Max(0, mean - r) : 0;   // 凹陷深度作权重
-                w = w * w;                                       // 平方权重：突出缺口底部
-                if (w <= 0) continue;
-                double rad = a * Math.PI / 180;
-                wSum += w; sSin += w * Math.Sin(rad); sCos += w * Math.Cos(rad);
+                // 中心 → 既有偏心小圆 的方向 = 12H（现场 2026-10-30 确认）
+                var datum = FindOffsetCircle(blur, fit, opt);
+                if (datum is null)
+                    return Fail("未找到盘面基准小圆（12H 方向特征）。检查：小圆是否在视野内/对比度是否足够/" +
+                                "模板 datumCircleDiameterMm 是否与实物一致");
+                datumClock = ClockAngle(datum.X - fit.Cx, datum.Y - fit.Cy);
+                datumQuality = datum.Quality;
+                _log?.Info($"[视觉] 三遍：基准小圆@({datum.X:F1},{datum.Y:F1}) " +
+                           $"直径≈{datum.DiameterPx:F0}px → 12H 方位={datumClock:F2}°（圆度{datumQuality:F2}）");
             }
-            // 角度质心 = 加权向量的方向（环形平均，避免 359°/1° 跨零问题）
-            double notchClock = wSum > 0
-                ? ((Math.Atan2(sSin, sCos) * 180 / Math.PI) % 360 + 360) % 360
-                : notchFrom % 360;
-            _log?.Info($"[视觉] 三遍：缺口角向={notchClock:F2}°（加权质心，权重和{wSum:F0}）");
+            else
+            {
+                // 旧方案：全体点重建剖面，最长凹陷带的深度加权质心
+                var (bins, mean, std) = BuildProfile(contour, fit.Cx, fit.Cy);
+                var dips2 = FindDipRuns(bins, mean, std);
+                if (dips2.Count == 0)
+                    return Fail("未找到可靠的零位缺口（外缘无凹陷带），请确认缺口可见");
+                var run = dips2.OrderByDescending(d => d.Len).First();
+                double notchFrom = run.Start, notchTo = run.Start + run.Len;
+                double wSum = 0, sSin = 0, sCos = 0;
+                for (double a = notchFrom; a <= notchTo; a += 0.25)
+                {
+                    double r = BinAt(bins, a);
+                    double w = r > 0 ? Math.Max(0, mean - r) : 0;   // 凹陷深度作权重
+                    w = w * w;                                       // 平方权重：突出缺口底部
+                    if (w <= 0) continue;
+                    double rad = a * Math.PI / 180;
+                    wSum += w; sSin += w * Math.Sin(rad); sCos += w * Math.Cos(rad);
+                }
+                // 角度质心 = 加权向量的方向（环形平均，避免 359°/1° 跨零问题）
+                datumClock = wSum > 0
+                    ? ((Math.Atan2(sSin, sCos) * 180 / Math.PI) % 360 + 360) % 360
+                    : notchFrom % 360;
+                double dipDepth = std / mean;
+                datumQuality = Math.Min(dipDepth / 0.05, 1);
+                _log?.Info($"[视觉] 三遍：缺口角向={datumClock:F2}°（加权质心，权重和{wSum:F0}）");
+            }
 
             // ---- 尺寸校验：测得外缘半径 vs 预期（防拿错件/视野不对）----
             double expectedR = opt.ExpectedOuterDiameterMm / 2 / Math.Max(opt.PixelSizeMm, 1e-6);
@@ -91,15 +129,15 @@ public sealed class DialPositioning : IVisionService
             if (sizeErr > 0.3)
                 return Fail($"外缘半径偏差过大：测到{fit.R:F0}px vs 预期{expectedR:F0}px（{sizeErr:P0}）");
 
-            // ---- 置信度：椭圆圆度 + 尺寸吻合度 + 缺口深度 三项加权 ----
-            double dipDepth = std / mean;
+            // ---- 置信度：椭圆圆度 + 尺寸吻合度 + 基准特征质量 三项加权 ----
             double conf = Math.Max(0, Math.Min(1,
-                0.5 * fit.AxesRatio + 0.3 * (1 - Math.Min(sizeErr / 0.3, 1)) + 0.2 * Math.Min(dipDepth / 0.05, 1)));
+                0.5 * fit.AxesRatio + 0.3 * (1 - Math.Min(sizeErr / 0.3, 1)) + 0.2 * datumQuality));
 
-            // 装卡转角 = 实测缺口角 - 名义零位角，归一化到 ±180°
-            double angleOffset = ((notchClock - opt.NominalDatumAngleDeg) % 360 + 540) % 360 - 180;
-            return new PartPose(true, fit.Cx, fit.Cy, fit.R, notchClock, angleOffset, conf,
-                $"中心=({fit.Cx:F1},{fit.Cy:F1})px 外缘R={fit.R:F0}px 缺口@{notchClock:F1}° 转角={angleOffset:F2}°");
+            // 装卡转角 = 实测基准方位 - 名义零位角，归一化到 ±180°
+            double angleOffset = ((datumClock - opt.NominalDatumAngleDeg) % 360 + 540) % 360 - 180;
+            string datumName = useOffsetCircle ? "基准小圆" : "缺口";
+            return new PartPose(true, fit.Cx, fit.Cy, fit.R, datumClock, angleOffset, conf,
+                $"中心=({fit.Cx:F1},{fit.Cy:F1})px 外缘R={fit.R:F0}px {datumName}@{datumClock:F1}° 转角={angleOffset:F2}°");
         }
         catch (Exception ex)
         {
@@ -113,6 +151,73 @@ public sealed class DialPositioning : IVisionService
         _log?.Warn("[视觉] " + why);
         return new PartPose(false, 0, 0, 0, 0, 0, 0, why);
     }
+
+    // ==================== 偏心基准小圆检测（12H 方向特征） ====================
+
+    /// <summary>基准小圆检测结果：亚像素中心（椭圆拟合）+ 实测直径 + 质量分（0~1）。</summary>
+    private sealed record DatumCircle(double X, double Y, double DiameterPx, double Quality);
+
+    /// <summary>
+    /// 在盘面内部找"既有偏心小圆"（12H 基准特征）。要点：
+    ///   - 以盘面（0.9R 圆盘）的平均灰度为基准电平，亮斑 = 均值+25、暗斑 = 均值-25 的全局阈值。
+    ///     不用自适应阈值：小圆大小未知，窗口与特征同量级时阈值会被特征自身抬高导致碎裂；
+    ///     视野仅 Ø34mm，光照均匀性由环形光源保证，全局阈值更可预期、现场好调。
+    ///   - 两种极性都找（小圆是亮点还是暗点现场未确认），取质量分最高的
+    ///   - 排除盘心正中的中心孔（Φ2.3~2.9mm 就在拟合圆心上，靠"距中心 &lt; 0.12R"排除）
+    ///   - 排除外缘渠口内壁/边缘噪声：只搜 0.12R ~ 0.75R 环带
+    ///   - 已知预期直径时按直径过滤（±45%），未知时按"面积够大 + 圆度够圆"的分数挑
+    /// </summary>
+    private DatumCircle? FindOffsetCircle(Mat gray, CircleFit face, VisionOptions opt)
+    {
+        double r = face.R;
+        double expectedPx = opt.DatumCircleDiameterMm > 0
+            ? opt.DatumCircleDiameterMm / Math.Max(opt.PixelSizeMm, 1e-6) : 0;
+
+        // 盘面圆盘掩膜 + 基准电平（掩膜平均：中心孔/基准小圆占比极小，均值≈盘面本体灰度）
+        using var roiMask = new Mat(gray.Size(), MatType.CV_8UC1, Scalar.All(0));
+        Cv2.Circle(roiMask, new Point((int)face.Cx, (int)face.Cy), Math.Max(4, (int)(r * 0.9)), Scalar.All(255), -1);
+        double level = Cv2.Mean(gray, roiMask).Val0;
+
+        DatumCircle? best = null;
+        // 亮斑 / 暗斑 两种极性
+        var polarities = new (double Offset, ThresholdTypes Mode)[]
+        { (+25.0, ThresholdTypes.Binary), (-25.0, ThresholdTypes.BinaryInv) };
+        foreach (var (offset, mode) in polarities)
+        {
+            using var mask = new Mat();
+            Cv2.Threshold(gray, mask, level + offset, 255, mode);
+            Cv2.BitwiseAnd(mask, roiMask, mask);   // 背景必须剔除（暗极性下背景会整体过阈值）
+            Cv2.FindContours(mask, out var cs, out _, RetrievalModes.External, ContourApproximationModes.ApproxNone);
+
+            foreach (var ct in cs)
+            {
+                double area = Cv2.ContourArea(ct);
+                if (area < 30 || area > Math.PI * r * r * 0.05) continue;      // 太小=噪声，太大=不是特征
+                if (ct.Length < 5) continue;                                     // FitEllipse 至少 5 点
+                var ell = Cv2.FitEllipse(ct);
+                double dPx = (ell.Size.Width + ell.Size.Height) / 2;            // 实测直径
+                double ratio = Math.Min(ell.Size.Width, ell.Size.Height)
+                             / Math.Max(ell.Size.Width, ell.Size.Height);
+                if (ratio < 0.55) continue;                                     // 不圆的不要
+
+                double dist = Math.Sqrt(Math.Pow(ell.Center.X - face.Cx, 2) + Math.Pow(ell.Center.Y - face.Cy, 2));
+                if (dist < r * 0.12 || dist > r * 0.75) continue;               // 中心孔区/边缘区排除
+
+                if (expectedPx > 0 && Math.Abs(dPx - expectedPx) / expectedPx > 0.45)
+                    continue;                                                   // 与预期直径差太多
+
+                // 分数：圆度为主，特征大小做弱加权（预期已知时命中直径即满分）
+                double score = ratio * (expectedPx > 0 ? 1.0 : Math.Min(1, dPx / 100));
+                if (best is null || score > best.Quality)
+                    best = new DatumCircle(ell.Center.X, ell.Center.Y, dPx, score);
+            }
+        }
+        if (best is null)
+            _log?.Warn("[视觉] 基准小圆：两种极性均未找到合格候选（调整阈值/确认特征在 0.12R~0.75R 环带内）");
+        return best;
+    }
+
+    // ==================== 通用几何/剖面工具 ====================
 
     /// <summary>
     /// 图像坐标 → 时钟角（12H=0，顺时针）。
@@ -144,7 +249,7 @@ public sealed class DialPositioning : IVisionService
     /// <summary>
     /// 径向半径剖面：把轮廓点按角度扔进 360 个桶，桶值=该角度的平均半径。
     /// 再做环形平滑（3桶滑窗，跨 359°/0° 正确回绕）。
-    /// 缺口在剖面上表现为一段"半径凹陷带"。
+    /// 渠口在剖面上表现为一段"半径凹陷带"。
     /// </summary>
     private static (double[] Bins, double Mean, double Std) BuildProfile(Point[] pts, double cx, double cy)
     {
@@ -173,22 +278,24 @@ public sealed class DialPositioning : IVisionService
     }
 
     /// <summary>
-    /// 找最长连续凹陷带（半径 &lt; mean-0.6σ，环形搜索）。
-    /// 长度限制 2°~90°：太短=噪声，太长=拿错特征（都不是缺口）。
+    /// 找**全部**连续凹陷带（半径 &lt; mean-0.6σ，环形搜索）。
+    /// 现场核实：外缘有 8 个渠口且不均匀分布 → 必须把每个渠口都找出来逐个剔除。
+    /// 单段长度限制 2°~90°：太短=噪声，太长=拿错特征（都不是渠口）。
     /// </summary>
-    private static (int Start, int Len)? FindDipRun(double[] bins, double mean, double std)
+    private static List<(int Start, int Len)> FindDipRuns(double[] bins, double mean, double std)
     {
+        var runs = new List<(int, int)>();
         bool IsDip(int i) => bins[i] > 0 && bins[i] < mean - 0.6 * std;
-        int bestLen = 0, bestStart = -1;
         for (int start = 0; start < BinCount; start++)
         {
             if (!IsDip(start)) continue;
             int len = 0;
             while (len < BinCount && IsDip((start + len) % BinCount)) len++;
-            if (len > bestLen) { bestLen = len; bestStart = start; }
+            if (len is >= 2 and <= 90)
+                runs.Add((start, len));
             start += len;
         }
-        return (bestStart < 0 || bestLen is < 2 or > 90) ? null : (bestStart, bestLen);
+        return runs;
     }
 
     /// <summary>取指定角度（可为小数/越界）所在桶的半径值。</summary>

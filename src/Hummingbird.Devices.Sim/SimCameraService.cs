@@ -64,10 +64,21 @@ public sealed class SimCameraService : ICameraService
             Cv2.Circle(img, new Point((int)(cxPx + x * s), (int)(cyPx - y * s)), 4, Scalar.All(90), -1);
         }
 
-        // 零位缺口：名义 12H + 装卡转角 处的外缘凹陷
-        double notch = Math.PI / 180 * ((0 + LastRotationDeg) % 360);
-        var nBase = new Point((int)(cxPx + Math.Sin(notch) * rOuter), (int)(cyPx - Math.Cos(notch) * rOuter));
-        Cv2.Circle(img, nBase, (int)(1.2 * s), Scalar.All(25), -1);
+        // 8 个渠口（现场 2026-10-30 核实：不均匀分布，以下角度为模拟假设值，待实物测量后替换）
+        // 全部随装卡转角旋转
+        double[] notches = { 5, 42, 88, 133, 181, 226, 274, 318 };
+        foreach (var n in notches)
+        {
+            double a = Math.PI / 180 * ((n + LastRotationDeg) % 360);
+            var np = new Point((int)(cxPx + Math.Sin(a) * rOuter), (int)(cyPx - Math.Cos(a) * rOuter));
+            Cv2.Circle(img, np, (int)(1.2 * s), Scalar.All(25), -1);
+        }
+
+        // 角向基准：盘面既有偏心小圆（现场确认：中心→小圆方向 = 12H，实物无 12H 印刷标记）。
+        // 模拟值：位于 12H+转角 方向、离中心 3.5mm、Ø1.5mm 亮点（与模板 datumCircleDiameterMm 一致）
+        double da = Math.PI / 180 * ((0 + LastRotationDeg) % 360);
+        var dc = new Point((int)(cxPx + Math.Sin(da) * 3.5 * s), (int)(cyPx - Math.Cos(da) * 3.5 * s));
+        Cv2.Circle(img, dc, (int)(0.75 * s), Scalar.All(235), -1);
 
         using var noise = new Mat(Height, Width, MatType.CV_8UC1);
         Cv2.Randn(noise, Scalar.All(0), Scalar.All(6));

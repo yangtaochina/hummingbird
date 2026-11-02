@@ -2,9 +2,11 @@
  "partName": "表盘25孔（数字化）",
  "units": "mm",
  "origin": "表盘中心；+Y=12H（正上方），+X=3H；角度顺时针",
- "note": "来源：《表盘开孔位置(20261029)》图3数字化，取整参考值；待客户核对",
+ "note": "来源：《表盘开孔位置(20261029)》图3数字化，取整参考值；待客户核对。2026-10-30 现场核实：孔打在正面且打通",
  "nominalDatumAngleDeg": 0.0,
- "datumFeature": "外圈缺口（现场确认）",
+ "datumMode": "offsetCircle",
+ "datumCircleDiameterMm": 1.5,
+ "datumFeature": "盘面既有偏心小圆：中心→小圆方向=12H（现场确认：实物无12H标记，12H为客户自定义方向；1.5mm为模拟/待实测值，现场量得后更新）",
  "holes": [
   {
    "id": 1,
