@@ -127,7 +127,9 @@ public sealed class DialPositioning : IVisionService
             double expectedR = opt.ExpectedOuterDiameterMm / 2 / Math.Max(opt.PixelSizeMm, 1e-6);
             double sizeErr = expectedR > 0 ? Math.Abs(fit.R - expectedR) / expectedR : 0;
             if (sizeErr > 0.3)
-                return Fail($"外缘半径偏差过大：测到{fit.R:F0}px vs 预期{expectedR:F0}px（{sizeErr:P0}）");
+                return Fail($"外缘半径偏差过大：测到{fit.R:F0}px vs 预期{expectedR:F0}px（{sizeErr:P0}）。" +
+                            $"若上件确为本料号表盘，说明像素尺寸配置不符：实际≈{opt.ExpectedOuterDiameterMm / 2 / Math.Max(fit.R, 1):F4} mm/px，" +
+                            $"请把 config.json 的 VisionPixelSizeMm 改为该值后重试");
 
             // ---- 置信度：椭圆圆度 + 尺寸吻合度 + 基准特征质量 三项加权 ----
             double conf = Math.Max(0, Math.Min(1,

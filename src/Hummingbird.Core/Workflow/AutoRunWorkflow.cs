@@ -51,7 +51,7 @@ public sealed class AutoRunWorkflow
         _log.Info("【步骤1】采集图像 ...");
         var frame = await _camera.GrabAsync(5000);
 
-        _log.Info("【步骤2】视觉定位（找中心 + 找零位缺口）...");
+        _log.Info("【步骤2】视觉定位（找中心 + 找基准小圆 12H）...");
         var pose = await _vision.LocateAsync(frame, VisionOptions, ct);
         if (pose.Success)
             _log.Info($"【步骤2】定位成功：中心=({pose.CenterPxX:F1},{pose.CenterPxY:F1})px 半径={pose.OuterRadiusPx:F0}px 转角={pose.AngleOffsetDeg:F2}° 置信度={pose.Confidence:F2}");

@@ -66,6 +66,10 @@ public sealed class AppConfig
     /// <summary>表盘外缘预期直径（mm），视觉定位的尺寸校验用（偏差>30% 报失败）。</summary>
     public double ExpectedOuterDiameterMm { get; set; } = 34.5;
 
+    /// <summary>视觉像素尺寸（mm/px）。规划假设值 0.02；现场实测校准：放上真件跑一次定位，
+    /// 失败日志会反推实际像素尺寸，把该值填到这里。影响：尺寸校验、基准小圆直径过滤。</summary>
+    public double VisionPixelSizeMm { get; set; } = 0.02;
+
     /// <summary>表盘系→机床系：是否交换 X/Y 轴（标定时确定）。</summary>
     public bool ConvSwapXY { get; set; }
 
