@@ -107,12 +107,74 @@ public sealed class OpcUaCncService : ICncService
         {
             _varNs = await ResolveVarNamespaceAsync(ct);
             _log.Info($"[数控] 会话建立成功（变量命名空间 ns={_varNs}）");
+            await LogDiagnosticsAsync(ct);   // 现场联调：打全候选节点可读性日志（只读不写）
         }
         else
         {
             _log.Info("[数控] 会话建立失败（返回未连接）");
         }
         return ok;
+    }
+
+    /// <summary>
+    /// 连接后诊断（现场联调用）：把"哪个节点能读、值是什么"全部打进日志，
+    /// 用户把日志贴回开发侧即可定死节点路径。全程只读、绝不写机床。
+    /// </summary>
+    private async Task LogDiagnosticsAsync(CancellationToken ct)
+    {
+        try
+        {
+            // 1) 命名空间表
+            var ns = (await _session!.ReadValueAsync(new NodeId(2255), ct)).Value as string[];
+            if (ns is not null)
+                for (int i = 0; i < ns.Length; i++)
+                    _log.Info($"[数控][诊断] 命名空间 ns={i}: {ns[i]}");
+
+            // 2) R 参数节点（生产链路关键，读 R1 验证）
+            await TryReadLog("[数控][诊断] R参数路径验证 R1: /Channel/Parameter/R[u1, 1]",
+                             "/Channel/Parameter/R[u1, 1]", ct);
+
+            // 3) 当前配置的三个位置节点
+            await TryReadLog($"[数控][诊断] 配置的位置节点 X: {PosNodeX}", PosNodeX, ct);
+            await TryReadLog($"[数控][诊断] 配置的位置节点 Y: {PosNodeY}", PosNodeY, ct);
+            await TryReadLog($"[数控][诊断] 配置的位置节点 Z: {PosNodeZ}", PosNodeZ, ct);
+
+            // 4) 候选扫描：目录 × 变量 × 轴写法（X 轴定模式，Y/Z 后续类推）
+            string[] dirs = { "/Channel/GeometricAxis", "/Channel/MachineAxis" };
+            string[] vars = { "actToolBasePos", "aaPos", "aaIm", "aaMm", "aaMa", "actPos" };
+            string[] axes = { "[u1, X]", "[u1, X1]", "[u1, 1]", "" };   // ""=不带索引(默认索引)
+            int hits = 0;
+            foreach (var dir in dirs)
+                foreach (var v in vars)
+                    foreach (var ax in axes)
+                    {
+                        string p = $"{dir}/{v}{ax}";
+                        if (await TryReadLog($"[数控][诊断] 候选命中 {p}", p, ct, quietFail: true))
+                            hits++;
+                    }
+            _log.Info($"[数控][诊断] 候选扫描完成：可读 {hits} 个（上面\"候选命中\"行即可用路径）");
+        }
+        catch (Exception ex)
+        {
+            _log.Warn($"[数控][诊断] 中断：{ex.Message}");
+        }
+    }
+
+    /// <summary>读一个节点：成功打值+类型，失败打错误（quietFail=true 时失败不刷屏）。</summary>
+    private async Task<bool> TryReadLog(string label, string path, CancellationToken ct, bool quietFail = false)
+    {
+        try
+        {
+            var dv = await _session!.ReadValueAsync(new NodeId(path, _varNs), ct);
+            _log.Info($"{label} = {dv.Value} ({dv.Value?.GetType().Name}, 状态 {dv.StatusCode})");
+            return StatusCode.IsGood(dv.StatusCode) && dv.Value is not null;
+        }
+        catch (Exception ex)
+        {
+            if (!quietFail)
+                _log.Info($"{label} 读取失败: {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>
