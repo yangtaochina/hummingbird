@@ -32,10 +32,11 @@ public sealed class OpcUaCncService : ICncService
     public string? Password { get; set; }
     /// <summary>true = 选加密端点（Basic256Sha256 - Sign）；false = None。None 下密码明文传输，部分服务器拒绝用户名登录。</summary>
     public bool UseSecureEndpoint { get; set; }
-    /// <summary>轴位置节点整路径（不带 ns；默认 actToolBasePos——该 828D 无 aaPos，2026-11-02 现场核实）。</summary>
-    public string PosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, X]";
-    public string PosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Y]";
-    public string PosNodeZ { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Z1]";
+    /// <summary>轴位置节点整路径（不带 ns）。现场核实（2026-11-02 实测日志）：该 828D 轴索引用数字
+    /// [u1, 1|2|3]（几何轴1=X/2=Y/3=Z），字母写法 [u1, X] 无效；actToolBasePos[u1, 1] 实测可读且随轴动。</summary>
+    public string PosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, 1]";
+    public string PosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, 2]";
+    public string PosNodeZ { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, 3]";
 
     private readonly IAppLogger _log;
     private Session? _session;
@@ -154,7 +155,7 @@ public sealed class OpcUaCncService : ICncService
             // 4) 候选扫描：目录 × 变量 × 轴写法（X 轴定模式，Y/Z 后续类推）
             string[] dirs = { "/Channel/GeometricAxis", "/Channel/MachineAxis" };
             string[] vars = { "actToolBasePos", "aaPos", "aaIm", "aaMm", "aaMa", "actPos" };
-            string[] axes = { "[u1, X]", "[u1, X1]", "[u1, 1]", "" };   // ""=不带索引(默认索引)
+            string[] axes = { "[u1, 1]", "[u1, 2]", "[u1, 3]", "[u1, X]", "" };   // 数字索引为实测有效写法；""=不带索引(默认索引)
             int hits = 0;
             foreach (var dir in dirs)
                 foreach (var v in vars)
