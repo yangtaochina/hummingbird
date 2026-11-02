@@ -14,12 +14,22 @@ namespace Hummingbird.Devices.OpcUa;
 ///   3. SelectEndpoint 发现服务器端点（此步不通 = 网络不通/IP错/服务未开）
 ///   4. 建立会话（此步不通 = 证书未被 828D 信任，需在 828D 上信任客户端证书）
 ///
-/// 节点映射（ns=3，Siemens AMM 标准）——现场需用 UaExpert 核对后微调节点表。
+/// 节点映射：变量命名空间在会话建立后从服务器命名空间表自动解析（按关键字匹配
+/// "SinumerikVarProvider"，可由 config.json 的 CncVarNamespace 覆盖）。
+/// 现场核实（2026-11-02，UaExpert）：这台 828D 的变量节点在 ns=2，
+/// ns=0=OPC UA 标准、ns=1=服务器实例（SinumerikServer）、ns=2=SinumerikVarProvider。
+/// 轴名可配（config.json 的 CncAxisX/Y/ZName），以 UaExpert 实际展开结果为准。
 /// </summary>
 public sealed class OpcUaCncService : ICncService
 {
     /// <summary>程序下发用的网络共享路径（如 \\192.168.214.1\nc），由 App 配置注入。</summary>
     public string? ProgramSharePath { get; set; }
+    /// <summary>变量命名空间匹配关键字（连接时在命名空间表里找包含它的 URI）。</summary>
+    public string VarNamespaceKeyword { get; set; } = "SinumerikVarProvider";
+    /// <summary>轴名（aaPos[u1, 轴名]）。</summary>
+    public string AxisXName { get; set; } = "X";
+    public string AxisYName { get; set; } = "Y";
+    public string AxisZName { get; set; } = "Z1";
 
     private readonly IAppLogger _log;
     private Session? _session;
@@ -35,13 +45,13 @@ public sealed class OpcUaCncService : ICncService
     public string Endpoint { get; private set; } = "";
     public bool IsConnected => _session is { Connected: true };
 
-    // ---- 节点映射（现场用 UaExpert 核对 TODO）----
+    // ---- 节点映射（命名空间索引连接时解析，轴名可配）----
+    private ushort _varNs = 2;   // 默认 2（现场核实值），连接后 ResolveVarNamespaceAsync 会再确认
+
     /// <summary>R 参数节点：/Channel/Parameter/R[u1, n]，u1=通道1。写 R 参数供 NC 参数化子程序读取。</summary>
-    private static NodeId R(int n) => new($"/Channel/Parameter/R[u1, {n}]", 3);
-    /// <summary>X 轴实际位置（只读），ns=3 = Siemens AMM 命名空间。</summary>
-    private static readonly NodeId NodeX = new("/Channel/MachineAxis/aaPos[u1, X]", 3);
-    private static readonly NodeId NodeY = new("/Channel/MachineAxis/aaPos[u1, Y]", 3);
-    private static readonly NodeId NodeZ = new("/Channel/MachineAxis/aaPos[u1, Z1]", 3);
+    private NodeId R(int n) => new($"/Channel/Parameter/R[u1, {n}]", _varNs);
+    /// <summary>轴实际位置节点（只读）：/Channel/MachineAxis/aaPos[u1, 轴名]。</summary>
+    private NodeId NodeAxis(string axis) => new($"/Channel/MachineAxis/aaPos[u1, {axis}]", _varNs);
 
 #pragma warning disable CS0618 // Validate/CreateAsync 系列新旧 API 混用，先按 1.5.378 可用形态实现
 
@@ -92,8 +102,60 @@ public sealed class OpcUaCncService : ICncService
             60000, new UserIdentity(new AnonymousIdentityToken()), null, ct);
 
         bool ok = IsConnected;
-        _log.Info(ok ? "[数控] 会话建立成功" : "[数控] 会话建立失败（返回未连接）");
+        if (ok)
+        {
+            _varNs = await ResolveVarNamespaceAsync(ct);
+            _log.Info($"[数控] 会话建立成功（变量命名空间 ns={_varNs}）");
+        }
+        else
+        {
+            _log.Info("[数控] 会话建立失败（返回未连接）");
+        }
         return ok;
+    }
+
+    /// <summary>
+    /// 解析变量命名空间索引：读标准节点 NamespaceArray（ns=0, i=2255，数组下标=命名空间索引）。
+    /// 优先找 URI 含 VarNamespaceKeyword 的（默认 SinumerikVarProvider）；
+    /// 找不到再退而找任何含 "Sinumerik" 的（跳过 ns=0 标准和 ns=1 服务器实例）；
+    /// 还找不到就维持默认 ns=2 并警告（现场用 UaExpert 看命名空间表后改 config.json 的 CncVarNamespace）。
+    /// </summary>
+    private async Task<ushort> ResolveVarNamespaceAsync(CancellationToken ct)
+    {
+        const ushort fallback = 2;
+        try
+        {
+            var val = (await _session!.ReadValueAsync(new NodeId(2255), ct)).Value as string[];
+            if (val is null || val.Length == 0)
+            {
+                _log.Warn("[数控] 命名空间数组读取为空，按默认 ns=2 使用");
+                return fallback;
+            }
+            for (int i = 0; i < val.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(val[i]) &&
+                    val[i]!.Contains(VarNamespaceKeyword, StringComparison.OrdinalIgnoreCase))
+                {
+                    _log.Info($"[数控] 变量命名空间：ns={i}（{val[i]}）");
+                    return (ushort)i;
+                }
+            }
+            for (int i = 2; i < val.Length; i++)   // ns=1=服务器实例(SinumerikServer)，跳过
+            {
+                if (!string.IsNullOrEmpty(val[i]) &&
+                    val[i]!.Contains("Sinumerik", StringComparison.OrdinalIgnoreCase))
+                {
+                    _log.Info($"[数控] 变量命名空间（兜底匹配）：ns={i}（{val[i]}）");
+                    return (ushort)i;
+                }
+            }
+            _log.Warn($"[数控] 命名空间表未找到 \"{VarNamespaceKeyword}\"，按默认 ns=2 使用。命名空间表：{string.Join(" | ", val)}");
+        }
+        catch (Exception ex)
+        {
+            _log.Warn($"[数控] 命名空间表读取失败：{ex.Message}，按默认 ns=2 使用");
+        }
+        return fallback;
     }
 
     public async Task DisconnectAsync()
@@ -115,9 +177,9 @@ public sealed class OpcUaCncService : ICncService
         if (!IsConnected) return new MachineStatus(false, "-", "-", 0, 0, 0, "未连接");
         try
         {
-            double x = await ReadDoubleAsync(NodeX, ct);
-            double y = await ReadDoubleAsync(NodeY, ct);
-            double z = await ReadDoubleAsync(NodeZ, ct);
+            double x = await ReadDoubleAsync(NodeAxis(AxisXName), ct);
+            double y = await ReadDoubleAsync(NodeAxis(AxisYName), ct);
+            double z = await ReadDoubleAsync(NodeAxis(AxisZName), ct);
             return new MachineStatus(true, "AUTO", "-", x, y, z, "OK");
         }
         catch (Exception ex)
@@ -141,7 +203,9 @@ public sealed class OpcUaCncService : ICncService
             AttributeId = Attributes.Value,
             Value = new DataValue(new Variant(value))
         };
+#pragma warning disable CS0618 // 同步 Write 在此版本可用；R 参数单条写，无需异步
         _session!.Write(null, new WriteValueCollection { wv }, out var statuses, out _);
+#pragma warning restore CS0618
         bool ok = statuses.Count == 1 && StatusCode.IsGood(statuses[0]);
         if (ok) _log.Info($"[数控] R{rNumber} = {value} 写入成功");
         else _log.Error($"[数控] R{rNumber} = {value} 写入失败（状态码 {statuses.FirstOrDefault()}）");
@@ -179,9 +243,9 @@ public sealed class OpcUaCncService : ICncService
             try
             {
                 if (!IsConnected) return;
-                double x = await ReadDoubleAsync(NodeX, default);
-                double y = await ReadDoubleAsync(NodeY, default);
-                double z = await ReadDoubleAsync(NodeZ, default);
+                double x = await ReadDoubleAsync(NodeAxis(AxisXName), default);
+                double y = await ReadDoubleAsync(NodeAxis(AxisYName), default);
+                double z = await ReadDoubleAsync(NodeAxis(AxisZName), default);
                 _posChanged?.Invoke(new AxisPosition(x, y, z));
             }
             catch { /* 单次读取失败不中断订阅，也不刷屏 */ }

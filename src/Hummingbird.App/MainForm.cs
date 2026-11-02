@@ -80,7 +80,14 @@ public sealed class MainForm : Form
         else
         {
             // ---- Real 模式：真机三件套 ----
-            _cnc = new OpcUaCncService(_log) { ProgramSharePath = _cfg.CncProgramShare };
+            _cnc = new OpcUaCncService(_log)
+            {
+                ProgramSharePath = _cfg.CncProgramShare,
+                VarNamespaceKeyword = _cfg.CncVarNamespace,
+                AxisXName = _cfg.CncAxisXName,
+                AxisYName = _cfg.CncAxisYName,
+                AxisZName = _cfg.CncAxisZName
+            };
             _laser = new ModbusRtuLaserService(_log);
 #if HAS_PYLON
             // pylon SDK 已装（csproj 探测到 Basler.Pylon.dll）→ 启用真机相机
