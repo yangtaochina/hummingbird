@@ -84,9 +84,9 @@ public sealed class MainForm : Form
             {
                 ProgramSharePath = _cfg.CncProgramShare,
                 VarNamespaceKeyword = _cfg.CncVarNamespace,
-                AxisXName = _cfg.CncAxisXName,
-                AxisYName = _cfg.CncAxisYName,
-                AxisZName = _cfg.CncAxisZName
+                PosNodeX = _cfg.CncPosNodeX,
+                PosNodeY = _cfg.CncPosNodeY,
+                PosNodeZ = _cfg.CncPosNodeZ
             };
             _laser = new ModbusRtuLaserService(_log);
 #if HAS_PYLON

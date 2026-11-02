@@ -26,10 +26,10 @@ public sealed class OpcUaCncService : ICncService
     public string? ProgramSharePath { get; set; }
     /// <summary>变量命名空间匹配关键字（连接时在命名空间表里找包含它的 URI）。</summary>
     public string VarNamespaceKeyword { get; set; } = "SinumerikVarProvider";
-    /// <summary>轴名（aaPos[u1, 轴名]）。</summary>
-    public string AxisXName { get; set; } = "X";
-    public string AxisYName { get; set; } = "Y";
-    public string AxisZName { get; set; } = "Z1";
+    /// <summary>轴位置节点整路径（不带 ns；默认 actToolBasePos——该 828D 无 aaPos，2026-11-02 现场核实）。</summary>
+    public string PosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, X]";
+    public string PosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Y]";
+    public string PosNodeZ { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Z1]";
 
     private readonly IAppLogger _log;
     private Session? _session;
@@ -45,13 +45,14 @@ public sealed class OpcUaCncService : ICncService
     public string Endpoint { get; private set; } = "";
     public bool IsConnected => _session is { Connected: true };
 
-    // ---- 节点映射（命名空间索引连接时解析，轴名可配）----
+    // ---- 节点映射（命名空间索引连接时解析，位置节点路径可配）----
     private ushort _varNs = 2;   // 默认 2（现场核实值），连接后 ResolveVarNamespaceAsync 会再确认
 
-    /// <summary>R 参数节点：/Channel/Parameter/R[u1, n]，u1=通道1。写 R 参数供 NC 参数化子程序读取。</summary>
+    /// <summary>R 参数节点：/Channel/Parameter/R[u1, n]，u1=通道1。
+    /// 该路径已被西门子 VarProvider 文档原样证实（R-Parameter n in Channel 1）。</summary>
     private NodeId R(int n) => new($"/Channel/Parameter/R[u1, {n}]", _varNs);
-    /// <summary>轴实际位置节点（只读）：/Channel/MachineAxis/aaPos[u1, 轴名]。</summary>
-    private NodeId NodeAxis(string axis) => new($"/Channel/MachineAxis/aaPos[u1, {axis}]", _varNs);
+    /// <summary>轴位置节点（只读，整路径可配，ns 连接时解析）。</summary>
+    private NodeId Node(string path) => new(path, _varNs);
 
 #pragma warning disable CS0618 // Validate/CreateAsync 系列新旧 API 混用，先按 1.5.378 可用形态实现
 
@@ -177,9 +178,9 @@ public sealed class OpcUaCncService : ICncService
         if (!IsConnected) return new MachineStatus(false, "-", "-", 0, 0, 0, "未连接");
         try
         {
-            double x = await ReadDoubleAsync(NodeAxis(AxisXName), ct);
-            double y = await ReadDoubleAsync(NodeAxis(AxisYName), ct);
-            double z = await ReadDoubleAsync(NodeAxis(AxisZName), ct);
+            double x = await ReadDoubleAsync(Node(PosNodeX), ct);
+            double y = await ReadDoubleAsync(Node(PosNodeY), ct);
+            double z = await ReadDoubleAsync(Node(PosNodeZ), ct);
             return new MachineStatus(true, "AUTO", "-", x, y, z, "OK");
         }
         catch (Exception ex)
@@ -243,9 +244,9 @@ public sealed class OpcUaCncService : ICncService
             try
             {
                 if (!IsConnected) return;
-                double x = await ReadDoubleAsync(NodeAxis(AxisXName), default);
-                double y = await ReadDoubleAsync(NodeAxis(AxisYName), default);
-                double z = await ReadDoubleAsync(NodeAxis(AxisZName), default);
+                double x = await ReadDoubleAsync(Node(PosNodeX), default);
+                double y = await ReadDoubleAsync(Node(PosNodeY), default);
+                double z = await ReadDoubleAsync(Node(PosNodeZ), default);
                 _posChanged?.Invoke(new AxisPosition(x, y, z));
             }
             catch { /* 单次读取失败不中断订阅，也不刷屏 */ }

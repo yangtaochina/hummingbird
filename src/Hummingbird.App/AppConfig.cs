@@ -28,10 +28,13 @@ public sealed class AppConfig
     /// 现场核实（2026-11-02）：这台 828D 的变量节点在 ns=2 SinumerikVarProvider，不是文档常写的 ns=3。</summary>
     public string CncVarNamespace { get; set; } = "SinumerikVarProvider";
 
-    /// <summary>轴名（须与 aaPos[u1, 轴名] 一致，UaExpert 展开 MachineAxis 可核实；Z 常见为 Z1 或 Z）。</summary>
-    public string CncAxisXName { get; set; } = "X";
-    public string CncAxisYName { get; set; } = "Y";
-    public string CncAxisZName { get; set; } = "Z1";
+    /// <summary>轴位置节点整路径（不带 ns 前缀，ns 连接时自动解析）。
+    /// 现场核实（2026-11-02）：该 828D VarProvider 无 aaPos 变量（原预设错误），
+    /// 轴位置正式变量为 actToolBasePos（刀具基准点机床系实际位置）。
+    /// 最终以 UaExpert 里能读到、且摇轴会变的节点为准——右键 Copy NodeId，取 s= 后面的部分填这里。</summary>
+    public string CncPosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, X]";
+    public string CncPosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Y]";
+    public string CncPosNodeZ { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Z1]";
 
     /// <summary>激光器 232转USB 的串口号（设备管理器里查，如 COM3）。</summary>
     public string LaserComPort { get; set; } = "COM3";
