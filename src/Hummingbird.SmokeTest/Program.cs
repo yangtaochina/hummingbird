@@ -9,7 +9,7 @@ var template = HolePatternTemplate.LoadJson("templates/dial_25holes.json");
 var cam = new SimCameraService { Template = template };
 var cnc = new SimCncService();
 var laser = new SimLaserService();
-var wf = new AutoRunWorkflow(log, cam, new DialPositioning(), cnc, laser)
+var wf = new AutoRunWorkflow(log, cam, new DialPositioning(log), cnc, laser)
 {
     Template = template,
     VisionOptions = new VisionOptions

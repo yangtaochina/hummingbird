@@ -6,7 +6,7 @@
  "nominalDatumAngleDeg": 0.0,
  "datumMode": "offsetCircle",
  "datumCircleDiameterMm": 1.5,
- "datumFeature": "盘面既有偏心小圆：中心→小圆方向=12H（现场确认：实物无12H标记，12H为客户自定义方向；1.5mm为模拟/待实测值，现场量得后更新）",
+ "datumFeature": "白色外环上的小圆圈：中心→小圆方向=12H（现场口述'大圈圈上面有小圆圈'；实物无12H标记，12H为客户自定义方向。1.5mm为模拟/待实测值，现场量得后更新）",
  "holes": [
   {
    "id": 1,

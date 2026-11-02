@@ -86,7 +86,7 @@ public sealed class DialPositioning : IVisionService
             if (useOffsetCircle)
             {
                 // 中心 → 既有偏心小圆 的方向 = 12H（现场 2026-10-30 确认）
-                var datum = FindOffsetCircle(blur, fit, opt);
+                var datum = FindOffsetCircle(blur, fit, dips, opt);
                 if (datum is null)
                     return Fail("未找到盘面基准小圆（12H 方向特征）。检查：小圆是否在视野内/对比度是否足够/" +
                                 "模板 datumCircleDiameterMm 是否与实物一致");
@@ -158,25 +158,31 @@ public sealed class DialPositioning : IVisionService
     private sealed record DatumCircle(double X, double Y, double DiameterPx, double Quality);
 
     /// <summary>
-    /// 在盘面内部找"既有偏心小圆"（12H 基准特征）。要点：
+    /// 在盘面内部找"既有偏心小圆"（12H 基准特征）。现场口述：白色外环（大圈圈）上有小圆圈，
+    /// 中心→小圆方向 = 12H。要点：
     ///   - 以盘面（0.9R 圆盘）的平均灰度为基准电平，亮斑 = 均值+25、暗斑 = 均值-25 的全局阈值。
     ///     不用自适应阈值：小圆大小未知，窗口与特征同量级时阈值会被特征自身抬高导致碎裂；
     ///     视野仅 Ø34mm，光照均匀性由环形光源保证，全局阈值更可预期、现场好调。
     ///   - 两种极性都找（小圆是亮点还是暗点现场未确认），取质量分最高的
-    ///   - 排除盘心正中的中心孔（Φ2.3~2.9mm 就在拟合圆心上，靠"距中心 &lt; 0.12R"排除）
-    ///   - 排除外缘渠口内壁/边缘噪声：只搜 0.12R ~ 0.75R 环带
+    ///   - 搜索区 0.12R ~ 0.96R：小圆在白色外环上（≈0.9R），只排除中心孔（&lt;0.12R）
+    ///     和最外缘渠口区（&gt;0.96R）；直径过滤再挡一层渠口/中心孔这类"尺寸不对"的假候选
+    ///   - 渠口扇区排除：渠口切入外缘可达 0.9R（白色外环也在其范围内），其暗块是天然假候选，
+    ///     贴近基准小圆时还会粘连成"长条"使圆度判定失效 → 候选中心落在渠口扇区内一律拒绝
     ///   - 已知预期直径时按直径过滤（±45%），未知时按"面积够大 + 圆度够圆"的分数挑
     /// </summary>
-    private DatumCircle? FindOffsetCircle(Mat gray, CircleFit face, VisionOptions opt)
+    private DatumCircle? FindOffsetCircle(Mat gray, CircleFit face,
+        List<(int Start, int Len)> dips, VisionOptions opt)
     {
         double r = face.R;
         double expectedPx = opt.DatumCircleDiameterMm > 0
             ? opt.DatumCircleDiameterMm / Math.Max(opt.PixelSizeMm, 1e-6) : 0;
 
-        // 盘面圆盘掩膜 + 基准电平（掩膜平均：中心孔/基准小圆占比极小，均值≈盘面本体灰度）
-        using var roiMask = new Mat(gray.Size(), MatType.CV_8UC1, Scalar.All(0));
-        Cv2.Circle(roiMask, new Point((int)face.Cx, (int)face.Cy), Math.Max(4, (int)(r * 0.9)), Scalar.All(255), -1);
-        double level = Cv2.Mean(gray, roiMask).Val0;
+        // 基准电平掩膜（0.9R 圆盘）+ 搜索掩膜（0.98R 圆盘，罩住白色外环上的基准小圆）
+        using var levelMask = new Mat(gray.Size(), MatType.CV_8UC1, Scalar.All(0));
+        Cv2.Circle(levelMask, new Point((int)face.Cx, (int)face.Cy), Math.Max(4, (int)(r * 0.9)), Scalar.All(255), -1);
+        using var searchMask = new Mat(gray.Size(), MatType.CV_8UC1, Scalar.All(0));
+        Cv2.Circle(searchMask, new Point((int)face.Cx, (int)face.Cy), Math.Max(4, (int)(r * 0.98)), Scalar.All(255), -1);
+        double level = Cv2.Mean(gray, levelMask).Val0;
 
         DatumCircle? best = null;
         // 亮斑 / 暗斑 两种极性
@@ -186,13 +192,13 @@ public sealed class DialPositioning : IVisionService
         {
             using var mask = new Mat();
             Cv2.Threshold(gray, mask, level + offset, 255, mode);
-            Cv2.BitwiseAnd(mask, roiMask, mask);   // 背景必须剔除（暗极性下背景会整体过阈值）
+            Cv2.BitwiseAnd(mask, searchMask, mask);   // 背景必须剔除（暗极性下背景会整体过阈值）
             Cv2.FindContours(mask, out var cs, out _, RetrievalModes.External, ContourApproximationModes.ApproxNone);
 
             foreach (var ct in cs)
             {
                 double area = Cv2.ContourArea(ct);
-                if (area < 30 || area > Math.PI * r * r * 0.05) continue;      // 太小=噪声，太大=不是特征
+                if (area < 30 || area > Math.PI * r * r * 0.05) continue;      // 太小=噪声，太大=不是特征（整条白环在此被挡掉）
                 if (ct.Length < 5) continue;                                     // FitEllipse 至少 5 点
                 var ell = Cv2.FitEllipse(ct);
                 double dPx = (ell.Size.Width + ell.Size.Height) / 2;            // 实测直径
@@ -201,10 +207,19 @@ public sealed class DialPositioning : IVisionService
                 if (ratio < 0.55) continue;                                     // 不圆的不要
 
                 double dist = Math.Sqrt(Math.Pow(ell.Center.X - face.Cx, 2) + Math.Pow(ell.Center.Y - face.Cy, 2));
-                if (dist < r * 0.12 || dist > r * 0.75) continue;               // 中心孔区/边缘区排除
+                if (dist < r * 0.12 || dist > r * 0.96) continue;               // 中心孔区/最外缘渠口区排除
 
                 if (expectedPx > 0 && Math.Abs(dPx - expectedPx) / expectedPx > 0.45)
-                    continue;                                                   // 与预期直径差太多
+                    continue;                                                   // 与预期直径差太多（中心孔假候选在此被挡）
+
+                // 渠口扇区排除：渠口切入外缘可达 0.9R，其暗块/亮环缺口是天然假候选，
+                // 且贴近基准小圆时会把小圆粘连成长条（圆度判定失效）——候选中心落在
+                // 任一渠口扇区（外扩候选自身角宽度+3°）内的一律拒绝
+                double clock = ClockAngle(ell.Center.X - face.Cx, ell.Center.Y - face.Cy);
+                double halfAng = dist > 1 ? (dPx / 2 / dist) * 180 / Math.PI : 90;
+                bool inNotch = dips.Any(d =>
+                    AngleDist(clock, (d.Start + d.Len / 2.0) % 360) < d.Len / 2.0 + halfAng + 3);
+                if (inNotch) continue;
 
                 // 分数：圆度为主，特征大小做弱加权（预期已知时命中直径即满分）
                 double score = ratio * (expectedPx > 0 ? 1.0 : Math.Min(1, dPx / 100));
@@ -213,7 +228,7 @@ public sealed class DialPositioning : IVisionService
             }
         }
         if (best is null)
-            _log?.Warn("[视觉] 基准小圆：两种极性均未找到合格候选（调整阈值/确认特征在 0.12R~0.75R 环带内）");
+            _log?.Warn("[视觉] 基准小圆：两种极性均未找到合格候选（调整阈值/确认特征在 0.12R~0.96R 环带内）");
         return best;
     }
 

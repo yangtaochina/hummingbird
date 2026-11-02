@@ -53,8 +53,10 @@ public sealed class SimCameraService : ICameraService
         var c = new Point((int)cxPx, (int)cyPx);
 
         using var img = new Mat(Height, Width, MatType.CV_8UC1, Scalar.All(25));
-        Cv2.Circle(img, c, (int)rOuter, Scalar.All(190), -1);                      // 盘体
-        Cv2.Circle(img, c, (int)(2.3 / 2 * s), Scalar.All(40), -1);                // 中心孔
+        // 结构对照实物：金棕颗粒盘面 + 白色外环（大圈圈）+ 中心孔；渠口切在外缘
+        Cv2.Circle(img, c, (int)rOuter, Scalar.All(230), -1);                     // 白色外环（Ø34.5 最外）
+        Cv2.Circle(img, c, (int)(15.5 * s), Scalar.All(150), -1);                // 金棕颗粒盘面
+        Cv2.Circle(img, c, (int)(2.3 / 2 * s), Scalar.All(40), -1);              // 中心孔
 
         double rot = Math.PI / 180 * LastRotationDeg;
         foreach (var h in Template?.Holes ?? new List<HoleTemplate>())
@@ -64,9 +66,10 @@ public sealed class SimCameraService : ICameraService
             Cv2.Circle(img, new Point((int)(cxPx + x * s), (int)(cyPx - y * s)), 4, Scalar.All(90), -1);
         }
 
-        // 8 个渠口（现场 2026-10-30 核实：不均匀分布，以下角度为模拟假设值，待实物测量后替换）
-        // 全部随装卡转角旋转
-        double[] notches = { 5, 42, 88, 133, 181, 226, 274, 318 };
+        // 8 个渠口（现场 2026-10-30 核实：不均匀分布；以下角度为模拟假设值，待实物测量后替换）。
+        // 注意与基准小圆（0°方向）保持 ≥15° 角距：渠口切入白环 0.9R 深处，贴得太近会把基准小圆
+        // 粘连成长条导致检测失败（算法已加渠口扇区排除兜底，但物理上贴住是真解不开的）
+        double[] notches = { 15, 52, 88, 133, 181, 226, 274, 318 };
         foreach (var n in notches)
         {
             double a = Math.PI / 180 * ((n + LastRotationDeg) % 360);
@@ -74,11 +77,11 @@ public sealed class SimCameraService : ICameraService
             Cv2.Circle(img, np, (int)(1.2 * s), Scalar.All(25), -1);
         }
 
-        // 角向基准：盘面既有偏心小圆（现场确认：中心→小圆方向 = 12H，实物无 12H 印刷标记）。
-        // 模拟值：位于 12H+转角 方向、离中心 3.5mm、Ø1.5mm 亮点（与模板 datumCircleDiameterMm 一致）
+        // 角向基准：白色外环上的小圆圈（现场口述"大圈圈上面有小圆圈"：中心→小圆方向 = 12H）。
+        // 模拟值：位于 12H+转角 方向、R16.3mm（环带中段）、Ø1.5mm 深色点（与模板 datumCircleDiameterMm 一致）
         double da = Math.PI / 180 * ((0 + LastRotationDeg) % 360);
-        var dc = new Point((int)(cxPx + Math.Sin(da) * 3.5 * s), (int)(cyPx - Math.Cos(da) * 3.5 * s));
-        Cv2.Circle(img, dc, (int)(0.75 * s), Scalar.All(235), -1);
+        var dc = new Point((int)(cxPx + Math.Sin(da) * 16.3 * s), (int)(cyPx - Math.Cos(da) * 16.3 * s));
+        Cv2.Circle(img, dc, (int)(0.75 * s), Scalar.All(60), -1);
 
         using var noise = new Mat(Height, Width, MatType.CV_8UC1);
         Cv2.Randn(noise, Scalar.All(0), Scalar.All(6));
