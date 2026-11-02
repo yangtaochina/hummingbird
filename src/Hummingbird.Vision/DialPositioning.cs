@@ -187,6 +187,7 @@ public sealed class DialPositioning : IVisionService
         double level = Cv2.Mean(gray, levelMask).Val0;
 
         DatumCircle? best = null;
+        var rejections = new List<string>();   // 候选诊断：只记过了面积关的候选，远程排障用
         // 亮斑 / 暗斑 两种极性
         var polarities = new (double Offset, ThresholdTypes Mode)[]
         { (+25.0, ThresholdTypes.Binary), (-25.0, ThresholdTypes.BinaryInv) };
@@ -201,18 +202,19 @@ public sealed class DialPositioning : IVisionService
             {
                 double area = Cv2.ContourArea(ct);
                 if (area < 30 || area > Math.PI * r * r * 0.05) continue;      // 太小=噪声，太大=不是特征（整条白环在此被挡掉）
-                if (ct.Length < 5) continue;                                     // FitEllipse 至少 5 点
+                if (ct.Length < 5) { rejections.Add($"area={area:F0} 点数<5 椭圆拟不了"); continue; }
                 var ell = Cv2.FitEllipse(ct);
                 double dPx = (ell.Size.Width + ell.Size.Height) / 2;            // 实测直径
                 double ratio = Math.Min(ell.Size.Width, ell.Size.Height)
                              / Math.Max(ell.Size.Width, ell.Size.Height);
-                if (ratio < 0.55) continue;                                     // 不圆的不要
-
                 double dist = Math.Sqrt(Math.Pow(ell.Center.X - face.Cx, 2) + Math.Pow(ell.Center.Y - face.Cy, 2));
-                if (dist < r * 0.12 || dist > r * 0.96) continue;               // 中心孔区/最外缘渠口区排除
+                string tag = $"{(offset > 0 ? "亮" : "暗")}斑 area={area:F0} dPx={dPx:F0} 圆度={ratio:F2} " +
+                             $"距心={dist:F0}px({dist / r:F2}R) 时钟角={ClockAngle(ell.Center.X - face.Cx, ell.Center.Y - face.Cy):F0}°";
 
+                if (ratio < 0.55) { rejections.Add(tag + " → 拒:不圆(可能渠口粘连)"); continue; }
+                if (dist < r * 0.12 || dist > r * 0.96) { rejections.Add(tag + " → 拒:超出0.12R~0.96R搜索环带"); continue; }
                 if (expectedPx > 0 && Math.Abs(dPx - expectedPx) / expectedPx > 0.45)
-                    continue;                                                   // 与预期直径差太多（中心孔假候选在此被挡）
+                { rejections.Add(tag + $" → 拒:直径与预期{expectedPx:F0}px差>45%"); continue; }
 
                 // 渠口扇区排除：渠口切入外缘可达 0.9R，其暗块/亮环缺口是天然假候选，
                 // 且贴近基准小圆时会把小圆粘连成长条（圆度判定失效）——候选中心落在
@@ -221,7 +223,7 @@ public sealed class DialPositioning : IVisionService
                 double halfAng = dist > 1 ? (dPx / 2 / dist) * 180 / Math.PI : 90;
                 bool inNotch = dips.Any(d =>
                     AngleDist(clock, (d.Start + d.Len / 2.0) % 360) < d.Len / 2.0 + halfAng + 3);
-                if (inNotch) continue;
+                if (inNotch) { rejections.Add(tag + " → 拒:落在渠口扇区内"); continue; }
 
                 // 分数：圆度为主，特征大小做弱加权（预期已知时命中直径即满分）
                 double score = ratio * (expectedPx > 0 ? 1.0 : Math.Min(1, dPx / 100));
@@ -230,7 +232,13 @@ public sealed class DialPositioning : IVisionService
             }
         }
         if (best is null)
+        {
             _log?.Warn("[视觉] 基准小圆：两种极性均未找到合格候选（调整阈值/确认特征在 0.12R~0.96R 环带内）");
+            foreach (var line in rejections.Take(12))
+                _log?.Info("[视觉][基准诊断] " + line);
+            _log?.Info($"[视觉][基准诊断] 盘面电平={level:F1} 亮阈={level + 25:F1} 暗阈={level - 25:F1} " +
+                       $"预期直径={expectedPx:F0}px 共{rejections.Count}个候选被拒（把dumps图+这些行发给开发）");
+        }
         return best;
     }
 

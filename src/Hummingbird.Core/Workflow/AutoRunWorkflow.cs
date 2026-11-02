@@ -56,8 +56,47 @@ public sealed class AutoRunWorkflow
         if (pose.Success)
             _log.Info($"【步骤2】定位成功：中心=({pose.CenterPxX:F1},{pose.CenterPxY:F1})px 半径={pose.OuterRadiusPx:F0}px 转角={pose.AngleOffsetDeg:F2}° 置信度={pose.Confidence:F2}");
         else
+        {
             _log.Error("【步骤2】定位失败：" + pose.Detail);
+            try   // 失败现场存图：远程离线分析全靠它（无它只能猜）
+            {
+                var dir = Path.Combine(AppContext.BaseDirectory, "dumps");
+                Directory.CreateDirectory(dir);
+                var p = Path.Combine(dir, $"fail_{DateTime.Now:HHmmss_fff}.bmp");
+                SaveGrayBmp(p, frame);
+                _log.Warn($"已保存失败现场图：{p}（发给开发做离线复现）");
+            }
+            catch (Exception ex) { _log.Warn("失败现场图保存失败：" + ex.Message); }
+        }
         return (pose, frame);
+    }
+
+    /// <summary>纯 C# 写 8 位灰度 BMP（不引第三方依赖，PS/画图/OpenCV 都能开）。</summary>
+    private static void SaveGrayBmp(string path, CameraFrame f)
+    {
+        int w = f.Width, h = f.Height;
+        int stride = (w + 3) / 4 * 4;               // 行按 4 字节对齐
+        int dataOffset = 14 + 40 + 256 * 4;          // 文件头+信息头+灰度调色板
+        int fileSize = dataOffset + stride * h;
+        var buf = new byte[fileSize];
+        buf[0] = (byte)'B'; buf[1] = (byte)'M';
+        BitConverter.GetBytes(fileSize).CopyTo(buf, 2);
+        BitConverter.GetBytes(dataOffset).CopyTo(buf, 10);
+        BitConverter.GetBytes(40).CopyTo(buf, 14);
+        BitConverter.GetBytes(w).CopyTo(buf, 18);
+        BitConverter.GetBytes(h).CopyTo(buf, 22);    // 正值=行序自下而上
+        BitConverter.GetBytes((short)1).CopyTo(buf, 26);
+        BitConverter.GetBytes((short)8).CopyTo(buf, 28);
+        BitConverter.GetBytes(stride * h).CopyTo(buf, 34);
+        BitConverter.GetBytes(3780).CopyTo(buf, 38);
+        BitConverter.GetBytes(3780).CopyTo(buf, 42);
+        BitConverter.GetBytes(256).CopyTo(buf, 46);
+        BitConverter.GetBytes(256).CopyTo(buf, 50);
+        for (int i = 0; i < 256; i++)               // 256 灰阶调色板
+            buf[dataOffset - 1024 + i * 4] = buf[dataOffset - 1024 + i * 4 + 1] = buf[dataOffset - 1024 + i * 4 + 2] = (byte)i;
+        for (int y = 0; y < h; y++)
+            Buffer.BlockCopy(f.Gray, y * w, buf, dataOffset + (h - 1 - y) * stride, w);
+        File.WriteAllBytes(path, buf);
     }
 
     /// <summary>
