@@ -270,9 +270,12 @@ public sealed class OpcUaCncService : ICncService
         _poll?.Dispose(); _poll = null;
         if (_session != null)
         {
-            try { await _session.CloseAsync(ct: default); }
+            var s = _session;
+            _session = null;              // 先置空：断开过程中其他线程调用 IsConnected 立即生效
+            try { await s.CloseAsync(ct: default); }
             catch { /* 会话已断开，无需处理 */ }
-            _session = null;
+            try { s.Dispose(); }          // 彻底释放底层通道/证书句柄，防止下次连不上
+            catch { /* 已释放则忽略 */ }
             _log.Info("[数控] 已断开连接");
         }
     }

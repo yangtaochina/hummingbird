@@ -203,6 +203,7 @@ public sealed class MainForm : Form
         var gbLaser = GroupBoxOf("激光器",
             Lbl("串口"), _txtCom, Lbl("波特率"), _cmbBaud,
             Btn("打开串口", async (_, _) => await OpenLaserPort()),
+            Btn("关闭串口", async (_, _) => { await _laser.CloseAsync(); _log.Info("激光串口已关闭"); }),
             Btn("读寄存器测试(不出光)", async (_, _) => await LaserProbe()),
             Btn("扫描全部串口(不出光)", async (_, _) => await LaserScan()),
             Lbl("功率0-10000"), _numPower, Lbl("重频kHz"), _numFreq, Lbl("脉冲数"), _numPulse,
@@ -213,6 +214,7 @@ public sealed class MainForm : Form
         var gbCnc = GroupBoxOf("数控(828D OPC UA)",
             Lbl("端点"), _txtEndpoint,
             Btn("连接", async (_, _) => { var ok = await _cnc.ConnectAsync(_txtEndpoint.Text); _log.Info(ok ? "数控已连接" : "数控连接失败"); }),
+            Btn("断开连接", async (_, _) => { await _cnc.DisconnectAsync(); _log.Info("数控已断开（会话已释放，可重新连接）"); }),
             Btn("读状态", async (_, _) => { var st = await _cnc.GetStatusAsync(); _log.Info($"模式={st.Mode} 程序={st.ProgramName} X={st.PosX} Y={st.PosY} {st.Message}"); }),
             Lbl("R序号"), _numR, Lbl("值"), _numRval,
             Btn("写入R参数", async (_, _) => { var ok = await _cnc.WriteRAsync((int)_numR.Value, (double)_numRval.Value); _log.Info(ok ? $"R{(int)_numR.Value}={_numRval.Value} 已写入" : "写入失败"); }),
@@ -255,6 +257,16 @@ public sealed class MainForm : Form
     }
 
     // ================= 动作 =================
+
+    /// <summary>窗体关闭时释放设备：断开 OPC UA 会话 + 关闭激光串口。
+    /// 不释放则 828D 侧会话残留到超时、串口被占用，导致下次连接不上（现场调试反复启停必踩）。</summary>
+    protected override async void OnFormClosed(FormClosedEventArgs e)
+    {
+        try { await _cnc.DisconnectAsync(); } catch { /* 进程即将退出，尽力而为 */ }
+        try { await _laser.CloseAsync(); } catch { }
+        try { _camera?.Dispose(); } catch { }
+        base.OnFormClosed(e);
+    }
 
     private async Task ConnectDevices()
     {
