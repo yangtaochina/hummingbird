@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Hummingbird.Devices.OpcUa</RootNamespace>
     <Description>828D 数控 OPC UA 客户端（OPC Foundation .NET 官方栈）</Description>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

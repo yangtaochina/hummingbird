@@ -21,6 +21,18 @@ public sealed class AppConfig
     /// <summary>828D OPC UA 端点。X130 口默认 IP 192.168.214.1，端口 4840。</summary>
     public string CncEndpoint { get; set; } = "opc.tcp://192.168.214.1:4840";
 
+    /// <summary>OPC UA 登录用户名（空 = 匿名）。现场核实（2026-11-02）：该 828D 匿名可建会话但读 NC 变量
+    /// 被拒（BadUserAccessDenied）——SW4.7+ 必须用户名密码。需在 HMI【调试→网络→OPC UA→设置】
+    /// 创建用户（8 位以上强密码）并赋变量读写权限。</summary>
+    public string CncUserName { get; set; } = "";
+
+    /// <summary>OPC UA 登录密码（配合 CncUserName）。</summary>
+    public string CncPassword { get; set; } = "";
+
+    /// <summary>是否用加密端点（Basic256Sha256 - Sign）。用户名登录时若 None 通道被拒（密码明文传输部分服务器禁止），
+    /// 改 true；注意加密端点需要在 828D 信任客户端证书。</summary>
+    public bool CncUseSecurity { get; set; } = false;
+
     /// <summary>NC 程序下发的网络共享路径（828D 侧需开 SMB 共享并给写权限）。</summary>
     public string CncProgramShare { get; set; } = @"\\192.168.214.1\nc";
 

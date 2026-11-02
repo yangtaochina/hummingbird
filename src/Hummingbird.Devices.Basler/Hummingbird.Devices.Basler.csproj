@@ -8,6 +8,7 @@
     <Description>Basler pylon 相机实现 —— 需安装 pylon SDK（本机：E:\Program Files\Basler\pylon 7）</Description>
     <!-- pylon .NET 程序集在 x64 目录，且 P/Invoke 原生库，强制 x64 避免加载错位数 -->
     <PlatformTarget>x64</PlatformTarget>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <!--

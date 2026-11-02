@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Hummingbird.Devices.Sim</RootNamespace>
     <Description>模拟设备（相机/数控/激光）——无硬件开发与演示用</Description>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

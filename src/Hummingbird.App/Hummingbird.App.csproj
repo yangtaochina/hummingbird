@@ -10,6 +10,7 @@
     <Description>表盘激光打孔上位机（WinForms 主程序）</Description>
     <!-- 与 Basler.Pylon.dll（x64 + P/Invoke 原生库）保持一致，避免 32/64 位加载失败 -->
     <PlatformTarget>x64</PlatformTarget>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <!--

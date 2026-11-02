@@ -84,6 +84,9 @@ public sealed class MainForm : Form
             {
                 ProgramSharePath = _cfg.CncProgramShare,
                 VarNamespaceKeyword = _cfg.CncVarNamespace,
+                UserName = _cfg.CncUserName,
+                Password = _cfg.CncPassword,
+                UseSecureEndpoint = _cfg.CncUseSecurity,
                 PosNodeX = _cfg.CncPosNodeX,
                 PosNodeY = _cfg.CncPosNodeY,
                 PosNodeZ = _cfg.CncPosNodeZ

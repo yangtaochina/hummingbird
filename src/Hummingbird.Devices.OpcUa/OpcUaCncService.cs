@@ -26,6 +26,12 @@ public sealed class OpcUaCncService : ICncService
     public string? ProgramSharePath { get; set; }
     /// <summary>变量命名空间匹配关键字（连接时在命名空间表里找包含它的 URI）。</summary>
     public string VarNamespaceKeyword { get; set; } = "SinumerikVarProvider";
+    /// <summary>OPC UA 登录用户名（空 = 匿名）。828D SW4.7+ 匿名只能建会话、读变量被拒，需 HMI 侧创建用户。</summary>
+    public string? UserName { get; set; }
+    /// <summary>OPC UA 登录密码。</summary>
+    public string? Password { get; set; }
+    /// <summary>true = 选加密端点（Basic256Sha256 - Sign）；false = None。None 下密码明文传输，部分服务器拒绝用户名登录。</summary>
+    public bool UseSecureEndpoint { get; set; }
     /// <summary>轴位置节点整路径（不带 ns；默认 actToolBasePos——该 828D 无 aaPos，2026-11-02 现场核实）。</summary>
     public string PosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, X]";
     public string PosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Y]";
@@ -94,13 +100,19 @@ public sealed class OpcUaCncService : ICncService
         await app.CheckApplicationInstanceCertificatesAsync(false, null, ct);
 
         _log.Info("[数控] 连接步骤3/4：发现服务器端点（不通=检查网线/IP/4840端口）");
-        var epDesc = CoreClientUtils.SelectEndpoint(_config, endpoint, false, 15000);
+        var epDesc = CoreClientUtils.SelectEndpoint(_config, endpoint, UseSecureEndpoint, 15000);
         _log.Info($"[数控] 端点确认：{epDesc.EndpointUrl} 安全策略={epDesc.SecurityPolicyUri}");
 
         _log.Info("[数控] 连接步骤4/4：建立会话（不通=在828D上信任客户端证书）");
+        UserIdentity identity = string.IsNullOrWhiteSpace(UserName)
+            ? new UserIdentity(new AnonymousIdentityToken())
+            : new UserIdentity(UserName, System.Text.Encoding.UTF8.GetBytes(Password ?? ""));
+        _log.Info(string.IsNullOrWhiteSpace(UserName)
+            ? "[数控] 登录方式：匿名（828D SW4.7+ 匿名读 NC 变量会被拒，生产用请配置 CncUserName）"
+            : $"[数控] 登录方式：用户名 {UserName}（读取被拒=检查该用户在 HMI 里是否被赋变量读写权限）");
         var configured = new ConfiguredEndpoint(null, epDesc, EndpointConfiguration.Create(_config));
         _session = await Session.CreateAsync(_config, (ReverseConnectManager?)null, configured, false, false, "Hummingbird",
-            60000, new UserIdentity(new AnonymousIdentityToken()), null, ct);
+            60000, identity, null, ct);
 
         bool ok = IsConnected;
         if (ok)
@@ -153,10 +165,42 @@ public sealed class OpcUaCncService : ICncService
                             hits++;
                     }
             _log.Info($"[数控][诊断] 候选扫描完成：可读 {hits} 个（上面\"候选命中\"行即可用路径）");
+
+            // 5) 目录浏览：把真实存在的子节点名全部列出来（登录后权限足够才有意义）
+            LogChildren("/Channel");
+            LogChildren("/Channel/GeometricAxis");
+            LogChildren("/Channel/MachineAxis");
         }
         catch (Exception ex)
         {
             _log.Warn($"[数控][诊断] 中断：{ex.Message}");
+        }
+    }
+
+    /// <summary>列出一个目录节点的全部子节点名（Browser 辅助类，内部自动翻页），打进日志。位置变量名以此为准，不靠猜。</summary>
+    private void LogChildren(string dirPath)
+    {
+        try
+        {
+#pragma warning disable CS0618 // Browser.Browse(同步) 在此版本仍可用，内部自动处理续页
+            var browser = new Browser(_session!)
+            {
+                BrowseDirection = BrowseDirection.Forward,
+                ReferenceTypeId = ReferenceTypeIds.HierarchicalReferences,
+                IncludeSubtypes = true,
+                NodeClassMask = 0,
+                ResultMask = (uint)BrowseResultMask.All
+            };
+            var names = browser.Browse(new NodeId(dirPath, _varNs))
+                                 .Select(r => r.DisplayName?.Text ?? "?").ToList();
+#pragma warning restore CS0618
+            _log.Info($"[数控][诊断] 目录 {dirPath} 共 {names.Count} 个子节点：");
+            for (int i = 0; i < names.Count; i += 40)   // 每行 40 个，避免单行过长
+                _log.Info($"[数控][诊断]   {string.Join(", ", names.Skip(i).Take(40))}");
+        }
+        catch (Exception ex)
+        {
+            _log.Info($"[数控][诊断] 目录 {dirPath} 浏览异常：{ex.Message}");
         }
     }
 

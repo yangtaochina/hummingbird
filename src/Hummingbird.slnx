@@ -1,10 +1,30 @@
 <Solution>
-  <Project Path="Hummingbird.App/Hummingbird.App.csproj" />
-  <Project Path="Hummingbird.Core/Hummingbird.Core.csproj" />
-  <Project Path="Hummingbird.Devices.Basler/Hummingbird.Devices.Basler.csproj" />
-  <Project Path="Hummingbird.Devices.LaserRtu/Hummingbird.Devices.LaserRtu.csproj" />
-  <Project Path="Hummingbird.Devices.OpcUa/Hummingbird.Devices.OpcUa.csproj" />
-  <Project Path="Hummingbird.Devices.Sim/Hummingbird.Devices.Sim.csproj" />
-  <Project Path="Hummingbird.SmokeTest/Hummingbird.SmokeTest.csproj" />
-  <Project Path="Hummingbird.Vision/Hummingbird.Vision.csproj" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="Hummingbird.App/Hummingbird.App.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Core/Hummingbird.Core.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Devices.Basler/Hummingbird.Devices.Basler.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Devices.LaserRtu/Hummingbird.Devices.LaserRtu.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Devices.OpcUa/Hummingbird.Devices.OpcUa.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Devices.Sim/Hummingbird.Devices.Sim.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.SmokeTest/Hummingbird.SmokeTest.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Hummingbird.Vision/Hummingbird.Vision.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
 </Solution>

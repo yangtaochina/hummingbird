@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Hummingbird.Devices.LaserRtu</RootNamespace>
     <Description>激光器 RS232 Modbus RTU 控制（NModbus）</Description>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
