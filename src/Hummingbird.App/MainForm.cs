@@ -725,21 +725,45 @@ public sealed class MainForm : Form
                 _log.Info("【诊断②】" + line);
             }
 
-            // 判据：峰值灰度 < 60 视为"基本全黑"；均值 < 20 且峰值 < 100 视为"严重不足"
-            var good = probes.Where(p => p.Ok && p.MaxGray >= 100 && p.MeanGray >= 20).ToList();
+            // ---- 判据（用真机实测数据校准过，2026-11-05）----
+            // 真机扫描结果：5000us 均值63/峰值255；20000us 均值202；50000us 起全白(255/255)。
+            //   → "够亮"的标准不能只看峰值（峰值一到255就饱和了），要看**均值**落在 40~200 之间。
+            //   → 均值 < 40 = 太暗（噪点多，定位不稳）；均值 > 200 = 过曝（结构糊了）
+            var tooDark = probes.Where(p => p.Ok && p.MeanGray < 40).ToList();
+            var usable = probes.Where(p => p.Ok && p.MeanGray >= 40 && p.MeanGray <= 200).ToList();
+            var overExposed = probes.Where(p => p.Ok && p.MeanGray > 200).ToList();
+
             sb.AppendLine("------------------------------------------------");
-            if (good.Count == 0)
+            if (usable.Count > 0)
+            {
+                var best = usable.OrderBy(p => p.ExposureUs).First();
+                var safe = usable.OrderBy(p => p.MeanGray).First();   // 均值最接近"适中"的那档
+                sb.AppendLine($"结论：✅ 可用曝光区间 {usable.Min(p => p.ExposureUs):F0} ~ {usable.Max(p => p.ExposureUs):F0}us");
+                sb.AppendLine($"      推荐起点：{best.ExposureUs:F0}us（均值 {best.MeanGray:F1}）；" +
+                              $"更稳的一档：{safe.ExposureUs:F0}us（均值 {safe.MeanGray:F1}）");
+                sb.AppendLine("      判据：均值 40~200 为可用（<40 太暗噪点多，>200 过曝结构糊掉）；峰值 255 表示有饱和区域。");
+                if (overExposed.Count > 0)
+                    sb.AppendLine($"      注意：{overExposed.Min(p => p.ExposureUs):F0}us 起已过曝，不要用。");
+            }
+            else if (tooDark.Count > 0 && overExposed.Count > 0)
+            {
+                sb.AppendLine("结论：⚠ 曝光区间**跳空**——低档太暗、高档过曝，中间没有可用档。");
+                sb.AppendLine($"      太暗：≤ {tooDark.Max(p => p.ExposureUs):F0}us；过曝：≥ {overExposed.Min(p => p.ExposureUs):F0}us");
+                sb.AppendLine("      → 这是**动态范围不够**的典型表现：光太弱的同时相机一开大就饱和。");
+                sb.AppendLine("      → 处理：①降低光源强度 + 缩短曝光（把光打散、拉长曝光）②换低噪声/高动态范围的照明方案");
+                sb.AppendLine("            ③如果红光是激光引光，考虑用更弱的光或加漫射罩降低峰值");
+                sb.AppendLine("      → 同时可试：增益保持 0，靠曝光调节（增益会同时放大噪点和饱和区）");
+            }
+            else if (overExposed.Count > 0 && overExposed.Count == probes.Count)
+            {
+                sb.AppendLine("结论：❌ 所有档位都过曝 → 曝光要往小调（当前设置比画面需要的亮太多）。");
+            }
+            else
             {
                 sb.AppendLine("结论：❌ 所有曝光档位画面都明显偏暗 → 不是曝光设置问题，是**照明光强不足**。");
                 sb.AppendLine("      处理：①加装高功率同轴/环形照明；②换用白光LED并加大光通量；");
                 sb.AppendLine("            ③确认红光是否需要窄带滤光片（若是激光引光，还要评估强光对相机的污染）；");
                 sb.AppendLine("            ④检查镜头光圈是否被拧到最小、是否装了减光片。");
-            }
-            else
-            {
-                var best = good.OrderBy(p => p.ExposureUs).First();
-                sb.AppendLine($"结论：✅ 曝光 {best.ExposureUs:F0}us 起画面即可用（均值 {best.MeanGray:F1} / 峰值 {best.MaxGray:F0}）。");
-                sb.AppendLine("      建议把曝光设到该档（再留 1~2 倍余量给工件反光差异），并把增益调回 0 附近避免噪点。");
             }
         }
         catch (Exception ex)
@@ -750,7 +774,7 @@ public sealed class MainForm : Form
         _txtDiag.Text = sb.ToString();
     }
 
-    /// <summary>③ 视野诊断：用中央孔（已知尺寸）反算 mm/px，判断基准孔在不在画面内。</summary>
+    /// <summary>③ 视野诊断：用**白色外环（Ø34.2mm，图纸已知）**反算 mm/px，判断基准孔在不在画面内。</summary>
     private async Task DiagFieldOfView()
     {
         if (_camera is null) { _log.Warn("相机不可用"); return; }
@@ -761,8 +785,9 @@ public sealed class MainForm : Form
             var frame = await _camera.GrabAsync(3000);
             ShowFrame(_pbMain, frame, null);
             double datumR = _template.DatumHoleRadiusMm > 0 ? _template.DatumHoleRadiusMm : 14.45;
+            double outerD = _template.PartOuterDiameterMm > 0 ? _template.PartOuterDiameterMm : 34.2;
             var diag = new FieldDiagnosis(_log);
-            var r = diag.Analyze(frame, datumR);
+            var r = diag.Analyze(frame, datumR, outerD);
             _txtDiag.Text = r.Detail;
             if (r.Success)
                 _log.Info("【诊断③】" + r.Detail.Replace("\n", " | "));

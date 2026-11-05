@@ -20,8 +20,10 @@ public sealed class AppConfig
 
     /// <summary>相机曝光时间（微秒）。0 = 不设置（沿用相机内部当前值/pylon Viewer 里调的值）。
     /// 现场调光流程：pylon Viewer 里手动调到清晰、亮度合适后，把该数值抄到这里——
-    /// 程序每次连接相机时强制下发，避免相机参数被 pylon 改乱。调光目标：盘面约 120~150、特征 200+。</summary>
-    public double CameraExposureUs { get; set; } = 0;
+    /// 程序每次连接相机时强制下发，避免相机参数被 pylon 改乱。调光目标：盘面约 120~150、特征 200+。
+    /// ✅ 2026-11-05 真机曝光扫描：100us 均值0.7 / 500us 6.3 / 1000us 13.2 / 5000us 63.2（可用）
+    /// / 20000us 202（临界过曝）/ 50000us 起全白。默认取 5000us（留 1~2 倍余量）。</summary>
+    public double CameraExposureUs { get; set; } = 5000;
 
     /// <summary>相机增益。0 = 不设置。曝光拉满仍偏暗时再加增益（增益加噪声，优先加曝光）。</summary>
     public double CameraGain { get; set; } = 0;
@@ -74,9 +76,11 @@ public sealed class AppConfig
     /// <summary>表盘外缘预期直径（mm），视觉定位的尺寸校验用（偏差>30% 报失败）。</summary>
     public double ExpectedOuterDiameterMm { get; set; } = 34.2;
 
-    /// <summary>视觉像素尺寸（mm/px）。规划假设值 0.02；现场实测校准：放上真件跑一次定位，
-    /// 失败日志会反推实际像素尺寸，把该值填到这里。影响：尺寸校验、基准小圆直径过滤。</summary>
-    public double VisionPixelSizeMm { get; set; } = 0.02;
+    /// <summary>视觉像素尺寸（mm/px）。
+    /// ✅ 2026-11-05 真机实测回填：以工件白色外环 Ø34.2mm 为标尺，实测 R≈691px → 0.0247 mm/px，
+    /// 对应视野约 47.5×29.7mm。⚠ 该值与镜头/物距/相机安装角度绑定，改动机械或镜头必须重测。
+    /// 影响：尺寸校验、基准小圆直径过滤、坐标换算。</summary>
+    public double VisionPixelSizeMm { get; set; } = 0.0247;
 
     /// <summary>表盘系→机床系：是否交换 X/Y 轴（标定时确定）。</summary>
     public bool ConvSwapXY { get; set; }

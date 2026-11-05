@@ -156,39 +156,108 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
 // ============================================================
 // 【组6】视野诊断 FieldDiagnosis（2026-11-05 现场必做的一步）
 //
-// 目的：用手工合成的"已知尺寸亮环"验证反算逻辑正确，
-//       并验证"基准孔在不在视野内"的判定能给出对的结果。
-//       现场真图靠这个工具判定 datumHoles 方案是否成立。
+// 标尺 = 白色外环（Ø34.2mm，图纸已知）。
+// 判据用**垂直方向**（图幅 1920×1200 横图，垂直半高 600px 才是限制）。
 // ============================================================
 {
     var fdiag = new FieldDiagnosis(log);
 
-    // 情形 A：视野足够（1200×900 图幅，2.5mm 孔占 100px → 0.025mm/px → 视野 30mm，半宽 15mm ≥ 14.45mm）
-    var frameA = MakeFrameWithBrightRing(1200, 900, 100.0);
+    // 情形 A：视野足够。合成 Ø34.2mm 外环（半径 560px）→ mm/px = 17.1/560 = 0.03054
+    //         画面 1920×1200 → 垂直半高 600px = 18.3mm ≥ 14.45mm → 在视野内
+    var frameA = MakeFrameWithOuterRing(1920, 1200, 560.0);
     var rA = fdiag.Analyze(frameA, 14.45);
-    Check(rA.Success, $"视野诊断A：成功量到中央孔（{rA.HoleDiameterPx:F1}px）");
-    Check(rA.Success && Math.Abs(rA.MmPerPx - 0.025) < 0.002,
-          $"视野诊断A：反算 mm/px 正确（实际 {rA.MmPerPx:F5}，期望 0.02500）");
-    Check(rA.DatumInView, $"视野诊断A：判定基准孔在视野内（半宽 {rA.FovWidthMm / 2:F1}mm）");
+    Check(rA.Success, $"视野诊断A：成功量到白色外环（{rA.ScalePx:F1}px 直径）");
+    Check(rA.Success && Math.Abs(rA.MmPerPx - 0.030536) < 0.002,
+          $"视野诊断A：反算 mm/px 正确（实际 {rA.MmPerPx:F5}，期望 0.03054）");
+    Check(rA.DatumInView, $"视野诊断A：判定基准孔在视野内（余量 {rA.MarginMm:F2}mm）");
 
-    // 情形 B：视野太小（2.5mm 孔占 500px → 0.005mm/px → 视野 6mm，半宽 3mm < 14.45 → 不在视野内）
-    var frameB = MakeFrameWithBrightRing(1200, 900, 500.0);
+    // 情形 B：视野太小。合成 Ø34.2mm 外环（半径 800px）→ mm/px = 17.1/800 = 0.021375
+    //         画面 1920×1200 → 垂直半高 600px = 12.8mm < 14.45mm → 基准孔不在视野内
+    var frameB = MakeFrameWithOuterRing(1920, 1200, 800.0);
     var rB = fdiag.Analyze(frameB, 14.45);
-    Check(rB.Success, $"视野诊断B：成功量到中央孔（{rB.HoleDiameterPx:F1}px）");
+    Check(rB.Success, $"视野诊断B：成功量到白色外环（{rB.ScalePx:F1}px 直径）");
     Check(rB.Success && !rB.DatumInView,
-          $"视野诊断B：判定基准孔**不在**视野内（半宽仅 {rB.FovWidthMm / 2:F1}mm < 14.45mm）");
+          $"视野诊断B：判定基准孔**不在**视野内（超 {Math.Abs(rB.MarginMm):F2}mm）");
 
     // 情形 C：画面全黑 → 必须明确报"没量到"，而不是给出瞎猜的 mm/px
-    var frameC = new CameraFrame(new byte[1200 * 900], 1200, 900, DateTime.Now);
+    var frameC = new CameraFrame(new byte[1200 * 1920], 1920, 1200, DateTime.Now);
     var rC = fdiag.Analyze(frameC, 14.45);
     Check(!rC.Success, "视野诊断C：全黑画面明确报失败（不瞎猜 mm/px）");
+
+    // 情形 D：过曝全白 → 同样必须报失败（不能当成"结构完整"）
+    var frameD = new CameraFrame(new byte[1920 * 1200].Select(_ => (byte)255).ToArray(), 1920, 1200, DateTime.Now);
+    var rD = fdiag.Analyze(frameD, 14.45);
+    Check(!rD.Success, "视野诊断D：全白过曝画面明确报失败");
+
+    // ---------- 情形 E：真机实测图离线复现（决定性验证） ----------
+    // 真图：Image__2026-11-05__14-04-13.bmp（曝光 3114μs）
+    // Python 离线定量分析结论：白色外环 R ≈ 700px → mm/px ≈ 0.0244，视野 46.9×29.3mm
+    //                        基准孔 R14.45mm = 592px，垂直半高 600px → 勉强在视野内
+    // 这张图验证了：①外环能被测到 ②mm/px 量级正确 ③"边缘余量"这个结论能自动算出来
+    string realImg = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+                                  "Image__2026-11-05__14-04-13.bmp");
+    realImg = Path.GetFullPath(realImg);
+    if (File.Exists(realImg))
+    {
+        var realFrame = ReadGrayBmp(realImg);
+        var rE = fdiag.Analyze(realFrame, 14.45);
+        Console.WriteLine("  --- 真机图诊断结果 ---");
+        Console.WriteLine("  " + rE.Detail.Replace("\n", "\n  "));
+        Check(rE.Success, "视野诊断E：真机图成功量到标尺");
+        Check(rE.Success && rE.MmPerPx > 0.020 && rE.MmPerPx < 0.030,
+              $"视野诊断E：mm/px 量级正确（实际 {rE.MmPerPx:F6}，应在 0.020~0.030 之间）");
+        Check(rE.Success && rE.FovWidthMm > 40 && rE.FovWidthMm < 60,
+              $"视野诊断E：视野宽量级正确（实际 {rE.FovWidthMm:F1}mm，应在 40~60mm 之间）");
+        Check(rE.Success && rE.DatumInView && rE.MarginMm < 2.0,
+              $"视野诊断E：判定基准孔在视野内但余量 < 2mm（实际 {rE.MarginMm:F2}mm）——边缘状态必须暴露出来");
+    }
+    else
+    {
+        Console.WriteLine($"  [跳过] 真机图不存在：{realImg}");
+    }
 }
 
-/// <summary>合成一张"暗底 + 正中亮环"的灰度图，用于验证 FieldDiagnosis 的反算逻辑。</summary>
-static CameraFrame MakeFrameWithBrightRing(int w, int h, double ringDiameterPx)
+/// <summary>
+/// 读取 8 位灰度 BMP（Windows 拍摄/保存的常见格式），不依赖 OpenCV 的文件 IO API。
+/// 支持 BITMAPINFOHEADER（40 字节）；行数据按 4 字节对齐，行序自下而上。
+/// </summary>
+static CameraFrame ReadGrayBmp(string path)
+{
+    byte[] d = File.ReadAllBytes(path);
+    if (d.Length < 54 || d[0] != 'B' || d[1] != 'M')
+        throw new InvalidDataException("不是有效的 BMP 文件：" + path);
+
+    int dataOffset = BitConverter.ToInt32(d, 10);
+    int width = BitConverter.ToInt32(d, 18);
+    int height = BitConverter.ToInt32(d, 22);
+    int bpp = BitConverter.ToInt16(d, 28);
+    int headerSize = BitConverter.ToInt32(d, 14);
+
+    if (bpp != 8)
+        throw new NotSupportedException($"只支持 8 位灰度 BMP，实际 bpp={bpp}");
+    if (height < 0) height = -height;          // 负高度 = 自下而上
+    bool bottomUp = BitConverter.ToInt32(d, 22) < 0;
+
+    int rowSize = ((width * bpp / 8) + 3) / 4 * 4;   // 4 字节对齐
+    var gray = new byte[width * height];
+
+    for (int y = 0; y < height; y++)
+    {
+        int srcRow = bottomUp ? (height - 1 - y) : y;
+        int srcOff = dataOffset + srcRow * rowSize;
+        Array.Copy(d, srcOff, gray, y * width, width);
+    }
+
+    _ = headerSize;
+    return new CameraFrame(gray, width, height, DateTime.Now);
+}
+
+/// <summary>合成一张"暗底 + 白色外环（圆心在画面中心）"的灰度图，用于验证 FieldDiagnosis 的外环标尺逻辑。</summary>
+static CameraFrame MakeFrameWithOuterRing(int w, int h, double ringRadiusPx)
 {
     using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(30));
-    OpenCvSharp.Cv2.Circle(mat, new OpenCvSharp.Point(w / 2, h / 2), (int)(ringDiameterPx / 2), OpenCvSharp.Scalar.All(230), -1);
+    // 外环画成较宽的亮带（真实白环在图上是几十像素宽的弧）
+    OpenCvSharp.Cv2.Circle(mat, new OpenCvSharp.Point(w / 2, h / 2), (int)ringRadiusPx, OpenCvSharp.Scalar.All(235), 40);
     var buf = new byte[w * h];
     System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
     return new CameraFrame(buf, w, h, DateTime.Now);
