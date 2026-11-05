@@ -85,6 +85,29 @@ public sealed class AppConfig
     /// 影响：尺寸校验、基准小圆直径过滤、坐标换算。</summary>
     public double VisionPixelSizeMm { get; set; } = 0.0234;
 
+    // ================================================================
+    // 定位策略（策略模式）—— 界面「定位策略」页可实时修改并保存
+    // ================================================================
+
+    /// <summary>当前定位策略 ID。见 StrategyIds：fullFieldDatumHoles / singleFiducial / manualFixture。</summary>
+    public string PositioningStrategyId { get; set; } = "fullFieldDatumHoles";
+
+    /// <summary>夹具锁定的工件中心在相机像素系中的 X（px）。NaN=未标定（单标记孔策略会拒绝执行）。</summary>
+    public double FixtureCenterPxX { get; set; } = double.NaN;
+    /// <summary>夹具锁定的工件中心在相机像素系中的 Y（px）。NaN=未标定。</summary>
+    public double FixtureCenterPxY { get; set; } = double.NaN;
+
+    /// <summary>标记孔相对中心的名义半径（mm），图纸双环孔 14.45。</summary>
+    public double FiducialRadiusMm { get; set; } = 14.45;
+    /// <summary>标记孔名义直径（mm），用于检测时尺寸过滤。</summary>
+    public double FiducialDiameterMm { get; set; } = 0.8;
+    /// <summary>孔心到夹具中心距离允许偏差（mm），超差拒绝出坐标（防打废工件）。</summary>
+    public double FiducialRadiusToleranceMm { get; set; } = 1.5;
+    /// <summary>标记孔在表盘系的名义时钟角（度，12H=0，顺时针）。</summary>
+    public double FiducialNominalClockDeg { get; set; } = 0.0;
+    /// <summary>纯机械对刀策略用的假定装卡转角（度）。</summary>
+    public double FixtureAssumedAngleDeg { get; set; } = 0.0;
+
     /// <summary>表盘系→机床系：是否交换 X/Y 轴（标定时确定）。</summary>
     public bool ConvSwapXY { get; set; }
 

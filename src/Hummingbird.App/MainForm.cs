@@ -2,6 +2,7 @@ using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Hummingbird.Core;
 using Hummingbird.Devices.LaserRtu;
 using Hummingbird.Devices.OpcUa;
@@ -55,6 +56,29 @@ public sealed class MainForm : Form
     private readonly ComboBox _cmbBaud = new() { Width = 90, DropDownStyle = ComboBoxStyle.DropDownList };
     /// <summary>人工装夹粗对齐角（度）：工件按 12H 摆正的大致角度，用于消解基准孔组的 90° 旋转对称歧义。</summary>
     private readonly TextBox _txtCoarse = new() { Width = 70, Text = "0" };
+
+    // —— 定位策略（策略模式）：界面判断/切换用哪套定位算法 ——
+    private readonly PositioningStrategySelector _selector;
+    private readonly ComboBox _cmbStrategy = new() { Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly Label _lblStrategyDesc = new() { AutoSize = true, MaximumSize = new Size(700, 0), Padding = new Padding(4, 8, 0, 0) };
+    private readonly TextBox _txtStrategyCheck = new()
+    {
+        Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
+        Width = 700, Height = 200, Font = new Font("Consolas", 9F), BackColor = Color.White
+    };
+    private readonly CheckBox _chkFixtureCenters = new() { Text = "夹具定位销/止口能锁死工件中心", AutoSize = true, Checked = true };
+    private readonly CheckBox _chkFiducialAvailable = new() { Text = "有相机看得清的标记孔", AutoSize = true, Checked = true };
+    private readonly CheckBox _chkFiducialRotates = new() { Text = "标记孔随工件一起转动（不是固定在夹具上）", AutoSize = true, Checked = true };
+    private readonly CheckBox _chkFullInView = new() { Text = "整盘能入画（视野短边 ≥ 34.2mm）", AutoSize = true, Checked = false };
+    private readonly CheckBox _chkDatumVisible = new() { Text = "8 个双环基准孔在画面里清晰可见", AutoSize = true, Checked = false };
+    private readonly TextBox _txtFixCx = new() { Width = 90, Text = "" };
+    private readonly TextBox _txtFixCy = new() { Width = 90, Text = "" };
+    private readonly TextBox _txtFidR = new() { Width = 70, Text = "14.45" };
+    private readonly TextBox _txtFidClock = new() { Width = 70, Text = "0" };
+    private readonly TextBox _txtFidDia = new() { Width = 70, Text = "0.8" };
+    private readonly TextBox _txtFidTol = new() { Width = 70, Text = "1.5" };
+    private readonly TextBox _txtManualAngle = new() { Width = 70, Text = "0" };
+
     /// <summary>现场诊断结果输出区（相机参数范围 / 曝光扫描 / 视野诊断）。</summary>
     private readonly TextBox _txtDiag = new()
     {
@@ -120,7 +144,16 @@ public sealed class MainForm : Form
 #endif
         }
 
-        _wf = new AutoRunWorkflow(_log, _camera, new DialPositioning(_log), _cnc, _laser)
+        // 策略模式：注册全部定位策略，界面可随时切换 _wf.Vision 指向哪一个。
+        // 加工流程（AutoRunWorkflow）只认 IVisionService 抽象，切换策略零改动。
+        _selector = new PositioningStrategySelector(new IPositioningStrategy[]
+        {
+            new FullFieldDatumHolesStrategy(_log),
+            new SingleFiducialStrategy(_log),
+            new ManualFixtureStrategy(_log)
+        });
+
+        _wf = new AutoRunWorkflow(_log, _camera, _selector.All[0], _cnc, _laser)
         {
             Template = template,
             VisionOptions = new VisionOptions
@@ -133,7 +166,16 @@ public sealed class MainForm : Form
                 DatumMode = template.DatumMode,
                 DatumCircleDiameterMm = template.DatumCircleDiameterMm,
                 DatumHoleAngles = template.DatumHoleAnglesDeg.ToArray(),
-                DatumHoleRadiusMm = template.DatumHoleRadiusMm
+                DatumHoleRadiusMm = template.DatumHoleRadiusMm,
+                // 单标记孔策略参数（config.json 可覆盖，界面「定位策略」页可实时改）
+                StrategyId = _cfg.PositioningStrategyId,
+                FixtureCenterPxX = _cfg.FixtureCenterPxX,
+                FixtureCenterPxY = _cfg.FixtureCenterPxY,
+                FiducialRadiusMm = _cfg.FiducialRadiusMm,
+                FiducialDiameterMm = _cfg.FiducialDiameterMm,
+                FiducialRadiusToleranceMm = _cfg.FiducialRadiusToleranceMm,
+                FiducialNominalClockDeg = _cfg.FiducialNominalClockDeg,
+                FixtureAssumedAngleDeg = _cfg.FixtureAssumedAngleDeg
             },
             Convention = new TransformConvention
             {
@@ -270,14 +312,280 @@ public sealed class MainForm : Form
         dbgRoot.Controls.Add(gbCnc);
         tabDbg.Controls.Add(dbgRoot);
 
+        // ---- 页签4：定位策略（策略模式：界面判断/切换调用哪套定位算法）----
+        var tabStrategy = new TabPage("定位策略");
+        var stRoot = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, Padding = new Padding(8) };
+
+        var gbPick = new GroupBox { Text = "选择定位策略（切换后立即生效，加工流程无需重启）", AutoSize = true, Padding = new Padding(8) };
+        var pickFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true };
+        var pickRow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, WrapContents = true };
+        foreach (var s in _selector.All) _cmbStrategy.Items.Add(s.DisplayName);
+        pickRow.Controls.Add(Lbl("策略"));
+        pickRow.Controls.Add(_cmbStrategy);
+        pickRow.Controls.Add(Btn("自动推荐（按当前现场条件）", (_, _) => AutoRecommendStrategy()));
+        pickRow.Controls.Add(Btn("策略自检 / 看缺什么", (_, _) => RunStrategyCheck()));
+        pickFlow.Controls.Add(pickRow);
+        pickFlow.Controls.Add(_lblStrategyDesc);
+        gbPick.Controls.Add(pickFlow);
+        stRoot.Controls.Add(gbPick);
+
+        var gbCond = new GroupBox { Text = "现场条件（自动推荐与自检的依据，按实际情况勾选）", AutoSize = true, Padding = new Padding(8) };
+        var condFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true };
+        foreach (var c in new[] { _chkFixtureCenters, _chkFiducialAvailable, _chkFiducialRotates, _chkFullInView, _chkDatumVisible })
+            condFlow.Controls.Add(c);
+        condFlow.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(700, 0), ForeColor = Color.DimGray,
+            Text = "2026-11-05 真机诊断结论：整盘放不进画面、8 个基准孔在红光下完全不可见，所以默认勾掉后两项。",
+            Padding = new Padding(4, 6, 0, 0)
+        });
+        gbCond.Controls.Add(condFlow);
+        stRoot.Controls.Add(gbCond);
+
+        var gbFid = new GroupBox { Text = "单标记孔策略参数（客户新方案）", AutoSize = true, Padding = new Padding(8) };
+        var fidFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, WrapContents = true, MaximumSize = new Size(760, 0) };
+        fidFlow.Controls.Add(Lbl("夹具中心像素 X")); fidFlow.Controls.Add(_txtFixCx);
+        fidFlow.Controls.Add(Lbl("Y")); fidFlow.Controls.Add(_txtFixCy);
+        fidFlow.Controls.Add(Btn("用当前定位结果填入中心", (_, _) => FillFixtureCenterFromPose()));
+        fidFlow.Controls.Add(Btn("拍当前孔并示教名义角", async (_, _) => await TeachFiducialAngle()));
+        fidFlow.Controls.Add(Lbl("名义半径mm")); fidFlow.Controls.Add(_txtFidR);
+        fidFlow.Controls.Add(Lbl("名义时钟角°")); fidFlow.Controls.Add(_txtFidClock);
+        fidFlow.Controls.Add(Lbl("孔径mm")); fidFlow.Controls.Add(_txtFidDia);
+        fidFlow.Controls.Add(Lbl("半径容差mm")); fidFlow.Controls.Add(_txtFidTol);
+        fidFlow.Controls.Add(Lbl("机械对刀转角°")); fidFlow.Controls.Add(_txtManualAngle);
+        fidFlow.Controls.Add(Btn("应用参数", (_, _) => ApplyStrategyParams()));
+        fidFlow.Controls.Add(Btn("保存到 config.json", (_, _) => SaveStrategyConfig()));
+        fidFlow.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(720, 0), ForeColor = Color.DimGray,
+            Text = "夹具中心像素：装标准件→拍照整盘定位→点『用当前定位结果填入中心』；" +
+                   "也可先把工件按 12H 摆正、相机对准标记孔，再点『拍当前孔并示教名义角』自动反算名义角。",
+            Padding = new Padding(4, 6, 0, 0)
+        });
+        gbFid.Controls.Add(fidFlow);
+        stRoot.Controls.Add(gbFid);
+
+        stRoot.Controls.Add(_txtStrategyCheck);
+        tabStrategy.Controls.Add(stRoot);
+
         _tabs.TabPages.Add(tabAuto);
         _tabs.TabPages.Add(tabCal);
         _tabs.TabPages.Add(tabDbg);
+        _tabs.TabPages.Add(tabStrategy);
+
+        // 初始化策略下拉框 + 参数输入框
+        InitStrategyUi();
 
         var logHost = new Panel { Dock = DockStyle.Bottom, Height = 180 };
         logHost.Controls.Add(_rtbLog);
         Controls.Add(_tabs);
         Controls.Add(logHost);
+    }
+
+    // ================= 定位策略（策略模式）=================
+
+    /// <summary>初始化策略下拉框和参数输入框（从 config.json 读入）。</summary>
+    private void InitStrategyUi()
+    {
+        var o = _wf.VisionOptions;
+        _txtFixCx.Text = double.IsNaN(o.FixtureCenterPxX) ? "" : o.FixtureCenterPxX.ToString("F1");
+        _txtFixCy.Text = double.IsNaN(o.FixtureCenterPxY) ? "" : o.FixtureCenterPxY.ToString("F1");
+        _txtFidR.Text = o.FiducialRadiusMm.ToString("F2");
+        _txtFidClock.Text = o.FiducialNominalClockDeg.ToString("F1");
+        _txtFidDia.Text = o.FiducialDiameterMm.ToString("F2");
+        _txtFidTol.Text = o.FiducialRadiusToleranceMm.ToString("F2");
+        _txtManualAngle.Text = o.FixtureAssumedAngleDeg.ToString("F1");
+
+        int idx = _selector.All
+            .Select((s, i) => (s, i))
+            .FirstOrDefault(t => string.Equals(t.s.Id, o.StrategyId, StringComparison.OrdinalIgnoreCase)).i;
+        // FirstOrDefault 找不到时返回 (null,0)，正好落到第 ① 项
+        _cmbStrategy.SelectedIndex = Math.Max(0, Math.Min(_selector.All.Count - 1, idx));
+        _cmbStrategy.SelectedIndexChanged += (_, _) => ApplySelectedStrategy();
+        ApplySelectedStrategy();
+        // 启动时先跑一次自检：把"当前策略缺什么前提"直接摆出来，避免现场拿未标定的配置去加工
+        RunStrategyCheck();
+    }
+
+    /// <summary>下拉框切换：把 _wf.Vision 指向新策略，并显示其原理与前置条件。</summary>
+    private void ApplySelectedStrategy()
+    {
+        int i = _cmbStrategy.SelectedIndex;
+        if (i < 0 || i >= _selector.All.Count) return;
+        var s = _selector.All[i];
+        _wf.Vision = s;
+        _wf.VisionOptions = _wf.VisionOptions with { StrategyId = s.Id };
+
+        _lblStrategyDesc.Text = s.Description + Environment.NewLine +
+            "前置条件：" + string.Join("；", s.Prerequisites);
+        _log.Info($"定位策略已切换：{s.DisplayName}（{s.Id}）");
+        _log.Info("  " + s.Description);
+    }
+
+    /// <summary>组装现场条件快照。九点标定状态直接从 workflow 读，不用人工勾。</summary>
+    private StrategyContext BuildStrategyContext()
+    {
+        var o = _wf.VisionOptions;
+        return new StrategyContext(
+            FixtureCentersPart: _chkFixtureCenters.Checked,
+            FiducialAvailable: _chkFiducialAvailable.Checked,
+            FiducialRotatesWithPart: _chkFiducialRotates.Checked,
+            FullPartInView: _chkFullInView.Checked,
+            DatumHolesVisible: _chkDatumVisible.Checked,
+            CalibrationValid: _wf.Calibration is { Valid: true },
+            FiducialTaught: !double.IsNaN(o.FixtureCenterPxX) && !double.IsNaN(o.FixtureCenterPxY),
+            CoarseAlignProvided: !double.IsNaN(o.CoarseAlignDeg));
+    }
+
+    /// <summary>「策略自检」：列出每个策略能不能用、缺什么，并给出推荐。</summary>
+    private void RunStrategyCheck()
+    {
+        var ctx = BuildStrategyContext();
+        _txtStrategyCheck.Text = _selector.DescribeAll(ctx);
+        _log.Info("已执行定位策略自检（结果见『定位策略』页）");
+    }
+
+    /// <summary>
+    /// 加工/定位前的软拦截：当前策略硬前提不满足时明确告警。
+    /// 不强制禁止（现场可能就是想拍张图看看），但日志和策略页会把缺口写清楚。
+    /// </summary>
+    private bool WarnIfStrategyNotReady()
+    {
+        var ctx = BuildStrategyContext();
+        if (_wf.Vision is not IPositioningStrategy strategy) return true;
+        var r = strategy.Check(ctx);
+        if (r.CanRun) return true;
+
+        _txtStrategyCheck.Text = _selector.DescribeAll(ctx);
+        _log.Warn($"当前策略【{strategy.DisplayName}】前提不满足：{r.Reason} " +
+                  "—— 请到『定位策略』页看自检结果，或点『自动推荐』切换策略。");
+        return false;
+    }
+
+    /// <summary>「自动推荐」：按工程优先级选一个策略并直接切换过去。</summary>
+    private void AutoRecommendStrategy()
+    {
+        var ctx = BuildStrategyContext();
+        var (rec, why) = _selector.Recommend(ctx);
+        _txtStrategyCheck.Text = _selector.DescribeAll(ctx);
+        if (rec is null)
+        {
+            _log.Warn("自动推荐失败：" + why);
+            MessageBox.Show(this, why, "无法推荐定位策略", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        int idx = _selector.All.Select((s, i) => (s, i)).First(t => t.s.Id == rec.Id).i;
+        if (_cmbStrategy.SelectedIndex != idx) _cmbStrategy.SelectedIndex = idx;
+        else ApplySelectedStrategy();
+        _log.Info("自动推荐 → " + rec.DisplayName + "。" + why);
+        MessageBox.Show(this, why + "\n\n已切换到：" + rec.DisplayName,
+            "定位策略自动推荐", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    /// <summary>把界面上的单标记孔参数写进 VisionOptions（不落盘）。</summary>
+    private void ApplyStrategyParams()
+    {
+        double P(TextBox t, double fallback) => double.TryParse(t.Text.Trim(), out double v) ? v : fallback;
+        double cx = string.IsNullOrWhiteSpace(_txtFixCx.Text) ? double.NaN : P(_txtFixCx, double.NaN);
+        double cy = string.IsNullOrWhiteSpace(_txtFixCy.Text) ? double.NaN : P(_txtFixCy, double.NaN);
+
+        var o = _wf.VisionOptions;
+        _wf.VisionOptions = o with
+        {
+            FixtureCenterPxX = cx,
+            FixtureCenterPxY = cy,
+            FiducialRadiusMm = P(_txtFidR, o.FiducialRadiusMm),
+            FiducialNominalClockDeg = P(_txtFidClock, o.FiducialNominalClockDeg),
+            FiducialDiameterMm = P(_txtFidDia, o.FiducialDiameterMm),
+            FiducialRadiusToleranceMm = P(_txtFidTol, o.FiducialRadiusToleranceMm),
+            FixtureAssumedAngleDeg = P(_txtManualAngle, o.FixtureAssumedAngleDeg)
+        };
+        _log.Info($"策略参数已应用：夹具中心=({cx:F1},{cy:F1})px 名义半径={_wf.VisionOptions.FiducialRadiusMm:F2}mm " +
+                  $"名义角={_wf.VisionOptions.FiducialNominalClockDeg:F1}° 孔径={_wf.VisionOptions.FiducialDiameterMm:F2}mm");
+        RunStrategyCheck();
+    }
+
+    /// <summary>用最近一次成功的整盘定位结果，把工件中心像素填成夹具中心。</summary>
+    private void FillFixtureCenterFromPose()
+    {
+        if (_lastPose is not { Success: true })
+        {
+            MessageBox.Show(this, "还没有成功的定位结果。\n先把标准件装夹到位、用『① 整盘视觉定位』拍一张成功的图，再点这个按钮。",
+                "无法标定夹具中心", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        _txtFixCx.Text = _lastPose.CenterPxX.ToString("F1");
+        _txtFixCy.Text = _lastPose.CenterPxY.ToString("F1");
+        ApplyStrategyParams();
+        _log.Info($"夹具中心已按上次定位结果标定为 ({_lastPose.CenterPxX:F1},{_lastPose.CenterPxY:F1})px。" +
+                  "⚠ 相机/镜头/夹具一动就要重标。");
+    }
+
+    /// <summary>
+    /// 示教名义角：把工件按 12H 摆正、相机对准标记孔，拍一张 → 检测孔心 →
+    /// 反算「该孔在表盘系的名义时钟角」，省得人工从图纸换算。
+    /// </summary>
+    private async Task TeachFiducialAngle()
+    {
+        if (_camera is null) { _log.Warn("相机不可用"); return; }
+        if (!_camera.IsOpen) { _log.Warn("请先点『打开相机』"); return; }
+        var o = _wf.VisionOptions;
+        if (double.IsNaN(o.FixtureCenterPxX) || double.IsNaN(o.FixtureCenterPxY))
+        {
+            MessageBox.Show(this, "请先标定夹具中心像素（X/Y），否则算不出孔相对中心的方向。",
+                "缺少夹具中心", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        try
+        {
+            var frame = await _camera.GrabAsync(3000);
+            ShowFrame(_pbMain, frame, null);
+            var hole = SingleFiducialStrategy.DetectFiducialHole(frame, o, _log);
+            if (hole is null)
+            {
+                _log.Warn("示教失败：没找到标记孔。把相机对准该孔、调好曝光再试。");
+                return;
+            }
+            double dx = hole.Cx - o.FixtureCenterPxX, dy = hole.Cy - o.FixtureCenterPxY;
+            double clock = ((90 - Math.Atan2(-dy, dx) * 180 / Math.PI) % 360 + 360) % 360;
+            _txtFidClock.Text = clock.ToString("F2");
+            ApplyStrategyParams();
+            _log.Info($"示教完成：零位标记孔时钟角 = {clock:F2}°（孔心 {hole.Cx:F1},{hole.Cy:F1}px，圆度 {hole.Circularity:F2}）。" +
+                      "此后每次装夹的转角 = 实测角 − 该名义角。");
+        }
+        catch (Exception ex) { _log.Error("示教异常：" + ex.Message); }
+    }
+
+    /// <summary>把当前策略 ID 与单标记孔参数写回 config.json（保留其它配置字段）。</summary>
+    private void SaveStrategyConfig()
+    {
+        try
+        {
+            ApplyStrategyParams();
+            var o = _wf.VisionOptions;
+            string path = Path.Combine(AppContext.BaseDirectory, "config.json");
+            if (!File.Exists(path)) path = "config.json";
+            var node = JsonNode.Parse(File.ReadAllText(path))?.AsObject()
+                       ?? throw new InvalidDataException("config.json 不是有效 JSON 对象");
+
+            node["PositioningStrategyId"] = o.StrategyId;
+            // NaN 不能写进 JSON（JsonNode 会生成非法数值）→ 未标定时直接删掉这两个键
+            if (double.IsNaN(o.FixtureCenterPxX)) node.Remove("FixtureCenterPxX");
+            else node["FixtureCenterPxX"] = o.FixtureCenterPxX;
+            if (double.IsNaN(o.FixtureCenterPxY)) node.Remove("FixtureCenterPxY");
+            else node["FixtureCenterPxY"] = o.FixtureCenterPxY;
+
+            node["FiducialRadiusMm"] = o.FiducialRadiusMm;
+            node["FiducialDiameterMm"] = o.FiducialDiameterMm;
+            node["FiducialRadiusToleranceMm"] = o.FiducialRadiusToleranceMm;
+            node["FiducialNominalClockDeg"] = o.FiducialNominalClockDeg;
+            node["FixtureAssumedAngleDeg"] = o.FixtureAssumedAngleDeg;
+
+            File.WriteAllText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
+            _log.Info("定位策略配置已保存：" + path);
+            MessageBox.Show(this, "已保存到：\n" + path, "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) { _log.Error("保存策略配置失败：" + ex.Message); }
     }
 
     private void HookLog()
@@ -482,6 +790,7 @@ public sealed class MainForm : Form
             if (_camera is null) { _log.Warn("相机不可用（未探测到 pylon SDK，见 Hummingbird.Devices.Basler/README.md）"); return; }
             if (_camera is SimCameraService sc) sc.FreezePose = _chkFreeze.Checked;
             SyncCoarseAlign();
+            WarnIfStrategyNotReady();
             var (pose, frame) = await _wf.GrabAndLocateAsync();
             _lastPose = pose; _lastFrame = frame;
             ShowFrame(_pbMain, frame, pose);
@@ -509,6 +818,14 @@ public sealed class MainForm : Form
         {
             if (_camera is SimCameraService sc) sc.FreezePose = false;
             SyncCoarseAlign();
+            if (!WarnIfStrategyNotReady())
+            {
+                var ans = MessageBox.Show(this,
+                    "当前定位策略有硬前提未满足（详见『定位策略』页自检结果）。\n" +
+                    "继续加工可能出错误孔位甚至打废工件。\n\n仍要继续吗？",
+                    "定位策略前提不满足", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (ans != DialogResult.Yes) { _log.Warn("已取消：定位策略前提不满足"); return; }
+            }
             _log.Info("==== 一键加工开始 ====");
             var (pose, frame) = await _wf.GrabAndLocateAsync();
             if (!pose.Success) { _log.Error("终止：定位失败"); return; }

@@ -221,8 +221,137 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
     }
 }
 
+Console.WriteLine("== 7) 定位策略模式（客户 2026-11-05 提议：单标记孔 + 夹具锁心）==");
+{
+    var strategies = new IPositioningStrategy[]
+    {
+        new FullFieldDatumHolesStrategy(log),
+        new SingleFiducialStrategy(log),
+        new ManualFixtureStrategy(log)
+    };
+    var sel = new PositioningStrategySelector(strategies);
+
+    // 7.1 最坏现场：什么前提都没有 → 一个策略都不该可用
+    var worst = StrategyContext.WorstCase;
+    var (recWorst, _) = sel.Recommend(worst);
+    Check(sel.All.All(s => !s.Check(worst).CanRun),
+          "策略7.1：现场前提全缺时，三个策略全部拒绝执行（不会误出坐标）");
+    Check(recWorst is null, "策略7.1：前提全缺时不推荐任何策略");
+
+    // 7.2 整盘条件齐备 → 优先推荐现役整盘视觉（精度最高）
+    var fullOk = worst with
+    {
+        FullPartInView = true, DatumHolesVisible = true,
+        CalibrationValid = true, CoarseAlignProvided = true
+    };
+    var (recFull, _) = sel.Recommend(fullOk);
+    Check(recFull?.Id == StrategyIds.FullFieldDatumHoles,
+          "策略7.2：整盘入画+基准孔可见+已标定时，自动推荐『①整盘视觉定位』");
+
+    // 7.3 真机现状（整盘不入画、基准孔不可见）+ 客户新方案前提齐备 → 推荐单标记孔
+    var siteNow = worst with
+    {
+        FixtureCentersPart = true, FiducialAvailable = true,
+        FiducialRotatesWithPart = true, FiducialTaught = true,
+        CalibrationValid = true
+    };
+    var (recFid, _) = sel.Recommend(siteNow);
+    Check(recFid?.Id == StrategyIds.SingleFiducial,
+          "策略7.3：整盘方案失效但夹具能锁心+有标记孔时，自动推荐『②单标记孔』");
+    Check(sel.Find(StrategyIds.FullFieldDatumHoles)!.Check(siteNow).CanRun == false,
+          "策略7.3：整盘方案在当前真机条件下明确不可用（不会被误选）");
+
+    // 7.4 标记孔固定在夹具上（不随工件转）→ 单标记孔必须拒绝，否则转角永远测不出
+    var fixedMark = siteNow with { FiducialRotatesWithPart = false };
+    Check(!sel.Find(StrategyIds.SingleFiducial)!.Check(fixedMark).CanRun,
+          "策略7.4：标记孔不随工件转动时，单标记孔策略拒绝执行（数学上测不出转角）");
+
+    // 7.5 夹具没锁心 → 单标记孔必须拒绝（2 个约束 < 3 个自由度，欠定）
+    var noFixture = siteNow with { FixtureCentersPart = false };
+    Check(!sel.Find(StrategyIds.SingleFiducial)!.Check(noFixture).CanRun,
+          "策略7.5：夹具没锁死中心时，单标记孔策略拒绝执行（单孔数学上欠定）");
+
+    // 7.6 单标记孔角度计算：合成「暗底 + 亮圆孔」，孔相对夹具中心顺时针转 30°
+    const double mmPerPx = 0.1;        // 测试用放大值，只为让 145px ↔ 14.5mm 对得上
+    const double fidR = 14.5;
+    const double cx0 = 200, cy0 = 200;
+    double rPx = fidR / mmPerPx;       // 145px
+    double a = 30 * Math.PI / 180;     // 顺时针 30°
+    double hx = cx0 + rPx * Math.Sin(a), hy = cy0 - rPx * Math.Cos(a);
+    var opt = new VisionOptions
+    {
+        FixtureCenterPxX = cx0, FixtureCenterPxY = cy0,
+        PixelSizeMm = mmPerPx, FiducialRadiusMm = fidR,
+        FiducialDiameterMm = 0.8, FiducialRadiusToleranceMm = 1.5,
+        FiducialNominalClockDeg = 0, StrategyId = StrategyIds.SingleFiducial
+    };
+    var frame30 = MakeFiducialFrame(400, 400, hx, hy, 8);
+    var pose30 = await new SingleFiducialStrategy(log).LocateAsync(frame30, opt);
+    Check(pose30.Success, "策略7.6：合成单孔图成功定位");
+    Check(pose30.Success && AngleDiff(pose30.AngleOffsetDeg, 30) < 1.0,
+          $"策略7.6：装卡转角算对（实际 {pose30.AngleOffsetDeg:F2}°，期望 30°）");
+    Check(pose30.Success && Math.Abs(pose30.CenterPxX - cx0) < 0.01 && Math.Abs(pose30.CenterPxY - cy0) < 0.01,
+          "策略7.6：中心取夹具锁定值（不需要出现在画面里）");
+
+    // 7.7 转到 -75°（跨象限）也要算对
+    double a2 = -75 * Math.PI / 180;
+    double hx2 = cx0 + rPx * Math.Sin(a2), hy2 = cy0 - rPx * Math.Cos(a2);
+    var poseNeg = await new SingleFiducialStrategy(log).LocateAsync(
+        MakeFiducialFrame(400, 400, hx2, hy2, 8), opt);
+    Check(poseNeg.Success && AngleDiff(poseNeg.AngleOffsetDeg, -75) < 1.0,
+          $"策略7.7：负角度/跨象限也算对（实际 {poseNeg.AngleOffsetDeg:F2}°，期望 -75°）");
+
+    // 7.8 孔心距离超差（工件没装到位）→ 必须拒绝，避免打废工件
+    var optBad = opt with { FiducialRadiusMm = 30.0 };
+    var poseBad = await new SingleFiducialStrategy(log).LocateAsync(frame30, optBad);
+    Check(!poseBad.Success && poseBad.Detail.Contains("偏差"),
+          "策略7.8：孔心到夹具中心距离超差时拒绝出坐标（防打废工件）");
+
+    // 7.9 夹具中心未标定 → 拒绝
+    var poseNoCal = await new SingleFiducialStrategy(log).LocateAsync(
+        frame30, opt with { FixtureCenterPxX = double.NaN });
+    Check(!poseNoCal.Success, "策略7.9：夹具中心像素未标定时拒绝执行");
+
+    // 7.10 全白过曝 → 找不到孔，明确失败
+    var poseWhite = await new SingleFiducialStrategy(log).LocateAsync(
+        MakeSolidFrame(400, 400, 255), opt);
+    Check(!poseWhite.Success, "策略7.10：全白过曝画面明确失败（不瞎猜孔位）");
+
+    // 7.11 端到端：运行时切换策略 → ComputeTargets 仍算出 18 个孔，且按转角旋转
+    var wfSwitch = new AutoRunWorkflow(log, cam, strategies[0], cnc, laser)
+    {
+        Template = template,
+        VisionOptions = opt,
+        Calibration = new CalibrationResult(true, 0, mmPerPx, 0, 0, 0, mmPerPx, 0)
+    };
+    Check(ReferenceEquals(wfSwitch.Vision, strategies[0]),
+          "策略7.11：工作流初始注入整盘策略");
+    wfSwitch.Vision = strategies[1];      // 运行时切换，不用重建 workflow
+    Check(ReferenceEquals(wfSwitch.Vision, strategies[1]),
+          "策略7.11：运行时可切换到单标记孔策略（流程编排零改动）");
+    var targets = wfSwitch.ComputeTargets(pose30);
+    Check(targets.Count == 18, $"策略7.11：单标记孔位姿算出全部 18 个孔（实际 {targets.Count}）");
+    // ComputeTargets：中心 = Calibration.Apply(夹具中心像素) = (20,20)mm，
+    // 模板孔偏移是 mm 直接旋转相加（不再乘 mm/px）。角度用 pose 实测值，
+    // 这样本项验证的是"坐标链按 pose 转角正确旋转"，角度精度由 7.6 单独验证。
+    var h1 = template.Holes[0];
+    double t1 = pose30.AngleOffsetDeg * Math.PI / 180;
+    double c1 = Math.Cos(t1), s1 = Math.Sin(t1);
+    double expX = 20 + (h1.X * c1 + h1.Y * s1);
+    double expY = 20 + (-h1.X * s1 + h1.Y * c1);
+    Check(Math.Abs(targets[0].MachineX - expX) < 0.02 && Math.Abs(targets[0].MachineY - expY) < 0.02,
+          $"策略7.11：第 1 孔坐标按装卡转角正确旋转（得到 {targets[0].MachineX:F3},{targets[0].MachineY:F3}，" +
+          $"期望 {expX:F3},{expY:F3}）");
+
+    // 7.12 纯机械对刀兜底
+    var poseManual = await new ManualFixtureStrategy(log).LocateAsync(frame30,
+        opt with { FixtureAssumedAngleDeg = 12.0 });
+    Check(poseManual.Success && Math.Abs(poseManual.AngleOffsetDeg - 12) < 0.01 && poseManual.Confidence < 0.5,
+          "策略7.12：纯机械对刀按人工转角输出，且置信度故意压低以提醒是兜底方案");
+}
+
 /// <summary>
-/// 读取 8 位灰度 BMP（Windows 拍摄/保存的常见格式），不依赖 OpenCV 的文件 IO API。
+/// 读取 8 位灰度 BPM（Windows 拍摄/保存的常见格式），不依赖 OpenCV 的文件 IO API。
 /// 支持 BITMAPINFOHEADER（40 字节）；行数据按 4 字节对齐，行序自下而上。
 /// </summary>
 static CameraFrame ReadGrayBmp(string path)
@@ -262,6 +391,26 @@ static CameraFrame MakeFrameWithOuterRing(int w, int h, double ringRadiusPx)
     using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(30));
     // 外环画成较宽的亮带（真实白环在图上是几十像素宽的弧）
     OpenCvSharp.Cv2.Circle(mat, new OpenCvSharp.Point(w / 2, h / 2), (int)ringRadiusPx, OpenCvSharp.Scalar.All(235), 40);
+    var buf = new byte[w * h];
+    System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
+    return new CameraFrame(buf, w, h, DateTime.Now);
+}
+
+/// <summary>合成一张「暗底 + 一个亮圆孔」的灰度图，用于验证单标记孔策略的角度计算。</summary>
+static CameraFrame MakeFiducialFrame(int w, int h, double hx, double hy, int radius)
+{
+    using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(30));
+    OpenCvSharp.Cv2.Circle(mat, new OpenCvSharp.Point((int)Math.Round(hx), (int)Math.Round(hy)),
+        radius, OpenCvSharp.Scalar.All(235), -1);
+    var buf = new byte[w * h];
+    System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
+    return new CameraFrame(buf, w, h, DateTime.Now);
+}
+
+/// <summary>合成一张纯色灰度图（全黑/全白过曝测试用）。</summary>
+static CameraFrame MakeSolidFrame(int w, int h, byte gray)
+{
+    using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(gray));
     var buf = new byte[w * h];
     System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
     return new CameraFrame(buf, w, h, DateTime.Now);

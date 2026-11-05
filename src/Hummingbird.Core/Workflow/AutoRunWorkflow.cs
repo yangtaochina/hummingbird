@@ -15,9 +15,15 @@ public sealed class AutoRunWorkflow
 {
     private readonly IAppLogger _log;
     private readonly ICameraService? _camera;
-    private readonly IVisionService _vision;
     private readonly ICncService _cnc;
     private readonly ILaserService _laser;
+
+    /// <summary>
+    /// 当前定位策略（可运行时切换）。策略模式的关键接缝：
+    /// 本类只依赖 IVisionService 抽象，界面换 Strategy 实例即可切换整套定位算法，
+    /// 不用改流程编排、也不用重建 AutoRunWorkflow。
+    /// </summary>
+    public IVisionService Vision { get; set; }
 
     /// <summary>九点标定结果（像素→机床坐标）。为空或无效时 ComputeTargets 会拒绝执行。</summary>
     public CalibrationResult? Calibration { get; set; }
@@ -39,7 +45,7 @@ public sealed class AutoRunWorkflow
     public AutoRunWorkflow(IAppLogger log, ICameraService? camera, IVisionService vision,
         ICncService cnc, ILaserService laser)
     {
-        _log = log; _camera = camera; _vision = vision; _cnc = cnc; _laser = laser;
+        _log = log; _camera = camera; Vision = vision; _cnc = cnc; _laser = laser;
     }
 
     /// <summary>拍照并定位（顺带返回帧，供 UI 显示）。</summary>
@@ -52,7 +58,7 @@ public sealed class AutoRunWorkflow
         var frame = await _camera.GrabAsync(5000);
 
         _log.Info("【步骤2】视觉定位（找中心 + 找基准小圆 12H）...");
-        var pose = await _vision.LocateAsync(frame, VisionOptions, ct);
+        var pose = await Vision.LocateAsync(frame, VisionOptions, ct);
         if (pose.Success)
             _log.Info($"【步骤2】定位成功：中心=({pose.CenterPxX:F1},{pose.CenterPxY:F1})px 半径={pose.OuterRadiusPx:F0}px 转角={pose.AngleOffsetDeg:F2}° 置信度={pose.Confidence:F2}");
         else

@@ -108,6 +108,41 @@ public sealed record VisionOptions
     /// <summary>像素尺寸（mm/px），仅用于预期尺寸校验</summary>
     public double PixelSizeMm { get; init; } = 0.02;
 
+    // ================================================================
+    // 单标记孔策略（StrategyIds.SingleFiducial）专用参数
+    // 2026-11-05 客户提议：相机视野只看一个标记孔，中心由夹具锁死，
+    // 用「孔心相对夹具中心的方位角」求装卡转角，其余 18 孔由模板几何算。
+    // ================================================================
+
+    /// <summary>当前定位策略 ID（见 StrategyIds）。仅界面/配置用，策略实现不读它。</summary>
+    public string StrategyId { get; init; } = StrategyIds.FullFieldDatumHoles;
+
+    /// <summary>
+    /// 夹具锁定的工件中心在**当前相机像素坐标系**中的位置（px）。
+    /// 现场一次标定得到：把标准件装夹到位 → 拍一张整盘图或用机床坐标反推 → 记下中心像素。
+    /// ⚠ 相机/镜头/夹具任一改动都要重标这个值。NaN = 未标定，策略会拒绝执行。
+    /// </summary>
+    public double FixtureCenterPxX { get; init; } = double.NaN;
+    public double FixtureCenterPxY { get; init; } = double.NaN;
+
+    /// <summary>标记孔相对工件中心的**名义半径**（mm）。用于孔心到中心的距离校验。默认 14.45（图纸双环孔半径）。</summary>
+    public double FiducialRadiusMm { get; init; } = 14.45;
+
+    /// <summary>标记孔的名义直径（mm），用于孔检测的候选尺寸过滤。默认 0.8（R40 倒角口 Ø0.8）。</summary>
+    public double FiducialDiameterMm { get; init; } = 0.8;
+
+    /// <summary>孔心到夹具中心距离的允许偏差（mm），超过即认为装夹/标定有误，拒绝出坐标。</summary>
+    public double FiducialRadiusToleranceMm { get; init; } = 1.5;
+
+    /// <summary>
+    /// 标记孔在**表盘系**的名义时钟角（度，12H=0，顺时针）。
+    /// 实测方位角减去它 = 装卡转角。若客户把标记放在 12H 正上方，填 0。
+    /// </summary>
+    public double FiducialNominalClockDeg { get; init; } = 0.0;
+
+    /// <summary>纯机械对刀策略用：夹具保证的装卡转角（度，顺时针）。默认 0（工件按 12H 摆正）。</summary>
+    public double FixtureAssumedAngleDeg { get; init; } = 0.0;
+
     /// <summary>派生一份新选项，只改粗对齐角（其余字段保留）。供 UI 实时调整用。</summary>
     public VisionOptions WithCoarseAlign(double deg) => this with { CoarseAlignDeg = deg };
 }
