@@ -143,6 +143,20 @@ public sealed record VisionOptions
     /// <summary>纯机械对刀策略用：夹具保证的装卡转角（度，顺时针）。默认 0（工件按 12H 摆正）。</summary>
     public double FixtureAssumedAngleDeg { get; init; } = 0.0;
 
+    // ================================================================
+    // 多孔自主定位策略（StrategyIds.TwoFiducials）专用参数
+    // 2026-11-05 现场照片复核：托板只是随手摆放，既无定位销也无角向基准，
+    // 单孔方案「夹具锁心」的前提不成立 → 改为同时看 3 个孔（第 3 孔消镜像二义性），
+    // 中心/转角/缩放全由图像实时解出。
+    // ================================================================
+
+    /// <summary>
+    /// 多孔反算出的 mm/px 与 PixelSizeMm 配置值允许的相对偏差（0.20 = ±20%）。
+    /// 超差说明：①缩小视野后 mm/px 没重测 ②九点标定失效 ③配对配错（选到了不同角间隔的孔对）。
+    /// 超差直接拒绝出坐标，避免整盘打偏。
+    /// </summary>
+    public double TwoHoleScaleTolerancePct { get; init; } = 0.20;
+
     /// <summary>派生一份新选项，只改粗对齐角（其余字段保留）。供 UI 实时调整用。</summary>
     public VisionOptions WithCoarseAlign(double deg) => this with { CoarseAlignDeg = deg };
 }

@@ -19,13 +19,21 @@ namespace Hummingbird.Vision;
 /// 数学上的关键约束（务必看懂，否则会用错）：
 ///   平面刚体变换有 3 个自由度：中心 X、中心 Y、转角 θ。
 ///   一个孔的孔心只提供 2 个约束（像素 x,y）→ 欠定，解不出。
-///   所以必须由**夹具锁死中心**（2 个自由度交给机械），视觉只求转角 θ（1 个自由度）。
-///   此时：「夹具中心 → 孔心」的方向角 − 标记孔名义时钟角 = 装卡转角。
+///   策略②必须用**夹具锁死中心**（2 个自由度交给机械），视觉只求转角 θ。
 ///   ⚠ 若标记孔不随工件转（固定在夹具上），则转角永远测不出，Check() 会直接拒绝。
 ///
-/// 三个策略：
+/// ⚠ 2026-11-05 现场照片复核结论（推翻了策略②的前提）：
+///   客户现有「夹具」只是三根金属条拼出的托板，随手摆在回转台上靠一根挡块限位，
+///   既没有定位销锁中心、也没有角向定位 —— 策略②在现场**根本用不了**。
+///   但照片同时证明：白光下工件自带的那圈双环小孔清晰可见（红光下才看不见）。
+///   于是新增策略④：同时看 **3 个**相邻基准孔 → 中心、转角、mm/px 全部由图像实时解出，
+///   **夹具什么都不用锁**。为什么是 3 个不是 2 个：孔组有 180° 旋转对称，
+///   只看两个孔时弦两侧各有一个自洽圆心（相距 27.9mm），第三孔才能消掉这个镜像。
+///
+/// 四个策略（按工程优先级）：
 ///   ① FullFieldDatumHolesStrategy：现役整盘视觉（包装 DialPositioning，零改动复用）
-///   ② SingleFiducialStrategy：单标记孔 + 夹具锁心（客户新方案）
+///   ④ TwoFiducialStrategy：多孔自主定位（推荐 3 孔），不需夹具（当前现场最推荐）
+///   ② SingleFiducialStrategy：单标记孔 + 夹具锁心（夹具改造后才可用）
 ///   ③ ManualFixtureStrategy：纯机械对刀兜底（不用视觉，转角靠人工）
 ///
 /// 共同点：都实现 IPositioningStrategy（继承 IVisionService），
@@ -218,11 +226,26 @@ public sealed class SingleFiducialStrategy : IPositioningStrategy
     public sealed record HoleResult(double Cx, double Cy, double DiameterPx, double Circularity, double Quality);
 
     /// <summary>
-    /// 在（可能很小的）视野里找那个标记孔。
-    /// 思路：Otsu 二值化 → 轮廓 → 按「圆度 + 尺寸 + 面积」打分选最佳。
-    /// 同时兼容**亮孔**（孔反光成白点）和**暗孔**（孔是黑洞）：两种极性都试一遍。
+    /// 单孔版：在视野里找**质量最好的那个**标记孔（策略②用）。
+    /// 若画面里出现多个圆会告警 —— 策略②的视野本应只框住一个孔。
     /// </summary>
     public static HoleResult? DetectFiducialHole(CameraFrame frame, VisionOptions opt, IAppLogger? log = null)
+    {
+        var all = DetectFiducialHoles(frame, opt, log);
+        if (all.Count == 0) return null;
+        if (all.Count > 3)
+            log?.Warn($"[孔检测] 画面检出 {all.Count} 个圆形候选，已取质量最高者。" +
+                      "策略②建议把视野缩小到只框住一个孔；策略④（多孔）推荐同时框住 3 个相邻孔。");
+        return all[0];
+    }
+
+    /// <summary>
+    /// 多孔版：返回视野里**全部**圆孔候选（按质量降序，已按中心距离去重）。
+    /// 思路：Otsu 二值化 → 轮廓 → 按「圆度 + 尺寸 + 面积」打分。
+    /// 同时兼容**亮孔**（孔反光成白点）和**暗孔**（孔是黑洞）：两种极性都试一遍。
+    /// 策略④（多孔自主定位）靠它拿到 3 个孔心，从而解出中心与转角并消掉镜像。
+    /// </summary>
+    public static List<HoleResult> DetectFiducialHoles(CameraFrame frame, VisionOptions opt, IAppLogger? log = null)
     {
         using var src = new Mat(frame.Height, frame.Width, MatType.CV_8UC1);
         Marshal.Copy(frame.Gray, 0, src.Data, frame.Gray.Length);
@@ -234,13 +257,13 @@ public sealed class SingleFiducialStrategy : IPositioningStrategy
         double meanGray = Cv2.Mean(blur).Val0;
         if (maxGray < 20)
         {
-            log?.Warn("[策略②] 画面全黑（最亮仅 " + maxGray.ToString("F0") + "/255），先解决照明/曝光");
-            return null;
+            log?.Warn("[孔检测] 画面全黑（最亮仅 " + maxGray.ToString("F0") + "/255），先解决照明/曝光");
+            return new List<HoleResult>();
         }
         if (meanGray > 245 && maxGray - minGray < 12)
         {
-            log?.Warn("[策略②] 画面整体过曝（全白无结构），把曝光降到 5000~8000μs");
-            return null;
+            log?.Warn("[孔检测] 画面整体过曝（全白无结构），把曝光降到 5000~8000μs");
+            return new List<HoleResult>();
         }
 
         // 期望孔径（像素）：名义直径 / mm每像素。放宽到 0.35~3 倍，
@@ -294,17 +317,323 @@ public sealed class SingleFiducialStrategy : IPositioningStrategy
 
         if (candidates.Count == 0)
         {
-            log?.Warn($"[策略②] 二值化后没有符合圆形+尺寸的轮廓（期望孔径 {expectDiaPx:F1}px，允许 {minDia:F1}~{maxDia:F1}px）");
-            return null;
+            log?.Warn($"[孔检测] 二值化后没有符合圆形+尺寸的轮廓（期望孔径 {expectDiaPx:F1}px，允许 {minDia:F1}~{maxDia:F1}px）");
+            return new List<HoleResult>();
         }
 
-        // 取质量最高的；若画面里有多个圆，明确告警（视野应只框住一个孔）
-        var best = candidates.OrderByDescending(p => p.Quality).First();
-        if (candidates.Count > 3)
-            log?.Warn($"[策略②] 画面检出 {candidates.Count} 个圆形候选，已取质量最高者。" +
-                      "建议把视野再缩小、只框住一个标记孔，避免误检。");
-        return best;
+        // 同一个实体孔在两种极性下可能被检出两次 → 按中心距离合并，保留质量高者。
+        // 不做这步的话，策略④会把「一个孔的正反两种二值化结果」当成两个孔，解出荒唐的中心。
+        double mergePx = Math.Max(4, expectDiaPx * 0.6);
+        var merged = new List<HoleResult>();
+        foreach (var c in candidates.OrderByDescending(p => p.Quality))
+        {
+            bool dup = false;
+            foreach (var m in merged)
+            {
+                double dd = Math.Sqrt((m.Cx - c.Cx) * (m.Cx - c.Cx) + (m.Cy - c.Cy) * (m.Cy - c.Cy));
+                if (dd < mergePx) { dup = true; break; }
+            }
+            if (!dup) merged.Add(c);
+        }
+        return merged;   // 已按质量降序
     }
+}
+
+// ==================================================================
+// ④ 多孔自主定位（2026-11-05 现场照片复核后新增 —— 当前最推荐）
+// ==================================================================
+
+/// <summary>
+/// 多孔自主定位：视野同时看 3 个工件自带的双环基准孔，
+/// **中心、转角、mm/px 全部由图像实时解出，夹具不需要锁任何东西**。
+///
+/// 为什么需要它：2026-11-05 客户回传的现场照片显示，现有「夹具」只是三根金属条拼出的
+/// 托板，随手摆在回转台上靠一根挡块限位 —— 既没有定位销锁中心，也没有角向基准。
+/// 于是策略②「夹具锁死中心」的硬前提在现场不成立，必须有不依赖机械精度的退路。
+///
+/// 数学（关键）：
+///   两个孔心 = 4 个约束 &gt; 刚体变换 3 个自由度 → 中心(X,Y) 与转角 θ 全部可解，
+///   且两孔像素弦长 : 图纸名义弦长 还顺带把 mm/px 反算出来（可用来校验标定是否失效）。
+///   ① 名义角 αi→αj 顺时针差 Δ，名义弦长 d_mm = 2R·sin(Δ/2)
+///   ② 实测像素弦长 d_px → mm/px = d_mm / d_px
+///   ③ 圆心在弦的中垂线上，离弦中点 h = R·cos(Δ/2)；两个镜像候选里，
+///      只有一个满足「B 的时钟角 − A 的时钟角 ≡ +Δ」，据此消掉镜像
+///   ④ θ = ClockAngle(A − 圆心) − αi
+///   ⑤ 孔组有 90° 旋转对称 → θ / θ+90 / θ+180 / θ+270 四个等效解，
+///      用人工粗对齐角 CoarseAlignDeg 挑最接近的那个（必填，否则拒绝出坐标）
+///
+/// ⑥ **镜像二义性（务必看懂）**：8 个基准孔的分布有 180° 旋转对称，
+///   只看两个孔时，弦的两侧各有一个自洽圆心（相距 2R·cos(Δ/2) ≈ 27.9mm），
+///   两者都能解释观察到的两个孔，选错会把 18 个孔整体打偏。
+///   破解：让**第三个**相邻的基准孔一起入画 —— 它不在弦上，只有真圆心能让它
+///   同时落在半径圈且方位角吻合模板。只有 2 个孔时，必须给一个粗略中心提示，否则拒绝。
+///
+/// 视野需求：3 个相邻孔（30/60/120）的包围盒约 **6 × 20mm**，现有视野 28.1mm 完全够，
+/// 不用改镜头、不用改夹具。工件中心此时在画面外（离孔 14.45mm），但 ComputeTargets
+/// 只用中心像素的**数值**经九点标定换算，不要求它出现在图里 —— 18 孔坐标照样算得出。
+/// </summary>
+public sealed class TwoFiducialStrategy : IPositioningStrategy
+{
+    private readonly IAppLogger? _log;
+
+    public TwoFiducialStrategy(IAppLogger? log = null) => _log = log;
+
+    public string Id => StrategyIds.TwoFiducials;
+    public string DisplayName => "④ 多孔自主定位（不需夹具，推荐 3 孔）";
+    public string Description =>
+        "相机同时看 3 个工件自带的双环基准孔；由孔间距反算 mm/px、由弦中垂线解出工件中心、由孔心方位角求转角，" +
+        "第三个孔用来消掉孔组 180° 对称造成的镜像圆心二义性。" +
+        "中心/转角/缩放全由图像实时解出，夹具随便放、工件随手摆都不影响 —— 适合现场现有托板。";
+
+    public IReadOnlyList<string> Prerequisites => new[]
+    {
+        "【推荐】视野同时看清 3 个相邻基准孔（约需 6×20mm，现有 28.1mm 够）—— 第三孔用于消镜像二义性",
+        "若只能看到 2 个孔：需填一个粗略的工件中心像素（±10mm 内即可，仅用于选镜像）",
+        "孔必须随工件转动（直接用工件的 8 个双环孔，别用夹具上的孔）",
+        "已完成像素→机床九点标定（缩小视野后必须重做）",
+        "已填人工粗对齐角（孔组 90° 对称，不填会拒绝出坐标，防打废工件）",
+        "⚠ 不需要定位销、不需要止口、不需要精确示教夹具中心 —— 本策略不依赖夹具"
+    };
+
+    public StrategyReadiness Check(StrategyContext ctx)
+    {
+        var missing = new List<string>();
+        if (!ctx.TwoHolesInView) missing.Add("视野还没同时看清 3 个相邻基准孔（换白光后先拍一张确认）");
+        if (!ctx.FiducialRotatesWithPart) missing.Add("孔不随工件转动（用工件自带的双环孔就没这问题）");
+        if (!ctx.CalibrationValid) missing.Add("九点标定未完成（孔位无法换算到机床系）");
+        if (!ctx.CoarseAlignProvided) missing.Add("未填人工粗对齐角（90° 对称无法消歧）");
+
+        if (missing.Count > 0)
+            return StrategyReadiness.Block("缺 " + missing.Count + " 项：" + string.Join("；", missing) + "。");
+
+        return StrategyReadiness.Ok(
+            "前提齐备。**本策略完全不依赖夹具**：中心、转角、mm/px 都从当前这一帧图像解出，" +
+            (ctx.FixtureCentersPart ? "现场若有定位销也无妨（仅作冗余校验）。" : "现场没有定位销/止口也照样能打。") +
+            " 注意粗对齐角要准到 ±15° 以内，否则 90° 对称消歧会选错。");
+    }
+
+    private sealed record PairSolution(
+        double Cx, double Cy, double MmPerPx, double Theta,
+        double ScaleErr, double CoarseErr, double Quality,
+        double ChordMm, double DeltaDeg, double AlphaI,
+        int HoleA, int HoleB, int Consistent, int ExtraOnRing);
+
+    public async Task<PartPose> LocateAsync(CameraFrame frame, VisionOptions opt, CancellationToken ct = default)
+    {
+        await Task.Yield();
+
+        // ---- 前置校验 ----
+        if (opt.DatumHoleRadiusMm <= 0)
+            return Fail("模板未给基准孔名义半径 DatumHoleRadiusMm（应为 14.45mm）。");
+        if (opt.DatumHoleAngles.Count < 2)
+            return Fail("模板未给基准孔角度表 DatumHoleAngles（应为 30/60/120/150/210/240/300/330）。");
+        if (opt.PixelSizeMm <= 0)
+            return Fail("未设置像素尺寸 VisionPixelSizeMm，无法做弦长尺度自检。");
+        if (double.IsNaN(opt.CoarseAlignDeg))
+            return Fail("未填人工粗对齐角 CoarseAlignDeg。孔组有 90° 旋转对称，" +
+                        "不消歧有 3/4 概率打错方位，已拒绝出坐标。请在界面填一个 ±45° 内的估计角。");
+
+        var holes = SingleFiducialStrategy.DetectFiducialHoles(frame, opt, _log);
+        if (holes.Count < 2)
+            return Fail($"画面只检出 {holes.Count} 个孔，多孔定位至少需要 2 个孔（推荐 3 个）。检查：" +
+                        "①换白光/手机手电照明（红光下这些孔不反光，真机图已证实看不见）" +
+                        "②曝光 5000~8000μs、增益 0 ③视野是否同时框住相邻两个孔 " +
+                        "④FiducialDiameterMm 与实际孔径是否差太多");
+        if (holes.Count > 4)
+            _log?.Warn($"[策略④] 画面检出 {holes.Count} 个圆形候选（可能混入了划痕/污点），" +
+                       "已只用质量最高的前 6 个做配对，并用第三孔一致性做校验。");
+
+        double R = opt.DatumHoleRadiusMm;
+        double pxSize = opt.PixelSizeMm;
+        double tol = Math.Max(0.01, opt.TwoHoleScaleTolerancePct);
+        double coarse = opt.CoarseAlignDeg;
+        var angles = opt.DatumHoleAngles.Where(a => !double.IsNaN(a)).Distinct().ToArray();
+        var sols = new List<PairSolution>();
+
+        // 枚举：孔的有序对 (A→B) × 名义角的有序对 (αi→αj)
+        int n = Math.Min(holes.Count, 6);
+        for (int hi = 0; hi < n; hi++)
+        for (int hj = 0; hj < n; hj++)
+        {
+            if (hi == hj) continue;
+            var A = holes[hi]; var B = holes[hj];
+            double dx = B.Cx - A.Cx, dy = B.Cy - A.Cy;
+            double dPx = Math.Sqrt(dx * dx + dy * dy);
+            if (dPx < 10) continue;
+
+            double ux = dx / dPx, uy = dy / dPx;
+            double nx = -uy, ny = ux;                    // 弦的法向
+            double mx = (A.Cx + B.Cx) / 2, my = (A.Cy + B.Cy) / 2;
+
+            for (int ai = 0; ai < angles.Length; ai++)
+            for (int aj = 0; aj < angles.Length; aj++)
+            {
+                if (ai == aj) continue;
+                double delta = CwDiff(angles[ai], angles[aj]);   // 顺时针角差 0~360
+                if (delta <= 1 || delta > 120) continue;         // 小视野只容得下相邻近的孔对
+
+                double half = delta * Math.PI / 360.0;           // Δ/2（弧度）
+                double dMm = 2 * R * Math.Sin(half);             // 名义弦长
+                double mmpp = dMm / dPx;                         // 反算 mm/px
+                double scaleErr = Math.Abs(mmpp / pxSize - 1);
+                if (scaleErr > tol) continue;                    // 尺度对不上 → 配对错误或标定失效
+
+                double hPx = R * Math.Cos(half) / mmpp;          // 圆心离弦中点的距离
+
+                // 中垂线上有两个镜像圆心；只有满足「B−A 的时钟差 ≡ +Δ」的那个是对的
+                foreach (int sign in new[] { 1, -1 })
+                {
+                    double cx = mx + sign * hPx * nx;
+                    double cy = my + sign * hPx * ny;
+                    double ca = ClockAngle(A.Cx - cx, A.Cy - cy);
+                    double cb = ClockAngle(B.Cx - cx, B.Cy - cy);
+                    if (Math.Abs(CwDiff(ca, cb) - delta) > 2.0) continue;
+
+                    double theta = Norm180(ca - angles[ai]);
+
+                    // 90° 旋转对称：4 个等效解，用人工粗对齐角挑最接近的
+                    double bestTheta = theta, bestDiff = double.MaxValue;
+                    for (int k = 0; k < 4; k++)
+                    {
+                        double t = theta + 90 * k;
+                        double dd = Math.Abs(Norm180(t - coarse));
+                        if (dd < bestDiff) { bestDiff = dd; bestTheta = t; }
+                    }
+
+                    // 第三孔一致性：这是消掉「镜像圆心」的关键判据。
+                    // 8 个基准孔的分布有 180° 旋转对称，只看两个孔时，弦两侧各有一个
+                    // 自洽的圆心（相距 2R·cos(Δ/2) ≈ 27.9mm），会把 18 孔整体打偏。
+                    // 第三个孔不在弦上，只有真圆心能让它同时落在半径圈且角度吻合。
+                    var (extra, ok) = CountConsistentExtraHoles(
+                        holes, hi, hj, cx, cy, mmpp, R, bestTheta, angles);
+
+                    sols.Add(new PairSolution(
+                        cx, cy, mmpp, bestTheta, scaleErr, bestDiff,
+                        (A.Quality + B.Quality) / 2, dMm, delta, angles[ai], hi, hj, ok, extra));
+                }
+            }
+        }
+
+        if (sols.Count == 0)
+            return Fail("孔与模板角度表配不上（没有任何组合能同时满足弦长尺度和方位约束）。" +
+                        "常见原因：①缩小视野后 VisionPixelSizeMm 没重测（当前 " + pxSize.ToString("F5") +
+                        " mm/px）②检出的不是孔而是反光/污点 ③画面里的孔不是同一半径圈上的基准孔 " +
+                        "④DatumHoleRadiusMm 填错。⚠ 已拒绝输出坐标。");
+
+        // ---- 消歧：≥3 孔用第三孔自动消镜像；恰好 2 孔必须给一个粗略中心提示 ----
+        bool hasHint = !double.IsNaN(opt.FixtureCenterPxX) && !double.IsNaN(opt.FixtureCenterPxY);
+        List<PairSolution> usable;
+
+        if (holes.Count >= 3)
+        {
+            usable = sols.Where(s => s.Consistent > 0).ToList();
+            if (usable.Count == 0)
+                return Fail("画面里有 3 个以上圆，但没有任何一组解能让第三个孔同时满足" +
+                            "「落在半径圈上」和「方位角吻合模板」。可能混入了划痕/污点，或配对被反光干扰。" +
+                            "⚠ 已拒绝输出坐标，请换白光重拍或缩小视野只框住相邻的 3 个基准孔。");
+        }
+        else                                     // 恰好 2 孔
+        {
+            if (!hasHint)
+                return Fail("画面只有 2 个孔：**存在镜像圆心二义性**。8 个基准孔的分布有 180° 旋转对称，" +
+                            "两孔弦的两侧各有一个自洽圆心（相距约 27.9mm），选错会把 18 个孔整体打偏。\n" +
+                            "两条路任选其一：\n" +
+                            "  ①【推荐】把视野稍微放大，让第 3 个相邻基准孔一起入画 —— " +
+                            "3 孔约需 6×20mm 视野，现有 28.1mm 完全够，不用改镜头；\n" +
+                            "  ②在界面填一个**粗略**的工件中心像素 FixtureCenterPxX/Y" +
+                            "（误差 ±10mm 内即可，只用来选镜像，不参与最终坐标）。\n" +
+                            "⚠ 已拒绝输出坐标，避免打废工件。");
+            usable = sols;
+        }
+
+        double diag = Math.Sqrt((double)frame.Width * frame.Width + (double)frame.Height * frame.Height);
+
+        // 综合打分：第三孔一致性（权重最大）+ 尺度 + 粗对齐 + 成像质量 + 粗略中心提示
+        var best = usable.OrderBy(s =>
+            s.ScaleErr * 3
+            + s.CoarseErr / 180.0
+            + (1 - s.Quality) * 0.2
+            - s.Consistent * 2
+            + (hasHint
+                ? Math.Sqrt(Math.Pow(s.Cx - opt.FixtureCenterPxX, 2) +
+                            Math.Pow(s.Cy - opt.FixtureCenterPxY, 2)) / diag * 2
+                : 0)).First();
+
+        double ringPx = R / best.MmPerPx;
+        int consistent = best.Consistent, extraOnRing = best.ExtraOnRing;
+
+        double confidence = Math.Clamp(
+            best.Quality * (1 - Math.Min(1, best.ScaleErr / tol) * 0.3) * (consistent > 0 ? 1.0 : 0.85), 0, 1);
+
+        string detail =
+            $"多孔自主定位：孔A=({holes[best.HoleA].Cx:F1},{holes[best.HoleA].Cy:F1})px " +
+            $"孔B=({holes[best.HoleB].Cx:F1},{holes[best.HoleB].Cy:F1})px | " +
+            $"配对名义角 {best.AlphaI:F0}°→{best.AlphaI + best.DeltaDeg:F0}°（Δ={best.DeltaDeg:F0}°）| " +
+            $"像素弦长 {Math.Sqrt(Math.Pow(holes[best.HoleB].Cx - holes[best.HoleA].Cx, 2) + Math.Pow(holes[best.HoleB].Cy - holes[best.HoleA].Cy, 2)):F1}px " +
+            $"↔ 名义 {best.ChordMm:F2}mm → 反算 mm/px={best.MmPerPx:F6}" +
+            $"（配置 {pxSize:F6}，偏差 {best.ScaleErr * 100:F1}%）| " +
+            $"解出工件中心=({best.Cx:F1},{best.Cy:F1})px（可在画面外）| " +
+            $"装卡转角={best.Theta:F2}°（粗对齐 {coarse:F1}°，偏差 {best.CoarseErr:F1}°）| " +
+            $"第三孔校验：半径圈上 {extraOnRing} 个、角度吻合 {consistent} 个" +
+            (consistent > 0 ? " ✅" : "（视野只有两孔时无此项）") +
+            " | 中心/转角/缩放均由本帧图像解出，不依赖夹具";
+
+        _log?.Info("[策略④] " + detail);
+        if (best.CoarseErr > 20)
+            _log?.Warn($"[策略④] 选中解与粗对齐角差 {best.CoarseErr:F1}° > 20°。" +
+                       "请复核人工粗对齐角是否填错，否则可能选到 90° 等效解打错方位。");
+        if (extraOnRing > 0 && consistent == 0)
+            _log?.Warn("[策略④] 画面里还有圆落在基准孔半径圈上，但角度对不上模板 —— 可能是污点或配对错误，请人工看一眼图。");
+
+        return new PartPose(
+            Success: true,
+            CenterPxX: best.Cx,
+            CenterPxY: best.Cy,
+            OuterRadiusPx: ringPx,
+            DatumClockDeg: ClockAngle(holes[best.HoleA].Cx - best.Cx, holes[best.HoleA].Cy - best.Cy),
+            AngleOffsetDeg: best.Theta,
+            Confidence: confidence,
+            Detail: detail);
+    }
+
+    /// <summary>
+    /// 第三孔一致性：除 A、B 外，还有几个圆落在「以候选圆心为心、半径 R」的圈上，
+    /// 且方位角与「模板角 + 装卡转角」吻合。这是排除镜像圆心的决定性判据。
+    /// </summary>
+    private static (int OnRing, int Consistent) CountConsistentExtraHoles(
+        List<SingleFiducialStrategy.HoleResult> holes, int ia, int ib,
+        double cx, double cy, double mmpp, double R, double theta, double[] angles)
+    {
+        double ringPx = R / mmpp;
+        int onRing = 0, ok = 0;
+        for (int i = 0; i < holes.Count; i++)
+        {
+            if (i == ia || i == ib) continue;
+            double d = Math.Sqrt(Math.Pow(holes[i].Cx - cx, 2) + Math.Pow(holes[i].Cy - cy, 2));
+            if (Math.Abs(d - ringPx) / ringPx > 0.08) continue;   // 不在半径圈上
+            onRing++;
+            double clock = ClockAngle(holes[i].Cx - cx, holes[i].Cy - cy);
+            double err = angles.Min(a => Math.Abs(Norm180(clock - (a + theta))));
+            if (err < 6) ok++;
+        }
+        return (onRing, ok);
+    }
+
+    private PartPose Fail(string why)
+    {
+        _log?.Warn("[策略④] " + why);
+        return new PartPose(false, 0, 0, 0, 0, 0, 0, why);
+    }
+
+    /// <summary>时钟角：+Y=12H 为 0°，顺时针为正（与 DialPositioning 一致）。</summary>
+    private static double ClockAngle(double dx, double dy)
+        => ((90 - Math.Atan2(-dy, dx) * 180 / Math.PI) % 360 + 360) % 360;
+
+    /// <summary>从 a 顺时针走到 b 的角度差，返回 0~360。</summary>
+    private static double CwDiff(double a, double b) => ((b - a) % 360 + 360) % 360;
+
+    /// <summary>归一化到 ±180°。</summary>
+    private static double Norm180(double deg) => ((deg % 360) + 540) % 360 - 180;
 }
 
 // ==================================================================

@@ -66,11 +66,14 @@ public sealed class MainForm : Form
         Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
         Width = 700, Height = 200, Font = new Font("Consolas", 9F), BackColor = Color.White
     };
-    private readonly CheckBox _chkFixtureCenters = new() { Text = "夹具定位销/止口能锁死工件中心", AutoSize = true, Checked = true };
-    private readonly CheckBox _chkFiducialAvailable = new() { Text = "有相机看得清的标记孔", AutoSize = true, Checked = true };
-    private readonly CheckBox _chkFiducialRotates = new() { Text = "标记孔随工件一起转动（不是固定在夹具上）", AutoSize = true, Checked = true };
+    // ⚠ 2026-11-05 现场照片复核：托板只是三根金属条拼的，随手摆在回转台上靠一根挡块限位，
+    //   既没有定位销锁中心、也没有角向定位 → 「夹具锁心」必须默认勾掉。
+    private readonly CheckBox _chkFixtureCenters = new() { Text = "夹具定位销/止口能锁死工件中心（现场照片：没有，默认否）", AutoSize = true, Checked = false };
+    private readonly CheckBox _chkFiducialAvailable = new() { Text = "有相机看得清的标记孔（红光下不可见，默认否）", AutoSize = true, Checked = false };
+    private readonly CheckBox _chkFiducialRotates = new() { Text = "标记孔随工件一起转动（用工件自带的双环孔，默认是）", AutoSize = true, Checked = true };
     private readonly CheckBox _chkFullInView = new() { Text = "整盘能入画（视野短边 ≥ 34.2mm）", AutoSize = true, Checked = false };
     private readonly CheckBox _chkDatumVisible = new() { Text = "8 个双环基准孔在画面里清晰可见", AutoSize = true, Checked = false };
+    private readonly CheckBox _chkTwoHolesInView = new() { Text = "视野能同时看清 3 个相邻基准孔（约需 6×20mm，现有视野够）", AutoSize = true, Checked = false };
     private readonly TextBox _txtFixCx = new() { Width = 90, Text = "" };
     private readonly TextBox _txtFixCy = new() { Width = 90, Text = "" };
     private readonly TextBox _txtFidR = new() { Width = 70, Text = "14.45" };
@@ -149,6 +152,7 @@ public sealed class MainForm : Form
         _selector = new PositioningStrategySelector(new IPositioningStrategy[]
         {
             new FullFieldDatumHolesStrategy(_log),
+            new TwoFiducialStrategy(_log),          // ④ 多孔自主定位（现场照片复核后新增，不依赖夹具）
             new SingleFiducialStrategy(_log),
             new ManualFixtureStrategy(_log)
         });
@@ -175,7 +179,9 @@ public sealed class MainForm : Form
                 FiducialDiameterMm = _cfg.FiducialDiameterMm,
                 FiducialRadiusToleranceMm = _cfg.FiducialRadiusToleranceMm,
                 FiducialNominalClockDeg = _cfg.FiducialNominalClockDeg,
-                FixtureAssumedAngleDeg = _cfg.FixtureAssumedAngleDeg
+                FixtureAssumedAngleDeg = _cfg.FixtureAssumedAngleDeg,
+                // 多孔自主定位参数（StrategyIds.TwoFiducials）
+                TwoHoleScaleTolerancePct = _cfg.TwoHoleScaleTolerancePct
             },
             Convention = new TransformConvention
             {
@@ -331,12 +337,17 @@ public sealed class MainForm : Form
 
         var gbCond = new GroupBox { Text = "现场条件（自动推荐与自检的依据，按实际情况勾选）", AutoSize = true, Padding = new Padding(8) };
         var condFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true };
-        foreach (var c in new[] { _chkFixtureCenters, _chkFiducialAvailable, _chkFiducialRotates, _chkFullInView, _chkDatumVisible })
+        foreach (var c in new[] { _chkFixtureCenters, _chkFiducialAvailable, _chkFiducialRotates,
+                                  _chkFullInView, _chkDatumVisible, _chkTwoHolesInView })
             condFlow.Controls.Add(c);
         condFlow.Controls.Add(new Label
         {
             AutoSize = true, MaximumSize = new Size(700, 0), ForeColor = Color.DimGray,
-            Text = "2026-11-05 真机诊断结论：整盘放不进画面、8 个基准孔在红光下完全不可见，所以默认勾掉后两项。",
+            Text = "2026-11-05 现场复核：①整盘放不进画面、红光下基准孔不可见 → 勾掉；" +
+                   "②照片里的托板没有定位销 → 「夹具锁心」勾掉；" +
+                   "③但手机白光照片里那圈小孔清晰可见 → 换白光 + 视野调到能同时框住 3 个相邻孔后" +
+                   "（约 6×20mm，现有 28.1mm 视野够，不用改镜头），把最后一项勾上，策略④即可用。" +
+                   "第 3 个孔用来消掉孔组 180° 对称造成的镜像圆心二义性，否则 18 孔会整体打偏。",
             Padding = new Padding(4, 6, 0, 0)
         });
         gbCond.Controls.Add(condFlow);
@@ -434,7 +445,8 @@ public sealed class MainForm : Form
             DatumHolesVisible: _chkDatumVisible.Checked,
             CalibrationValid: _wf.Calibration is { Valid: true },
             FiducialTaught: !double.IsNaN(o.FixtureCenterPxX) && !double.IsNaN(o.FixtureCenterPxY),
-            CoarseAlignProvided: !double.IsNaN(o.CoarseAlignDeg));
+            CoarseAlignProvided: !double.IsNaN(o.CoarseAlignDeg),
+            TwoHolesInView: _chkTwoHolesInView.Checked);
     }
 
     /// <summary>「策略自检」：列出每个策略能不能用、缺什么，并给出推荐。</summary>

@@ -89,8 +89,15 @@ public sealed class AppConfig
     // 定位策略（策略模式）—— 界面「定位策略」页可实时修改并保存
     // ================================================================
 
-    /// <summary>当前定位策略 ID。见 StrategyIds：fullFieldDatumHoles / singleFiducial / manualFixture。</summary>
-    public string PositioningStrategyId { get; set; } = "fullFieldDatumHoles";
+    /// <summary>
+    /// 当前定位策略 ID。见 StrategyIds：fullFieldDatumHoles / twoFiducials / singleFiducial / manualFixture。
+    /// 默认 twoFiducials：2026-11-05 现场照片证明托板没有定位销也没有角向基准，
+    /// 只有「多孔自主定位（3 孔消镜像）」不依赖夹具，是现场唯一可落地的视觉方案。
+    /// </summary>
+    public string PositioningStrategyId { get; set; } = "twoFiducials";
+
+    /// <summary>多孔策略：反算 mm/px 与 VisionPixelSizeMm 允许的相对偏差（0.20=±20%），超差拒绝出坐标。</summary>
+    public double TwoHoleScaleTolerancePct { get; set; } = 0.20;
 
     /// <summary>夹具锁定的工件中心在相机像素系中的 X（px）。NaN=未标定（单标记孔策略会拒绝执行）。</summary>
     public double FixtureCenterPxX { get; set; } = double.NaN;

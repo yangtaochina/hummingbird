@@ -416,6 +416,153 @@ static CameraFrame MakeSolidFrame(int w, int h, byte gray)
     return new CameraFrame(buf, w, h, DateTime.Now);
 }
 
+/// <summary>
+/// 合成「暗底 + N 个亮圆孔」：按 工件中心(cx,cy) + 半径圈 + 装卡转角 放置孔。
+/// 图像时钟角 = 名义角 + 装卡转角；12H=0°、顺时针为正，y 轴向下。
+/// </summary>
+static CameraFrame MakeTwoHoleFrame(int w, int h, double cx, double cy, double ringPx,
+                                    double thetaDeg, double[] anglesDeg, int holeR)
+{
+    using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(30));
+    foreach (var a in anglesDeg)
+    {
+        double ang = (a + thetaDeg) * Math.PI / 180.0;
+        double x = cx + ringPx * Math.Sin(ang);
+        double y = cy - ringPx * Math.Cos(ang);
+        if (x >= holeR && x < w - holeR && y >= holeR && y < h - holeR)
+            OpenCvSharp.Cv2.Circle(mat,
+                new OpenCvSharp.Point((int)Math.Round(x), (int)Math.Round(y)),
+                holeR, OpenCvSharp.Scalar.All(235), -1);
+    }
+    var buf = new byte[w * h];
+    System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
+    return new CameraFrame(buf, w, h, DateTime.Now);
+}
+
+Console.WriteLine("== 8) 多孔自主定位（2026-11-05 现场照片复核：夹具无定位销也能打）==");
+{
+    const double mmpp = 0.02;
+    const double R = 14.45;
+    double ringPx = R / mmpp;                 // 722.5px
+    double[] angles = { 30, 60, 120, 150, 210, 240, 300, 330 };
+
+    var opt = new VisionOptions
+    {
+        PixelSizeMm = mmpp,
+        DatumHoleAngles = angles,
+        DatumHoleRadiusMm = R,
+        FiducialDiameterMm = 0.8,
+        CoarseAlignDeg = 30.0,
+        TwoHoleScaleTolerancePct = 0.20,
+        StrategyId = StrategyIds.TwoFiducials
+    };
+    var strat = new TwoFiducialStrategy(log);
+    const double cx = 960, cy = 400;
+
+    // 8.1 三个相邻基准孔入画，装卡转角 30° —— 中心/转角/缩放三项都要算对
+    //     第 3 个孔是关键：孔组有 180° 对称，只有它能消掉镜像圆心二义性。
+    var frame = MakeTwoHoleFrame(1920, 1200, cx, cy, ringPx, 30.0, new[] { 30.0, 60.0, 120.0 }, 12);
+    var p8 = await strat.LocateAsync(frame, opt);
+    Check(p8.Success, "策略8.1：合成三孔图成功定位" + (p8.Success ? "" : " —— " + p8.Detail));
+    Check(p8.Success && Math.Abs(p8.CenterPxX - cx) < 2 && Math.Abs(p8.CenterPxY - cy) < 2,
+          $"策略8.1：中心由弦中垂线 + 第三孔消镜像解出（实际 {p8.CenterPxX:F1},{p8.CenterPxY:F1}，期望 {cx},{cy}）");
+    Check(p8.Success && AngleDiff(p8.AngleOffsetDeg, 30) < 1,
+          $"策略8.1：装卡转角算对（实际 {p8.AngleOffsetDeg:F2}°，期望 30°）");
+    Check(p8.Success && Math.Abs(p8.OuterRadiusPx - ringPx) < 2,
+          $"策略8.1：由孔间距反算 mm/px 与标定一致（半径圈 {p8.OuterRadiusPx:F1}px，期望 {ringPx:F1}px）");
+    Check(p8.Success && p8.Detail.Contains("✅"),
+          "策略8.1：第三孔一致性校验通过（这是排除镜像圆心的证据）");
+
+    // 8.2 工件中心在**画面外**（真实小视野就是这个情况）也要能解出中心
+    const double cx2 = 960, cy2 = 1250;
+    var frameOut = MakeTwoHoleFrame(1920, 1200, cx2, cy2, ringPx, 0.0, new[] { 300.0, 330.0, 30.0 }, 12);
+    var poseOut = await strat.LocateAsync(frameOut, opt with { CoarseAlignDeg = 0.0 });
+    Check(poseOut.Success && Math.Abs(poseOut.CenterPxX - cx2) < 2 && Math.Abs(poseOut.CenterPxY - cy2) < 2,
+          $"策略8.2：中心在画面外也解得出来（实际 {poseOut.CenterPxX:F1},{poseOut.CenterPxY:F1}，期望 {cx2},{cy2}）");
+    Check(poseOut.Success && AngleDiff(poseOut.AngleOffsetDeg, 0) < 1,
+          $"策略8.2：跨 0°/360° 的孔角组也算对（实际 {poseOut.AngleOffsetDeg:F2}°）");
+
+    // 8.3 粗对齐角控制 90° 对称消歧（同一张图给 210° 粗对齐 → 选 θ+180）
+    var poseCoarse = await strat.LocateAsync(frame, opt with { CoarseAlignDeg = 210.0 });
+    Check(poseCoarse.Success && AngleDiff(poseCoarse.AngleOffsetDeg, 210) < 1,
+          $"策略8.3：90° 对称消歧受粗对齐角控制（实际 {poseCoarse.AngleOffsetDeg:F2}°，期望 210°）");
+
+    // 8.4 只看见一个孔 → 拒绝（4 约束退化成 2 约束，数学上欠定）
+    var oneHole = await strat.LocateAsync(
+        MakeTwoHoleFrame(1920, 1200, cx, cy, ringPx, 30.0, new[] { 30.0 }, 12), opt);
+    Check(!oneHole.Success && oneHole.Detail.Contains("至少需要 2 个"),
+          "策略8.4：只检出一个孔时明确拒绝（单孔解不出中心）");
+
+    // 8.5 mm/px 填得离谱（缩小视野后没重测）→ 所有配对都被尺度自检筛掉，拒绝出坐标
+    var badScale = await strat.LocateAsync(frame, opt with { PixelSizeMm = 0.08 });
+    Check(!badScale.Success,
+          "策略8.5：VisionPixelSizeMm 与实际孔间距尺度完全不符时拒绝出坐标（提醒重测/重标定）");
+
+    // 8.12 只有 2 个孔且没有粗略中心提示 → 必须拒绝（孔组 180° 对称 → 镜像圆心二义性）
+    var twoOnly = MakeTwoHoleFrame(1920, 1200, cx, cy, ringPx, 30.0, new[] { 30.0, 60.0 }, 12);
+    var twoNoHint = await strat.LocateAsync(twoOnly, opt);
+    Check(!twoNoHint.Success && twoNoHint.Detail.Contains("镜像"),
+          "策略8.12：只有 2 孔且无中心提示时明确拒绝（两候选圆心相距 27.9mm，选错会整体打偏）");
+
+    // 8.13 只有 2 个孔，但给了粗略中心提示（故意偏 100px/2mm）→ 能选出正确圆心
+    var twoWithHint = await strat.LocateAsync(twoOnly,
+        opt with { FixtureCenterPxX = cx + 100, FixtureCenterPxY = cy - 80 });
+    Check(twoWithHint.Success && Math.Abs(twoWithHint.CenterPxX - cx) < 2 && Math.Abs(twoWithHint.CenterPxY - cy) < 2,
+          $"策略8.13：2 孔 + 粗略中心提示（±10mm 即可）也能消镜像（实际 {twoWithHint.CenterPxX:F1},{twoWithHint.CenterPxY:F1}）");
+
+    // 8.6 没填粗对齐角 → 拒绝（避免 90° 等效解打错方位打废工件）
+    var noCoarse = await strat.LocateAsync(frame, opt with { CoarseAlignDeg = double.NaN });
+    Check(!noCoarse.Success && noCoarse.Detail.Contains("粗对齐"),
+          "策略8.6：未填粗对齐角时拒绝执行");
+
+    // 8.7 全白过曝 → 拒绝
+    var white = await strat.LocateAsync(MakeSolidFrame(400, 400, 255), opt);
+    Check(!white.Success, "策略8.7：全白过曝画面明确失败");
+
+    // 8.8 关键对照：夹具没锁心、没示教、孔在红光下不可见 → 多孔可用，单孔拒绝
+    var siteCtx = StrategyContext.WorstCase with
+    {
+        FiducialRotatesWithPart = true, CalibrationValid = true,
+        CoarseAlignProvided = true, TwoHolesInView = true
+    };
+    Check(strat.Check(siteCtx).CanRun,
+          "策略8.8：夹具无定位销/无示教时，多孔策略依然可用（本轮核心结论）");
+    Check(!new SingleFiducialStrategy().Check(siteCtx).CanRun,
+          "策略8.8：同样现场条件下单孔策略明确拒绝（对照：它必须依赖夹具锁心）");
+
+    // 8.9 自动推荐：现场照片条件（夹具不能锁心）→ 推荐多孔，而不是单孔
+    var all4 = new IPositioningStrategy[]
+    {
+        new FullFieldDatumHolesStrategy(log), new TwoFiducialStrategy(log),
+        new SingleFiducialStrategy(log), new ManualFixtureStrategy(log)
+    };
+    var sel4 = new PositioningStrategySelector(all4);
+    var (rec4, _) = sel4.Recommend(siteCtx);
+    Check(rec4?.Id == StrategyIds.TwoFiducials,
+          "策略8.9：整盘失效 + 夹具无定位销时，自动推荐『④多孔自主定位』");
+
+    // 8.10 多孔前提也没了、但夹具改造好了 → 回落单孔
+    var ctxFid = siteCtx with
+    {
+        TwoHolesInView = false, FixtureCentersPart = true,
+        FiducialAvailable = true, FiducialTaught = true
+    };
+    var (recFid2, _) = sel4.Recommend(ctxFid);
+    Check(recFid2?.Id == StrategyIds.SingleFiducial,
+          "策略8.10：多孔不可见但夹具已加定位销时，自动回落『②单标记孔』");
+
+    // 8.11 端到端：多孔定位结果喂进 ComputeTargets，18 个孔照样算得出
+    var wf8 = new AutoRunWorkflow(log, cam, strat, cnc, laser)
+    {
+        Template = template,
+        VisionOptions = opt,
+        Calibration = new CalibrationResult(true, 0, mmpp, 0, 0, 0, mmpp, 0)
+    };
+    var targets8 = wf8.ComputeTargets(p8);
+    Check(targets8.Count == 18,
+          $"策略8.11：视觉解出的(画面外中心 + 转角)经标定换算后算出 18 个孔（实际 {targets8.Count}）");
+}
+
 static double AngleDiff(double a, double b)
 {
     double d = Math.Abs(a - b) % 360;

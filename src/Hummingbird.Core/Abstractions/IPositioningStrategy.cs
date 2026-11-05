@@ -17,6 +17,16 @@ public static class StrategyIds
     /// </summary>
     public const string SingleFiducial = "singleFiducial";
 
+    /// <summary>
+    /// 多孔自主定位（2026-11-05 现场照片复核后新增）：相机视野同时看 3 个工件自带的双环基准孔，
+    /// 由「孔间距 ↔ 图纸名义弦长」反算 mm/px，由弦中垂线 + 已知半径解出工件中心，
+    /// 再由孔心方位角求转角，第 3 个孔用来消掉孔组 180° 对称造成的镜像圆心二义性。
+    /// **中心、转角、缩放全部由图像实时解出，夹具不需要锁任何东西**。
+    /// 适用：客户现有托板只是随手摆放、既无定位销也无角向基准（照片已证实）。
+    /// ID 沿用 twoFiducials 仅为兼容已写出的 config.json，实际推荐 3 孔入画。
+    /// </summary>
+    public const string TwoFiducials = "twoFiducials";
+
     /// <summary>兜底：纯机械对刀，不用视觉。中心与转角全部由夹具/人工粗对齐角给定。</summary>
     public const string ManualFixture = "manualFixture";
 }
@@ -33,6 +43,7 @@ public static class StrategyIds
 /// <param name="CalibrationValid">九点标定是否有效。</param>
 /// <param name="FiducialTaught">单标记孔策略的示教值（夹具中心像素 + 零位孔心）是否已录入。</param>
 /// <param name="CoarseAlignProvided">是否提供了人工粗对齐角（消解 90° 对称多解）。</param>
+/// <param name="TwoHolesInView">当前视野能否同时看清 **3 个相邻**基准孔（多孔策略的唯一视野前提，约需 6×20mm）。</param>
 public sealed record StrategyContext(
     bool FixtureCentersPart,
     bool FiducialAvailable,
@@ -41,7 +52,8 @@ public sealed record StrategyContext(
     bool DatumHolesVisible,
     bool CalibrationValid,
     bool FiducialTaught,
-    bool CoarseAlignProvided)
+    bool CoarseAlignProvided,
+    bool TwoHolesInView = true)
 {
     /// <summary>默认：按 2026-11-05 真机诊断的最坏情况（整盘不入画、基准孔不可见、无夹具信息）。</summary>
     public static StrategyContext WorstCase => new(
@@ -52,7 +64,8 @@ public sealed record StrategyContext(
         DatumHolesVisible: false,
         CalibrationValid: false,
         FiducialTaught: false,
-        CoarseAlignProvided: false);
+        CoarseAlignProvided: false,
+        TwoHolesInView: false);
 }
 
 /// <summary>策略可用性判定结果。</summary>
