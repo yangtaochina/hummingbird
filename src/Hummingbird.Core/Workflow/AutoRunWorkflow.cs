@@ -8,7 +8,7 @@ namespace Hummingbird.Core;
 /// 换相机/换数控/换激光器只换 Devices 层，本类零改动。
 ///
 /// 完整加工时序（现场操作视角）：
-///   [人工装卡] → 上位机拍照定位 → 算25孔机床坐标 → 生成SPF程序下发
+///   [人工装卡] → 上位机拍照定位 → 算N孔机床坐标 → 生成SPF程序下发
 ///   → [人工在NC面板按启动] → 本类轮询轴位置，到位一孔触发出光一孔 → [人工下料]
 /// </summary>
 public sealed class AutoRunWorkflow
@@ -22,7 +22,7 @@ public sealed class AutoRunWorkflow
     /// <summary>九点标定结果（像素→机床坐标）。为空或无效时 ComputeTargets 会拒绝执行。</summary>
     public CalibrationResult? Calibration { get; set; }
 
-    /// <summary>孔位几何模板（表盘坐标系，+Y=12H），来自 templates\dial_25holes.json。</summary>
+    /// <summary>孔位几何模板（表盘坐标系，+Y=12H），来自 templates\dial_18holes.json（DWG 权威版）。</summary>
     public HolePatternTemplate Template { get; set; } = new();
 
     /// <summary>视觉参数（预期外径/名义零位角等），用于定位结果的尺寸校验。</summary>

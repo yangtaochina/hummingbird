@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\templates\dial_25holes.json" Link="templates\dial_25holes.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\templates\dial_18holes.json" Link="templates\dial_18holes.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

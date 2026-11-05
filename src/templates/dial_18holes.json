@@ -1,0 +1,186 @@
+{
+ "partName": "表盘18孔（P26009G打孔图纸 2026.11.2 DWG）",
+ "units": "mm",
+ "origin": "表盘中心；+Y=12H(正上方)，+X=3H；角度顺时针为正",
+ "datumMode": "datumHoles",
+ "partOuterDiameterMm": 34.2,
+ "holeDiameterMm": 0.3,
+ "source": "P26009G打孔图纸（2026.11.2）.dwg",
+ "note": "共 26 个 Ø0.3 圆，其中 8 个为工件自带双环孔（R40 倒角口，R14.45，30°均布），不加工；本模板为剩余 18 个待加工单环孔。",
+ "datumHoleAnglesDeg": [
+  30.0,
+  60.0,
+  120.0,
+  150.0,
+  210.0,
+  240.0,
+  300.0,
+  330.0
+ ],
+ "holes": [
+  {
+   "id": 1,
+   "x_mm": 0.475,
+   "y_mm": 13.5,
+   "diameter_mm": 0.3,
+   "clock": "0H",
+   "clock_deg": 2.013,
+   "radius_mm": 13.508
+  },
+  {
+   "id": 2,
+   "x_mm": 0.475,
+   "y_mm": 11.1,
+   "diameter_mm": 0.3,
+   "clock": "0H",
+   "clock_deg": 2.448,
+   "radius_mm": 11.11
+  },
+  {
+   "id": 3,
+   "x_mm": 6.325,
+   "y_mm": 10.955,
+   "diameter_mm": 0.3,
+   "clock": "1H",
+   "clock_deg": 29.998,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 4,
+   "x_mm": 10.956,
+   "y_mm": 6.325,
+   "diameter_mm": 0.3,
+   "clock": "2H",
+   "clock_deg": 60.0,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 5,
+   "x_mm": 12.8,
+   "y_mm": 1.4,
+   "diameter_mm": 0.3,
+   "clock": "3H",
+   "clock_deg": 83.757,
+   "radius_mm": 12.876
+  },
+  {
+   "id": 6,
+   "x_mm": 11.9,
+   "y_mm": -1.25,
+   "diameter_mm": 0.3,
+   "clock": "3H",
+   "clock_deg": 95.996,
+   "radius_mm": 11.965
+  },
+  {
+   "id": 7,
+   "x_mm": 10.956,
+   "y_mm": -6.325,
+   "diameter_mm": 0.3,
+   "clock": "4H",
+   "clock_deg": 119.999,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 8,
+   "x_mm": 6.325,
+   "y_mm": -10.955,
+   "diameter_mm": 0.3,
+   "clock": "5H",
+   "clock_deg": 150.001,
+   "radius_mm": 12.649
+  },
+  {
+   "id": 9,
+   "x_mm": -0.0,
+   "y_mm": -13.6,
+   "diameter_mm": 0.3,
+   "clock": "6H",
+   "clock_deg": 180.002,
+   "radius_mm": 13.6
+  },
+  {
+   "id": 10,
+   "x_mm": -0.0,
+   "y_mm": -11.2,
+   "diameter_mm": 0.3,
+   "clock": "6H",
+   "clock_deg": 180.002,
+   "radius_mm": 11.2
+  },
+  {
+   "id": 11,
+   "x_mm": -6.325,
+   "y_mm": -10.955,
+   "diameter_mm": 0.3,
+   "clock": "7H",
+   "clock_deg": 210.003,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 12,
+   "x_mm": -10.955,
+   "y_mm": -6.325,
+   "diameter_mm": 0.3,
+   "clock": "8H",
+   "clock_deg": 240.001,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 13,
+   "x_mm": -12.4,
+   "y_mm": -1.2,
+   "diameter_mm": 0.3,
+   "clock": "9H",
+   "clock_deg": 264.473,
+   "radius_mm": 12.458
+  },
+  {
+   "id": 14,
+   "x_mm": -12.4,
+   "y_mm": 1.2,
+   "diameter_mm": 0.3,
+   "clock": "9H",
+   "clock_deg": 275.528,
+   "radius_mm": 12.458
+  },
+  {
+   "id": 15,
+   "x_mm": -10.955,
+   "y_mm": 6.325,
+   "diameter_mm": 0.3,
+   "clock": "10H",
+   "clock_deg": 300.0,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 16,
+   "x_mm": -6.325,
+   "y_mm": 10.955,
+   "diameter_mm": 0.3,
+   "clock": "11H",
+   "clock_deg": 329.998,
+   "radius_mm": 12.65
+  },
+  {
+   "id": 17,
+   "x_mm": -1.165,
+   "y_mm": 11.45,
+   "diameter_mm": 0.3,
+   "clock": "12H",
+   "clock_deg": 354.188,
+   "radius_mm": 11.509
+  },
+  {
+   "id": 18,
+   "x_mm": -1.165,
+   "y_mm": 12.65,
+   "diameter_mm": 0.3,
+   "clock": "12H",
+   "clock_deg": 354.736,
+   "radius_mm": 12.704
+  }
+ ],
+ "datumHoleRadiusMm": 14.45,
+ "datumFeature": "白色外环上工件自带的 8 个定位双环孔（R14.45，30°均布，带Ø0.8倒角口）——不加工，用作角向基准"
+}

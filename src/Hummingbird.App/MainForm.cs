@@ -52,6 +52,8 @@ public sealed class MainForm : Form
     private readonly NumericUpDown _numRval = Num(-100000, 100000, 0, 1);
     private readonly TextBox _txtCom = new() { Width = 80, Text = "COM3" };
     private readonly ComboBox _cmbBaud = new() { Width = 90, DropDownStyle = ComboBoxStyle.DropDownList };
+    /// <summary>人工装夹粗对齐角（度）：工件按 12H 摆正的大致角度，用于消解基准孔组的 90° 旋转对称歧义。</summary>
+    private readonly TextBox _txtCoarse = new() { Width = 70, Text = "0" };
 
     /// <param name="logger">全局日志器；不传则自建（设计器/单元测试场景）。</param>
     public MainForm(IAppLogger? logger = null)
@@ -66,8 +68,10 @@ public sealed class MainForm : Form
         _cfg = AppConfig.LoadOrDefault("config.json");
         _log.Info($"读取配置 config.json：DeviceMode={_cfg.DeviceMode} 数控端点={_cfg.CncEndpoint} 串口={_cfg.LaserComPort}@{_cfg.LaserBaud}");
 
-        var template = HolePatternTemplate.LoadJson("templates/dial_25holes.json");
-        _log.Info($"加载孔位模板：{template.PartName}（{template.Holes.Count}孔）");
+        // 孔位模板：以 DWG 权威图纸为准（P26009G打孔图纸 2026.11.2，18 个待加工单环孔）
+        var template = HolePatternTemplate.LoadJson("templates/dial_18holes.json");
+        _log.Info($"加载孔位模板：{template.PartName}（{template.Holes.Count}孔，基准模式={template.DatumMode}）");
+        if (template.Note.Length > 0) _log.Info($"模板说明：{template.Note}");
 
         if (_cfg.DeviceMode == "Sim")
         {
@@ -106,11 +110,15 @@ public sealed class MainForm : Form
             Template = template,
             VisionOptions = new VisionOptions
             {
-                ExpectedOuterDiameterMm = _cfg.ExpectedOuterDiameterMm,
+                // 外径优先取模板（图纸 Ø34.2 DIAL），模板缺省才用配置文件
+                ExpectedOuterDiameterMm = template.PartOuterDiameterMm > 0
+                    ? template.PartOuterDiameterMm : _cfg.ExpectedOuterDiameterMm,
                 PixelSizeMm = _cfg.VisionPixelSizeMm,
                 NominalDatumAngleDeg = template.NominalDatumAngleDeg,
                 DatumMode = template.DatumMode,
-                DatumCircleDiameterMm = template.DatumCircleDiameterMm
+                DatumCircleDiameterMm = template.DatumCircleDiameterMm,
+                DatumHoleAngles = template.DatumHoleAnglesDeg.ToArray(),
+                DatumHoleRadiusMm = template.DatumHoleRadiusMm
             },
             Convention = new TransformConvention
             {
@@ -149,6 +157,10 @@ public sealed class MainForm : Form
         topAuto.Controls.Add(Btn("一键加工（定位+下发+监控）", async (_, _) => await AutoRun()));
         topAuto.Controls.Add(Btn("模拟NC启动(Sim)", (_, _) => SimStart()));
         topAuto.Controls.Add(Btn("取消监控", (_, _) => _wf.CancelRun()));
+        // 粗对齐角：工件自带定位孔组 90° 对称 → 单图 4 个等效转角，用它消歧
+        topAuto.Controls.Add(Lbl("粗对齐角°"));
+        topAuto.Controls.Add(_txtCoarse);
+        topAuto.Controls.Add(Lbl("(工件按12H摆正,±10°内)"));
         tabAuto.Controls.Add(_pbMain);
         tabAuto.Controls.Add(_lblPose);
         tabAuto.Controls.Add(topAuto);
@@ -292,10 +304,22 @@ public sealed class MainForm : Form
             try
             {
                 await _camera.OpenAsync();
+                await ApplyConfiguredCameraParams();
                 _log.Info("相机已打开：" + _camera.DeviceName);
             }
             catch (Exception ex) { _log.Error("相机打开失败：" + ex.Message + "（检查USB3线、相机供电）"); }
         }
+    }
+
+    /// <summary>config.json 配置了曝光/增益（>0）时，打开相机后强制下发——
+    /// 防止 pylon Viewer 或其他人改乱的相机参数被带进加工流程（2026-11-02 现场教训）。</summary>
+    private async Task ApplyConfiguredCameraParams()
+    {
+        if (_camera == null) return;
+        if (_cfg.CameraExposureUs > 0)
+            await _camera.SetExposureUsAsync(_cfg.CameraExposureUs);
+        if (_cfg.CameraGain > 0)
+            await _camera.SetGainAsync(_cfg.CameraGain);
     }
 
     private async Task ApplyCameraParams()
@@ -323,6 +347,7 @@ public sealed class MainForm : Form
         try
         {
             await _camera.OpenAsync();
+            await ApplyConfiguredCameraParams();
             _log.Info("相机已打开：" + _camera.DeviceName);
         }
         catch (Exception ex)
@@ -406,12 +431,32 @@ public sealed class MainForm : Form
         else _log.Warn("扫描完成：全部无应答。若线确实已接好且激光器已上电 → 大概率电平不匹配：说明书V3.0是RS485，客户说RS232；若拿到的是USB转232而激光器是485口，需要换 USB转485");
     }
 
+    /// <summary>
+    /// 把界面上的"粗对齐角"同步到视觉选项。
+    /// 工件自带的 8 个定位孔按 90° 对称 → 单张图只能得到 4 个等效转角，
+    /// 必须靠操作工"把工件按 12H 大致摆正"的角度来消歧（容差 ±10°）。
+    /// </summary>
+    private void SyncCoarseAlign()
+    {
+        if (double.TryParse(_txtCoarse.Text.Trim(), out double deg))
+        {
+            // 归一化到 ±180
+            deg = ((deg % 360) + 540) % 360 - 180;
+            _wf.VisionOptions = _wf.VisionOptions.WithCoarseAlign(deg);
+        }
+        else
+        {
+            _wf.VisionOptions = _wf.VisionOptions.WithCoarseAlign(double.NaN);
+        }
+    }
+
     private async Task GrabLocateShow()
     {
         try
         {
             if (_camera is null) { _log.Warn("相机不可用（未探测到 pylon SDK，见 Hummingbird.Devices.Basler/README.md）"); return; }
             if (_camera is SimCameraService sc) sc.FreezePose = _chkFreeze.Checked;
+            SyncCoarseAlign();
             var (pose, frame) = await _wf.GrabAndLocateAsync();
             _lastPose = pose; _lastFrame = frame;
             ShowFrame(_pbMain, frame, pose);
@@ -419,6 +464,13 @@ public sealed class MainForm : Form
             _lblPose.Text = pose.Success
                 ? $"定位成功 | 中心({pose.CenterPxX:F0},{pose.CenterPxY:F0})px | 转角 {pose.AngleOffsetDeg:F2}° | 置信度 {pose.Confidence:F2} | {pose.Detail}"
                 : "定位失败：" + pose.Detail;
+            // 多解时把候选角直接摆出来，操作工照着"粗对齐角"填即可
+            if (pose.Success && pose.AngleCandidatesDeg.Count > 1)
+            {
+                _txtCoarse.Text = pose.AngleOffsetDeg.ToString("F1");
+                _log.Warn($"角向有 {pose.AngleCandidatesDeg.Count} 个等效解（{string.Join(", ", pose.AngleCandidatesDeg.Select(c => c.ToString("F1")))}°），" +
+                          "已按当前粗对齐角选定。请确认工件是否按 12H 摆正（必要时改'粗对齐角'后重拍）");
+            }
         }
         catch (Exception ex)
         {
@@ -431,6 +483,7 @@ public sealed class MainForm : Form
         try
         {
             if (_camera is SimCameraService sc) sc.FreezePose = false;
+            SyncCoarseAlign();
             _log.Info("==== 一键加工开始 ====");
             var (pose, frame) = await _wf.GrabAndLocateAsync();
             if (!pose.Success) { _log.Error("终止：定位失败"); return; }

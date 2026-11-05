@@ -17,3 +17,20 @@ calibration.json
 # 打印产物
 现场核实清单-*.html
 现场核实清单-*.pdf
+
+# DWG 解析工作目录（含 130MB aspose 依赖外的中间产物，客户资料不入库）
+dwg_work/
+# 现场抓拍原图
+Image__*.bmp
+
+# 已作废的 17 孔表（口径被 DWG 权威版 18 孔取代）
+dial_digitize/表盘17孔坐标_待客户确认.xlsx
+
+# DWG 解析工作目录（中间产物，客户资料不入库）
+dwg_work/
+# 现场抓拍原图
+Image__*.bmp
+# 文档生成中间产物（报价单等，最终交付件由用户留存）
+output/
+# 已作废的 17 孔表（口径被 DWG 权威版 18 孔取代）
+dial_digitize/表盘17孔坐标_待客户确认.xlsx

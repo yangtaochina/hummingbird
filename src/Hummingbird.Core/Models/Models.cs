@@ -63,23 +63,53 @@ public sealed record CameraFrame(byte[] Gray, int Width, int Height, DateTime Ti
 public sealed record VisionOptions
 {
     /// <summary>表盘外缘预期直径（mm），用于轮廓校验</summary>
-    public double ExpectedOuterDiameterMm { get; init; } = 34.5;
+    public double ExpectedOuterDiameterMm { get; init; } = 34.2;
 
     /// <summary>
-    /// 角向基准模式（现场 2026-10-30 核实结论）：
+    /// 角向基准模式（现场 2026-10-30 / 11-05 核实结论）：
     ///   "notch"       = 外圈缺口定角向（旧方案，留作兼容）
     ///   "offsetCircle" = 盘面既有偏心小圆定角向：中心→小圆方向 = 12H（实物无 12H 标记，
     ///                    客户以偏心小圆自定义 12 点方向；表盘对称，靠它消解角向歧义）
+    ///   "datumHoles"  = **现役方案**：白色外环上自带的定位小孔组（工件自带、随工件转动，
+    ///                    客户 2026-11-05 确认）。一组多孔的**孔组朝向**作为角向基准，
+    ///                    比单个小圆更抗干扰（任一孔被反光淹没仍可用其余孔定角）。
+    ///                    需要 DatumHoleAngles 提供该组各孔的名义时钟角。
     /// </summary>
     public string DatumMode { get; init; } = "notch";
 
     /// <summary>基准小圆预期直径（mm），0=未知（检测时仅按形状/尺寸范围找，现场量得后填模板）</summary>
     public double DatumCircleDiameterMm { get; init; } = 0.0;
 
+    /// <summary>
+    /// "datumHoles" 模式用：外环自带定位孔组的**名义时钟角**列表（度，12H=0，顺时针）。
+    /// 视觉侧在白环带内找出所有小孔，检出角与该列表做**圆周平移匹配**（整体旋转一个角度），
+    /// 取残差最小的那个平移量作为"工件装卡转角"。
+    /// 图纸数据（P26009G 2026.11.2）：自带双环孔在 30/60/120/150/210/240/300/330°，
+    /// 即 90° 周期 → 单张图有 4 个等效解，需 CoarseAlignDeg 消歧。
+    /// </summary>
+    public IReadOnlyList<double> DatumHoleAngles { get; init; } = Array.Empty<double>();
+
+    /// <summary>
+    /// 人工装夹**粗对齐角**（度，顺时针为正）。操作工把工件大致按 12H 方向放好（±10° 内即可），
+    /// 上位机用它来消解"基准特征旋转对称"造成的多解（见 PartPose.AngleCandidatesDeg）。
+    /// NaN = 未提供（此时若多解则定位失败并要求人工介入）。
+    /// </summary>
+    public double CoarseAlignDeg { get; init; } = double.NaN;
+
+    /// <summary>
+    /// "datumHoles" 模式用：定位孔组的**名义半径**（mm，图样中心到孔心）。
+    /// 图纸标称 14.45mm（工件自带双环孔，R40 倒角口）。0=不限制半径。
+    /// 有此值时按 ±12% 过滤候选，防止把"待加工孔"误当基准孔（两者半径不同）。
+    /// </summary>
+    public double DatumHoleRadiusMm { get; init; } = 0.0;
+
     /// <summary>零位特征的名义时钟角：0=12H</summary>
     public double NominalDatumAngleDeg { get; init; } = 0.0;
     /// <summary>像素尺寸（mm/px），仅用于预期尺寸校验</summary>
     public double PixelSizeMm { get; init; } = 0.02;
+
+    /// <summary>派生一份新选项，只改粗对齐角（其余字段保留）。供 UI 实时调整用。</summary>
+    public VisionOptions WithCoarseAlign(double deg) => this with { CoarseAlignDeg = deg };
 }
 
 /// <summary>定位结果：中心（像素）+ 零件旋转偏角（顺时针为正，单位度）。</summary>
@@ -91,7 +121,15 @@ public sealed record PartPose(
     double DatumClockDeg,
     double AngleOffsetDeg,
     double Confidence,
-    string Detail);
+    string Detail)
+{
+    /// <summary>
+    /// 角向候选值（度）。当基准特征本身具旋转对称性时（如 8 孔 30° 均布 → 90° 周期），
+    /// 单张图无法唯一确定转角，只能给出若干候选；由"人工装夹粗对齐角 / 上次成功值"择一。
+    /// 为空表示转角唯一确定。
+    /// </summary>
+    public IReadOnlyList<double> AngleCandidatesDeg { get; init; } = Array.Empty<double>();
+}
 
 public sealed record HoleTemplate(
     [property: JsonPropertyName("id")] int Id,
@@ -152,10 +190,20 @@ public sealed class HolePatternTemplate
     [JsonPropertyName("partName")] public string PartName { get; set; } = "";
     [JsonPropertyName("note")] public string Note { get; set; } = "";
     [JsonPropertyName("nominalDatumAngleDeg")] public double NominalDatumAngleDeg { get; set; }
-    /// <summary>角向基准模式：notch=外圈缺口 / offsetCircle=偏心小圆（默认 notch 兼容旧模板）</summary>
+    /// <summary>角向基准模式：notch=外圈缺口 / offsetCircle=偏心小圆 / datumHoles=外环自带定位孔组</summary>
     [JsonPropertyName("datumMode")] public string DatumMode { get; set; } = "notch";
     /// <summary>基准小圆预期直径（mm），0=未知</summary>
     [JsonPropertyName("datumCircleDiameterMm")] public double DatumCircleDiameterMm { get; set; }
+    /// <summary>
+    /// "datumHoles" 模式用：外环自带定位孔组的**名义时钟角**列表（度，12H=0，顺时针）。
+    /// 视觉侧检出孔组后与该列表做圆周平移匹配，取残差最小的平移量 = 工件装卡转角。
+    /// 数据来源：P26009G打孔图纸（2026.11.2）.dwg 中 8 个工件自带双环孔（R14.45，30° 均布）。
+    /// </summary>
+    [JsonPropertyName("datumHoleAnglesDeg")] public List<double> DatumHoleAnglesDeg { get; set; } = new();
+    /// <summary>"datumHoles" 模式用：定位孔组的名义半径（mm），图纸标称 14.45</summary>
+    [JsonPropertyName("datumHoleRadiusMm")] public double DatumHoleRadiusMm { get; set; }
+    /// <summary>工件外径（mm），用于视觉尺寸校验</summary>
+    [JsonPropertyName("partOuterDiameterMm")] public double PartOuterDiameterMm { get; set; }
     /// <summary>基准特征的人类可读说明（写进模板便于现场人员理解）</summary>
     [JsonPropertyName("datumFeature")] public string DatumFeature { get; set; } = "";
     [JsonPropertyName("holes")] public List<HoleTemplate> Holes { get; set; } = new();

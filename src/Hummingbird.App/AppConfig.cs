@@ -18,6 +18,14 @@ public sealed class AppConfig
     /// <summary>Basler 相机序列号；空 = 使用发现的第一台相机（现场只挂一台时留空即可）。</summary>
     public string CameraSerialNumber { get; set; } = "";
 
+    /// <summary>相机曝光时间（微秒）。0 = 不设置（沿用相机内部当前值/pylon Viewer 里调的值）。
+    /// 现场调光流程：pylon Viewer 里手动调到清晰、亮度合适后，把该数值抄到这里——
+    /// 程序每次连接相机时强制下发，避免相机参数被 pylon 改乱。调光目标：盘面约 120~150、特征 200+。</summary>
+    public double CameraExposureUs { get; set; } = 0;
+
+    /// <summary>相机增益。0 = 不设置。曝光拉满仍偏暗时再加增益（增益加噪声，优先加曝光）。</summary>
+    public double CameraGain { get; set; } = 0;
+
     /// <summary>828D OPC UA 端点。X130 口默认 IP 192.168.214.1，端口 4840。</summary>
     public string CncEndpoint { get; set; } = "opc.tcp://192.168.214.1:4840";
 
@@ -64,7 +72,7 @@ public sealed class AppConfig
     public int LaserPulseCount { get; set; } = 5;
 
     /// <summary>表盘外缘预期直径（mm），视觉定位的尺寸校验用（偏差>30% 报失败）。</summary>
-    public double ExpectedOuterDiameterMm { get; set; } = 34.5;
+    public double ExpectedOuterDiameterMm { get; set; } = 34.2;
 
     /// <summary>视觉像素尺寸（mm/px）。规划假设值 0.02；现场实测校准：放上真件跑一次定位，
     /// 失败日志会反推实际像素尺寸，把该值填到这里。影响：尺寸校验、基准小圆直径过滤。</summary>
