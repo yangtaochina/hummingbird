@@ -18,7 +18,7 @@
   "LaserFrequencyKhz": 200,
   "LaserPulseCount": 5,
   "ExpectedOuterDiameterMm": 34.2,
-  "VisionPixelSizeMm": 0.0247,
+  "VisionPixelSizeMm": 0.0234,
   "ConvSwapXY": false,
   "ConvNegateX": false,
   "ConvNegateY": false,

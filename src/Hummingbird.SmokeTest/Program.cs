@@ -210,6 +210,10 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
               $"视野诊断E：视野宽量级正确（实际 {rE.FovWidthMm:F1}mm，应在 40~60mm 之间）");
         Check(rE.Success && rE.DatumInView && rE.MarginMm < 2.0,
               $"视野诊断E：判定基准孔在视野内但余量 < 2mm（实际 {rE.MarginMm:F2}mm）——边缘状态必须暴露出来");
+        // 2026-11-05 真图决定性结论：基准孔"在视野内"但极坐标展开后环带对比度仅 5/255，
+        // 8 个双环孔在红光下**完全不可见**。这条断言防止有人把 DatumVisible 判据改松。
+        Check(rE.Success && !rE.DatumVisible,
+              "视野诊断E：判定基准孔在视野内但**实际不可见**（红光下无反差）——必须与'在视野内'区分开");
     }
     else
     {

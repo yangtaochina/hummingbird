@@ -77,10 +77,13 @@ public sealed class AppConfig
     public double ExpectedOuterDiameterMm { get; set; } = 34.2;
 
     /// <summary>视觉像素尺寸（mm/px）。
-    /// ✅ 2026-11-05 真机实测回填：以工件白色外环 Ø34.2mm 为标尺，实测 R≈691px → 0.0247 mm/px，
-    /// 对应视野约 47.5×29.7mm。⚠ 该值与镜头/物距/相机安装角度绑定，改动机械或镜头必须重测。
+    /// ✅ 2026-11-05 真机实测回填：以工件白色外环 Ø34.2mm 为标尺，
+    ///    Kasa 圆拟合 + 阈值敏感性分析（R=720~733px，th=180/200/215）→ **0.0234 mm/px**，
+    ///    对应视野约 44.9 × 28.1mm（**垂直半高仅 14.0mm**）。
+    /// ⚠ 该值与镜头/物距/相机安装角度绑定，改动机械或镜头必须重测。
+    /// ⚠ 垂直方向是硬约束：视野短边 28.1mm &lt; 工件 Ø34.2mm，工件**放不进画面**。
     /// 影响：尺寸校验、基准小圆直径过滤、坐标换算。</summary>
-    public double VisionPixelSizeMm { get; set; } = 0.0247;
+    public double VisionPixelSizeMm { get; set; } = 0.0234;
 
     /// <summary>表盘系→机床系：是否交换 X/Y 轴（标定时确定）。</summary>
     public bool ConvSwapXY { get; set; }

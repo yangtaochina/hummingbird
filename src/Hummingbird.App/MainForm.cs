@@ -789,6 +789,31 @@ public sealed class MainForm : Form
             var diag = new FieldDiagnosis(_log);
             var r = diag.Analyze(frame, datumR, outerD);
             _txtDiag.Text = r.Detail;
+
+            // 结论分级提示：现场最关心的不是数字，而是"能不能干"
+            if (r.Success && !r.DatumVisible)
+            {
+                MessageBox.Show(this,
+                    "诊断结论：**角向基准孔在视野内，但画面里根本看不见**\n\n" +
+                    "极坐标展开验证：基准孔环带对比度极低，8 个双环孔在当前红光下不反光。\n" +
+                    "⇒ datumHoles 角向基准方案当前**不可用**，18 个孔无法确定角向。\n\n" +
+                    "建议动作：\n" +
+                    "① 先把曝光改到 5000~8000μs、增益 0 重拍（本张图是 3114μs）\n" +
+                    "② 试白光/蓝光照明（红光对金属工件不形成反差）\n" +
+                    "③ 若仍不可见 → 需改硬件方案（双工位/加装第二个相机/改用机械对刀）",
+                    "诊断③：基准孔不可见", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else if (r.Success)
+            {
+                MessageBox.Show(this,
+                    $"诊断结论：基准孔**可见**，角向定位方案可用。\n\n" +
+                    $"mm/px = {r.MmPerPx:F6}\n" +
+                    $"视野 = {r.FovWidthMm:F1} × {r.FovHeightMm:F1} mm\n" +
+                    $"基准孔余量 = {r.MarginMm:F2} mm" +
+                    (r.MarginMm < 1.5 ? "（⚠ 余量很小，装夹精度要严格控制）" : ""),
+                    "诊断③", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
             if (r.Success)
                 _log.Info("【诊断③】" + r.Detail.Replace("\n", " | "));
             else

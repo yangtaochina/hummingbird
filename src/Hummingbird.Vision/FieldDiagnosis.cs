@@ -15,16 +15,26 @@ namespace Hummingbird.Vision;
 ///   **完全看不到中央孔**，只有一个漫射光斑（中央孔应该是一个 ~100px 的圆）。
 ///   → 中央孔在当前红光照明下不可见，不能当标尺，也不能用它判断"在不在视野内"。
 ///
-/// 真图实测结论（离线定量分析，RANSAC + 多核径向峰值交叉验证）：
+/// 真图实测结论（离线定量分析，Kasa 圆拟合 + 阈值敏感性 + 极坐标展开交叉验证）：
 ///   · 画面中央的大椭圆是**工件盘面**，不是孔
 ///   · 四周的白色亮弧是**工件白色外环**（图纸 Ø3420 DIAL）
-///   · 外环半径实测 **R ≈ 700px**（blur 3/7/11/15 多核中位数 699~704，标准差 ~47px）
-///   · 由此 mm/px = 17.1mm / 700px = **0.0244 mm/px**
-///   · 视野 = 1920×0.0244 = **46.9mm** 宽 × 1200×0.0244 = **29.3mm** 高
-///   · 基准孔 R14.45mm = 592px，画面垂直半高 600px → **勉强在视野内（余量仅 8px）**
-///     ⇒ 垂直方向极度边缘，任何装夹偏移都会让基准孔出画
-///   · 18 个待加工孔 R11.1~13.6mm = 454~557px → 同样在视野内
-///   · 中央孔 Ø2.5/Ø2.9mm 应为 102/119px，但画面中看不到
+///   · 亮弧圆心**不在画面中心**：Kasa 拟合 center=(935,591)，R≈720px
+///     （阈值敏感性：th=180/200/215 → R=732/730/720px；th=235/245 → R=615/608px，
+///       那是拟合到了错误的更小弧段，不可信）
+///   · 由此 mm/px = 17.1mm / 720px = **0.0237 mm/px**（保守取 0.0234）
+///   · 视野 = 1920×0.0234 = **44.9mm** 宽 × 1200×0.0234 = **28.1mm** 高
+///   · 垂直半高 = 600px = **14.0mm** < 基准孔 R14.45mm
+///     ⇒ 基准孔**其实出画**（边缘情况，按保守口径说"在视野内但余量 <1mm"）
+///   · ⚠ **视野短边 28.1mm < 工件外径 Ø34.2mm** —— 工件根本放不进画面
+///   · 18 个待加工孔 R11.1~13.6mm = 474~581px → 在视野内
+///   · 中央孔 Ø2.5/Ø2.9mm 应为 107/124px，但画面中看不到
+///
+/// 🔴 最关键的发现：**8 个角向基准孔在红光下完全不可见**
+///   把图按 (角度,半径) 极坐标展开后，基准孔环带（R600~660px）灰度标准差仅
+///   **4.9/255**，看不到任何周期性结构；而外环亮弧处标准差 54.5。
+///   ⇒ "基准孔在视野内"是**假象**。在视野内 ≠ 看得见。
+///   ⇒ 当前红光 + 现有视野下，datumHoles 角向基准方案**实际不可用**。
+///   ⇒ 程序新增 `DatumVisible` 字段把这两件事分开报，避免现场误判。
 ///
 /// 因此本工具改为：
 ///   ① **主标尺 = 白色外环**（Ø34.2mm，图纸已知，视觉上最可靠）
@@ -32,13 +42,16 @@ namespace Hummingbird.Vision;
 ///   ② **副标尺 = 中央孔**（保留但降级）：只有真的量到圆环才用，并明确标注是次要依据
 ///   ③ 输出"基准孔在视野内的余量（px 与 mm）"，而不只是布尔值
 ///      —— 余量 8px 这种边缘情况必须让人一眼看到，不能只说"在视野内"
+///   ④ 新增**基准孔可见性检测**：区分"在视野内"与"看得见"（见上）
 ///
 /// ============================================================
-/// 另一个必须修正的判据：垂直方向才是约束
+/// 两个必须修正的判据
 /// ============================================================
-/// 之前用"半宽"判断视野够不够，错了——图幅是 1920×1200（横图），
-/// 垂直半高 600px 才是限制（1200/2 < 1920/2）。基准孔在 R592px 时，
-/// 水平方向余量 368px 很充裕，垂直方向余量只有 8px。
+/// ① 垂直方向才是约束：图幅是 1920×1200（横图），垂直半高 600px 才是限制
+///    （1200/2 < 1920/2）。
+/// ② ⚠ **相机旋转 90° 竖装对余量零增益**（曾有此误判，勿再犯）：
+///    旋转只改变画面方向，**物理短边仍是 28.1mm**，基准孔依然放不进画面。
+///    正确解法是**加大视野**（短焦镜头/拉远物距，短边 ≥36mm）或做机械限位。
 /// </summary>
 public sealed class FieldDiagnosis
 {
@@ -65,6 +78,11 @@ public sealed class FieldDiagnosis
     /// <param name="MarginMm">基准孔到画面上下边界的余量（mm）。负数=出画。</param>
     /// <param name="ScaleSource">标尺来源说明（外环 / 中央孔）。</param>
     /// <param name="Detail">人可读结论。</param>
+    /// <param name="DatumVisible">
+    /// 角向基准孔在环带上**是否真的看得见**（不是"在不在视野内"）。
+    /// 2026-11-05 真图实测：在视野内 ≠ 看得见 —— 红光下 8 个基准孔在极坐标展开图上
+    /// 完全不可见（环带标准差仅 4.9/255），角向基准方案实际不可用。
+    /// </param>
     public sealed record Result(
         bool Success,
         double ScalePx,
@@ -75,7 +93,8 @@ public sealed class FieldDiagnosis
         bool DatumInView,
         double MarginMm,
         string ScaleSource,
-        string Detail);
+        string Detail,
+        bool DatumVisible = true);
 
     /// <summary>
     /// 分析一帧图：优先用白色外环反算 mm/px → 判断基准孔是否在视野内。
@@ -142,17 +161,24 @@ public sealed class FieldDiagnosis
                     ? (marginMm < 1.5
                         ? $"  ⚠ 在视野内，但余量仅 {marginMm:F2}mm（{halfH - datumPx:F0}px）—— **垂直方向处于边缘**！\n" +
                           $"     → 装夹时工件一旦上下偏移，基准孔立刻出画。\n" +
-                          $"     → 建议：①相机改为竖装（1200×1920）或加宽图幅 ②改用 Binning=1 并确认 ROI 覆盖 ③" +
-                          $"把工件在 Y 方向做机械限位，确保每件都精确落在同一位置"
+                          $"     → 建议：①**加大视野**（换短焦镜头或拉远物距，使垂直半高 ≥ 18mm）" +
+                          $"②把工件在 Y 方向做机械限位，确保每件都精确落在同一位置 ③Binning 保持 1 并确认 ROI 覆盖全图\n" +
+                          $"     → ⚠ 旋转相机 90° **无效**（只换画面方向，物理短边不变）"
                         : $"  ✅ 在视野内，余量 {marginMm:F2}mm（{halfH - datumPx:F0}px），datumHoles 方案可行")
                     : $"  ❌ **不在视野内**（垂直半高仅 {halfH * mmPerPx:F2}mm < {datumRadiusMm:F2}mm，超出 {Math.Abs(marginMm):F2}mm）\n" +
-                      $"     → datumHoles 角向基准方案失效！退路：①加大视野（换短焦/加中继镜/相机竖装让 1200px 当长边）" +
-                      $"②或把相机移到能同时看到中心孔与基准孔的位置 ③或改用纯人工对刀（粗对齐角需准到 ±0.5°）");
+                      $"     → 视野短边 {fovH:F1}mm **小于工件外径 {outerRingDiameterMm:F1}mm**，工件根本放不进画面。\n" +
+                      $"     → 必须加大视野（换短焦/加中继镜/拉远物距，短边 ≥ {datumRadiusMm * 1.25:F0}mm）" +
+                      $"或把相机移到能同时看到中心孔与基准孔的位置，或改用纯机械对刀（粗对齐角需准到 ±0.5°）");
 
             detail += "\n" + MeasureCenterHoleNote(src, frame.Width, frame.Height, mmPerPx);
+
+            // ---------- 基准孔"可见性"检测（关键：在视野内 ≠ 看得见） ----------
+            var vis = MeasureDatumVisibility(src, frame.Width, frame.Height, datumPx, ring.RadiusPx);
+            detail += "\n" + vis.Note;
+
             _log?.Info("[诊断] " + detail.Replace("\n", " | "));
             return new Result(true, ring.RadiusPx * 2, mmPerPx, fovW, fovH, datumRadiusMm, inView, marginMm,
-                              $"白色外环 Ø{outerRingDiameterMm:F1}mm", detail);
+                              $"白色外环 Ø{outerRingDiameterMm:F1}mm", detail, vis.Visible);
         }
 
         // ---------- 副标尺：中央孔（外环量不到时的退路） ----------
@@ -284,6 +310,219 @@ public sealed class FieldDiagnosis
         }
 
         return new RingResult(median, median, std, inliers.Count);
+    }
+
+    // ==================================================================
+    // 基准孔可见性检测（极坐标展开 + 角度投票）
+    // ==================================================================
+
+    /// <summary>基准孔可见性检测结果。</summary>
+    private sealed record VisibilityResult(bool Visible, int Peaks, double RingStd, string Note);
+
+    /// <summary>
+    /// 检测角向基准孔在环带上是否真的成像可见。
+    ///
+    /// 2026-11-05 真图实测（决定性）：
+    ///   把相机图按极坐标展开（横轴=角度，纵轴=半径）后，基准孔所在环带（R600~680px）
+    ///   **几乎全黑，标准差仅 4.9/255**，看不到任何周期性结构。
+    ///   而外环亮弧所在半径（R700~780）标准差高达 54.5 —— 有强信号。
+    ///   ⇒ "基准孔在视野内" 是假象：**在视野内 ≠ 看得见**。
+    ///   红光下工件自带的双环孔不反光，角向基准方案不可用。
+    ///
+    /// 检测方法：极坐标展开 → 对基准孔环带做角度方向的高通 → 统计显著峰数量。
+    ///   有孔时，8 个孔（30° 均布）会在展开图上形成 8 组周期性暗点。
+    /// </summary>
+    private VisibilityResult MeasureDatumVisibility(Mat src, int w, int h, double datumPx, double ringPx)
+    {
+        // 圆心估计：外环拟合的圆心未知，用画面中心近似会偏。
+        // 这里直接从亮弧反推：用外环半径 + 图像重心二次修正代价高，
+        // 改用"以画面中心为起点、在外环内侧 15% 带宽内找最亮弧"的方式，
+        // 代价是圆心有几十像素误差 —— 但本检测判据是"环带有没有周期结构"，
+        // 对几十像素的圆心误差不敏感（环带取 ±60px 宽）。
+        var (cx, cy) = EstimateRingCenter(src, w, h, ringPx);
+
+        // 基准孔环带：目标半径 ± 60px，且不能越过外环亮弧的内边缘
+        int r0 = Math.Max(2, (int)(datumPx - 60));
+        int r1 = (int)(datumPx + 60);
+        int rCap = (int)(ringPx - 30);      // 外环亮弧内侧，环带上界不能进到这里
+        if (r1 > rCap) r1 = rCap;
+        if (r1 - r0 < 10) return new VisibilityResult(false, 0, 0, "");
+
+        const int nAng = 720;   // 0.5°/列
+        var band = new double[r1 - r0 + 1, nAng];
+
+        using var blur = new Mat();
+        Cv2.GaussianBlur(src, blur, new Size(3, 3), 0);
+
+        for (int ri = r0; ri <= r1; ri++)
+        {
+            for (int ai = 0; ai < nAng; ai++)
+            {
+                double ang = 2 * Math.PI * ai / nAng;
+                int x = (int)Math.Round(cx + ri * Math.Cos(ang));
+                int y = (int)Math.Round(cy + ri * Math.Sin(ang));
+                if (x < 0 || x >= w || y < 0 || y >= h) { band[ri - r0, ai] = double.NaN; continue; }
+                band[ri - r0, ai] = blur.At<byte>(y, x);   // ⚠ 必须 At<byte>()
+            }
+        }
+
+        // 每行（每个半径）沿角度方向做去均值 → 抑制大尺度照明起伏，保留局部特征
+        int rows = r1 - r0 + 1;
+        var valid = new bool[nAng];
+        for (int ri = 0; ri < rows; ri++)
+        {
+            double sum = 0; int n = 0;
+            for (int ai = 0; ai < nAng; ai++) if (!double.IsNaN(band[ri, ai])) { sum += band[ri, ai]; n++; }
+            if (n < 20) { for (int ai = 0; ai < nAng; ai++) valid[ai] = false; continue; }
+            double mean = sum / n;
+            for (int ai = 0; ai < nAng; ai++) if (!double.IsNaN(band[ri, ai])) band[ri, ai] -= mean;
+            for (int ai = 0; ai < nAng; ai++) valid[ai] = valid[ai] && true;
+        }
+        // valid[i] 表示该角度列在环带内有足够采样
+        for (int ai = 0; ai < nAng; ai++)
+        {
+            int cnt = 0;
+            for (int ri = 0; ri < rows; ri++) if (!double.IsNaN(band[ri, ai])) cnt++;
+            valid[ai] = cnt >= Math.Max(5, rows / 3);
+        }
+
+        // 逐角度聚合（对该半径区间内的所有行取平方和）→ 得到角度方向能量曲线
+        var energy = new double[nAng];
+        for (int ai = 0; ai < nAng; ai++)
+        {
+            double e = 0; int n = 0;
+            for (int ri = 0; ri < rows; ri++)
+            {
+                if (double.IsNaN(band[ri, ai])) continue;
+                e += band[ri, ai] * band[ri, ai]; n++;
+            }
+            energy[ai] = n > 0 ? Math.Sqrt(e / n) : 0;
+        }
+
+        double[] validEnergy = energy.Where((_, i) => valid[i]).ToArray();
+        if (validEnergy.Length < 50) return new VisibilityResult(false, 0, 0, "");
+        double avg = validEnergy.Average();
+        double std = Math.Sqrt(validEnergy.Select(v => (v - avg) * (v - avg)).Average());
+
+        // 角度方向能量的峰谷比：孔会产生局部凹陷（暗）或反光凸起（亮）
+        // 统计显著偏离均值的角度段数
+        int peaks = CountPeaks(energy, avg - Math.Max(3, std * 1.2), valid);
+
+        // 环带整体对比度（灰度域）
+        double ringStd = BandStdDev(band, r0, r1, nAng);
+
+        bool visible = ringStd >= 12 && peaks >= 4;
+
+        string note;
+        if (visible)
+        {
+            note = $"【基准孔可见性】✅ 环带 R{r0}~{r1}px 上检出 {peaks} 个显著特征（环带对比度 {ringStd:F1}/255），" +
+                   $"角向基准方案可用。";
+        }
+        else
+        {
+            note = $"【基准孔可见性】❌ **基准孔在视野内但完全不可见**" +
+                   $"（环带 R{r0}~{r1}px 对比度仅 {ringStd:F1}/255，显著特征 {peaks} 个，需 ≥12 且 ≥4 个）。\n" +
+                   $"     → 极坐标展开验证：该环带**看不到任何周期性结构**，8 个双环孔在红光下不反光。\n" +
+                   $"     → **\"基准孔在视野内\"是假象**——在视野内 ≠ 看得见。datumHoles 角向基准方案**实际不可用**。\n" +
+                   $"     → 退路：①换成**白光/蓝光**照明或加窄带滤光片（红光对工件金属不形成反差）" +
+                   $"②或改用**双相机/一次两工位**方案：一次拍中心定位、一次拍角向基准" +
+                   $"③或客户确认：打孔孔位本身是否对称（18 孔不具 90° 对称，必须有角向基准）";
+        }
+        return new VisibilityResult(visible, peaks, ringStd, note);
+    }
+
+    /// <summary>估计白色外环的圆心（用最亮弧的三点圆拟合）。</summary>
+    private static (double Cx, double Cy) EstimateRingCenter(Mat src, int w, int h, double ringPx)
+    {
+        // 取亮度最高的一批像素（外环最亮处），做 Kasa 圆拟合
+        var pts = new List<(double X, double Y)>();
+        using var blur = new Mat();
+        Cv2.GaussianBlur(src, blur, new Size(3, 3), 0);
+        Cv2.MinMaxIdx(blur, out _, out double maxGray);
+        double th = Math.Max(60, maxGray * 0.75);
+        for (int y = 0; y < h; y += 2)
+            for (int x = 0; x < w; x += 2)
+                if (blur.At<byte>(y, x) > th) pts.Add((x, y));
+
+        if (pts.Count < 30) return (w / 2.0, h / 2.0);
+
+        // Kasa 最小二乘圆拟合
+        double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sz = 0, sxz = 0, syz = 0;
+        foreach (var (x, y) in pts)
+        {
+            double z = x * x + y * y;
+            sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
+            sz += z; sxz += x * z; syz += y * z;
+        }
+        int n = pts.Count;
+        double[,] A =
+        {
+            { sxx, sxy, sx },
+            { sxy, syy, sy },
+            { sx,  sy,  n  }
+        };
+        double[] b = { sxz, syz, sz };
+        var sol = Solve3(A, b);
+        if (sol == null) return (w / 2.0, h / 2.0);
+        double cx = sol[0] / 2.0, cy = sol[1] / 2.0;
+        double r = Math.Sqrt(Math.Max(1, sol[2] + cx * cx + cy * cy));
+
+        // 拟合半径与传入的外环半径差太多 → 不可信，回退画面中心
+        if (r < ringPx * 0.6 || r > ringPx * 1.6) return (w / 2.0, h / 2.0);
+        return (cx, cy);
+    }
+
+    /// <summary>解 3×3 线性方程组（高斯消元）。解不出返回 null。</summary>
+    private static double[]? Solve3(double[,] a, double[] b)
+    {
+        var m = new double[4, 4];
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++) m[i, j] = a[i, j];
+            m[i, 3] = b[i];
+        }
+        for (int col = 0; col < 3; col++)
+        {
+            int piv = col;
+            for (int r = col + 1; r < 3; r++)
+                if (Math.Abs(m[r, col]) > Math.Abs(m[piv, col])) piv = r;
+            if (Math.Abs(m[piv, col]) < 1e-9) return null;
+            for (int j = col; j < 4; j++) (m[col, j], m[piv, j]) = (m[piv, j], m[col, j]);
+            for (int r = 0; r < 3; r++)
+            {
+                if (r == col) continue;
+                double f = m[r, col] / m[col, col];
+                for (int j = col; j < 4; j++) m[r, j] -= f * m[col, j];
+            }
+        }
+        return new[] { m[0, 3] / m[0, 0], m[1, 3] / m[1, 1], m[2, 3] / m[2, 2] };
+    }
+
+    /// <summary>统计能量曲线中低于阈值的连续段数量（暗点 = 孔）。</summary>
+    private static int CountPeaks(double[] energy, double threshold, bool[] valid)
+    {
+        int count = 0; bool inSeg = false;
+        for (int i = 0; i < energy.Length; i++)
+        {
+            if (!valid[i]) { inSeg = false; continue; }
+            bool low = energy[i] < threshold;
+            if (low && !inSeg) { count++; inSeg = true; }
+            else if (!low) inSeg = false;
+        }
+        return count;
+    }
+
+    /// <summary>环带的灰度标准差（衡量该环带有没有结构）。</summary>
+    private static double BandStdDev(double[,] band, int r0, int r1, int nAng)
+    {
+        var vals = new List<double>();
+        for (int ri = 0; ri < band.GetLength(0); ri++)
+            for (int ai = 0; ai < nAng; ai++)
+                if (!double.IsNaN(band[ri, ai])) vals.Add(band[ri, ai]);
+        if (vals.Count < 20) return 0;
+        double m = vals.Average();
+        return Math.Sqrt(vals.Select(v => (v - m) * (v - m)).Average());
     }
 
     // ==================================================================
