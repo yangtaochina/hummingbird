@@ -153,6 +153,47 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
           $"粗对齐角={alt:F1}° 时选中对应候选（实际 {pAlt.AngleOffsetDeg:F2}°）");
 }
 
+// ============================================================
+// 【组6】视野诊断 FieldDiagnosis（2026-11-05 现场必做的一步）
+//
+// 目的：用手工合成的"已知尺寸亮环"验证反算逻辑正确，
+//       并验证"基准孔在不在视野内"的判定能给出对的结果。
+//       现场真图靠这个工具判定 datumHoles 方案是否成立。
+// ============================================================
+{
+    var fdiag = new FieldDiagnosis(log);
+
+    // 情形 A：视野足够（1200×900 图幅，2.5mm 孔占 100px → 0.025mm/px → 视野 30mm，半宽 15mm ≥ 14.45mm）
+    var frameA = MakeFrameWithBrightRing(1200, 900, 100.0);
+    var rA = fdiag.Analyze(frameA, 14.45);
+    Check(rA.Success, $"视野诊断A：成功量到中央孔（{rA.HoleDiameterPx:F1}px）");
+    Check(rA.Success && Math.Abs(rA.MmPerPx - 0.025) < 0.002,
+          $"视野诊断A：反算 mm/px 正确（实际 {rA.MmPerPx:F5}，期望 0.02500）");
+    Check(rA.DatumInView, $"视野诊断A：判定基准孔在视野内（半宽 {rA.FovWidthMm / 2:F1}mm）");
+
+    // 情形 B：视野太小（2.5mm 孔占 500px → 0.005mm/px → 视野 6mm，半宽 3mm < 14.45 → 不在视野内）
+    var frameB = MakeFrameWithBrightRing(1200, 900, 500.0);
+    var rB = fdiag.Analyze(frameB, 14.45);
+    Check(rB.Success, $"视野诊断B：成功量到中央孔（{rB.HoleDiameterPx:F1}px）");
+    Check(rB.Success && !rB.DatumInView,
+          $"视野诊断B：判定基准孔**不在**视野内（半宽仅 {rB.FovWidthMm / 2:F1}mm < 14.45mm）");
+
+    // 情形 C：画面全黑 → 必须明确报"没量到"，而不是给出瞎猜的 mm/px
+    var frameC = new CameraFrame(new byte[1200 * 900], 1200, 900, DateTime.Now);
+    var rC = fdiag.Analyze(frameC, 14.45);
+    Check(!rC.Success, "视野诊断C：全黑画面明确报失败（不瞎猜 mm/px）");
+}
+
+/// <summary>合成一张"暗底 + 正中亮环"的灰度图，用于验证 FieldDiagnosis 的反算逻辑。</summary>
+static CameraFrame MakeFrameWithBrightRing(int w, int h, double ringDiameterPx)
+{
+    using var mat = new OpenCvSharp.Mat(h, w, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(30));
+    OpenCvSharp.Cv2.Circle(mat, new OpenCvSharp.Point(w / 2, h / 2), (int)(ringDiameterPx / 2), OpenCvSharp.Scalar.All(230), -1);
+    var buf = new byte[w * h];
+    System.Runtime.InteropServices.Marshal.Copy(mat.Data, buf, 0, buf.Length);
+    return new CameraFrame(buf, w, h, DateTime.Now);
+}
+
 static double AngleDiff(double a, double b)
 {
     double d = Math.Abs(a - b) % 360;

@@ -1,5 +1,6 @@
 using System.IO.Ports;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using Hummingbird.Core;
 using Hummingbird.Devices.LaserRtu;
@@ -54,6 +55,19 @@ public sealed class MainForm : Form
     private readonly ComboBox _cmbBaud = new() { Width = 90, DropDownStyle = ComboBoxStyle.DropDownList };
     /// <summary>人工装夹粗对齐角（度）：工件按 12H 摆正的大致角度，用于消解基准孔组的 90° 旋转对称歧义。</summary>
     private readonly TextBox _txtCoarse = new() { Width = 70, Text = "0" };
+    /// <summary>现场诊断结果输出区（相机参数范围 / 曝光扫描 / 视野诊断）。</summary>
+    private readonly TextBox _txtDiag = new()
+    {
+        Multiline = true,
+        ReadOnly = true,
+        ScrollBars = ScrollBars.Vertical,
+        Width = 700,
+        Height = 180,
+        Font = new Font("Consolas", 9F),
+        BackColor = Color.White
+    };
+    /// <summary>当前加载的孔位模板（诊断时需要基准孔半径）。</summary>
+    private HolePatternTemplate _template = new();
 
     /// <param name="logger">全局日志器；不传则自建（设计器/单元测试场景）。</param>
     public MainForm(IAppLogger? logger = null)
@@ -70,6 +84,7 @@ public sealed class MainForm : Form
 
         // 孔位模板：以 DWG 权威图纸为准（P26009G打孔图纸 2026.11.2，18 个待加工单环孔）
         var template = HolePatternTemplate.LoadJson("templates/dial_18holes.json");
+        _template = template;
         _log.Info($"加载孔位模板：{template.PartName}（{template.Holes.Count}孔，基准模式={template.DatumMode}）");
         if (template.Note.Length > 0) _log.Info($"模板说明：{template.Note}");
 
@@ -213,6 +228,15 @@ public sealed class MainForm : Form
             Lbl("曝光us"), _numExp, Lbl("增益"), _numGain,
             Btn("应用参数", async (_, _) => await ApplyCameraParams()),
             Btn("拍照(显示在自动页)", async (_, _) => await GrabLocateShow()));
+
+        // 现场诊断组（2026-11-05：曝光拉满仍全黑 / 视野疑似只有几毫米）
+        var gbDiag = GroupBoxOf("现场诊断",
+            Btn("①相机参数范围", async (_, _) => await DiagParamRanges()),
+            Btn("②自动曝光扫描", async (_, _) => await DiagExposureScan()),
+            Btn("③视野诊断(mm/px)", async (_, _) => await DiagFieldOfView()),
+            Btn("保存诊断结果", (_, _) => SaveDiag()),
+            _txtDiag);
+
         var gbLaser = GroupBoxOf("激光器",
             Lbl("串口"), _txtCom, Lbl("波特率"), _cmbBaud,
             Btn("打开串口", async (_, _) => await OpenLaserPort()),
@@ -241,6 +265,7 @@ public sealed class MainForm : Form
 
         var dbgRoot = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, Padding = new Padding(8) };
         dbgRoot.Controls.Add(gbCam);
+        dbgRoot.Controls.Add(gbDiag);
         dbgRoot.Controls.Add(gbLaser);
         dbgRoot.Controls.Add(gbCnc);
         tabDbg.Controls.Add(dbgRoot);
@@ -637,6 +662,136 @@ public sealed class MainForm : Form
     }
 
     // ================= 小工具 =================
+
+    // ---------- 现场诊断（2026-11-05） ----------
+    //
+    // 现场现象：关闭红光后画面全黑；红光长亮时能看到中心孔周围金属；
+    //           手机照明 + 曝光拉满也只看到"一点点亮的东西"。
+    // 要分清三件事，不能靠猜：
+    //   ① 相机允许的最大曝光/增益是多少？（是不是界面/驱动把值卡住了）
+    //   ② 当前照明到底需要多长曝光才够亮？
+    //   ③ 视野有多大 → 角向基准孔（R14.45mm）在不在画面内？
+    //      不在 → datumHoles 方案直接失效，必须改硬件方案或改人工对刀。
+
+    /// <summary>① 查询相机真实参数范围（曝光/增益/黑电平/gamma/Binning/ROI/传感器）。</summary>
+    private async Task DiagParamRanges()
+    {
+        if (_camera is not ICameraDiagnostics diag)
+        {
+            _log.Warn("当前相机不支持诊断（模拟相机或未装 pylon SDK）");
+            _txtDiag.Text = "当前相机不支持参数范围查询。";
+            return;
+        }
+        if (!_camera.IsOpen) { _log.Warn("请先点『打开相机』"); _txtDiag.Text = "相机未打开。"; return; }
+
+        try
+        {
+            string s = await Task.Run(() => diag.GetParameterRanges());
+            _txtDiag.Text = s;
+            _log.Info("【诊断①】相机参数范围：\n" + s);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("参数范围查询失败：" + ex.Message);
+            _txtDiag.Text = "查询失败：" + ex.Message;
+        }
+    }
+
+    /// <summary>② 自动曝光扫描：一次性找出当前照明下够亮的曝光档。</summary>
+    private async Task DiagExposureScan()
+    {
+        if (_camera is not ICameraDiagnostics diag)
+        {
+            _log.Warn("当前相机不支持诊断");
+            _txtDiag.Text = "当前相机不支持曝光扫描。";
+            return;
+        }
+        if (!_camera.IsOpen) { _log.Warn("请先点『打开相机』"); _txtDiag.Text = "相机未打开。"; return; }
+
+        // 覆盖从短到很长的曝光跨度：现场报"曝光加到最大还是暗"，这里要看到最上限的表现
+        double[] list = { 100, 500, 1000, 5000, 20000, 50000, 100000, 300000, 1000000 };
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("曝光扫描（曝光us / 平均灰度 / 峰值灰度）");
+        sb.AppendLine("------------------------------------------------");
+        try
+        {
+            var probes = await diag.ScanExposureAsync(list);
+            foreach (var p in probes)
+            {
+                string line = p.Ok
+                    ? $"{p.ExposureUs,10:F0}  均值 {p.MeanGray,6:F1}  峰值 {p.MaxGray,3:F0}"
+                    : $"{p.ExposureUs,10:F0}  采集失败";
+                sb.AppendLine(line);
+                _log.Info("【诊断②】" + line);
+            }
+
+            // 判据：峰值灰度 < 60 视为"基本全黑"；均值 < 20 且峰值 < 100 视为"严重不足"
+            var good = probes.Where(p => p.Ok && p.MaxGray >= 100 && p.MeanGray >= 20).ToList();
+            sb.AppendLine("------------------------------------------------");
+            if (good.Count == 0)
+            {
+                sb.AppendLine("结论：❌ 所有曝光档位画面都明显偏暗 → 不是曝光设置问题，是**照明光强不足**。");
+                sb.AppendLine("      处理：①加装高功率同轴/环形照明；②换用白光LED并加大光通量；");
+                sb.AppendLine("            ③确认红光是否需要窄带滤光片（若是激光引光，还要评估强光对相机的污染）；");
+                sb.AppendLine("            ④检查镜头光圈是否被拧到最小、是否装了减光片。");
+            }
+            else
+            {
+                var best = good.OrderBy(p => p.ExposureUs).First();
+                sb.AppendLine($"结论：✅ 曝光 {best.ExposureUs:F0}us 起画面即可用（均值 {best.MeanGray:F1} / 峰值 {best.MaxGray:F0}）。");
+                sb.AppendLine("      建议把曝光设到该档（再留 1~2 倍余量给工件反光差异），并把增益调回 0 附近避免噪点。");
+            }
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine("扫描失败：" + ex.Message);
+            _log.Error("曝光扫描失败：" + ex.Message);
+        }
+        _txtDiag.Text = sb.ToString();
+    }
+
+    /// <summary>③ 视野诊断：用中央孔（已知尺寸）反算 mm/px，判断基准孔在不在画面内。</summary>
+    private async Task DiagFieldOfView()
+    {
+        if (_camera is null) { _log.Warn("相机不可用"); return; }
+        if (!_camera.IsOpen) { _log.Warn("请先点『打开相机』"); _txtDiag.Text = "相机未打开。"; return; }
+
+        try
+        {
+            var frame = await _camera.GrabAsync(3000);
+            ShowFrame(_pbMain, frame, null);
+            double datumR = _template.DatumHoleRadiusMm > 0 ? _template.DatumHoleRadiusMm : 14.45;
+            var diag = new FieldDiagnosis(_log);
+            var r = diag.Analyze(frame, datumR);
+            _txtDiag.Text = r.Detail;
+            if (r.Success)
+                _log.Info("【诊断③】" + r.Detail.Replace("\n", " | "));
+            else
+                _log.Warn("【诊断③】" + r.Detail);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("视野诊断失败：" + ex.Message);
+            _txtDiag.Text = "视野诊断失败：" + ex.Message;
+        }
+    }
+
+    /// <summary>保存诊断结果到文件（带回现场分析/发给客户）。</summary>
+    private void SaveDiag()
+    {
+        try
+        {
+            string path = Path.Combine(AppContext.BaseDirectory, "output", $"诊断_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, _txtDiag.Text, Encoding.UTF8);
+            _log.Info("诊断结果已保存：" + path);
+            MessageBox.Show(this, "已保存：\n" + path, "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("保存诊断结果失败：" + ex.Message);
+        }
+    }
 
     private static Button Btn(string text, EventHandler onClick)
     {

@@ -19,7 +19,7 @@ namespace Hummingbird.Devices.Basler;
 ///
 /// 首次联机建议：先用 pylon Viewer 确认相机可见、能出 Mono8 图，再跑本软件。
 /// </summary>
-public sealed class BaslerCameraService : ICameraService
+public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
 {
     private readonly string _serial;        // 相机序列号；空 = 取第一台发现的相机
     private readonly IAppLogger _log;       // 运行日志（可为 null，只走界面时不影响功能）
@@ -146,6 +146,107 @@ public sealed class BaslerCameraService : ICameraService
         else
             _log.Warn("[相机] 设置增益失败");
         return Task.CompletedTask;
+    }
+
+    // ------------------------------------------------------------------
+    // 参数范围查询 / 自动曝光扫描（2026-11-05 现场：曝光拉满仍全黑）
+    // ------------------------------------------------------------------
+
+    /// <summary>读取当前可用的曝光/增益参数范围（相机实际支持值，不是猜的）。</summary>
+    /// <remarks>
+    /// 现场问题："曝光加到最大只能看到一点点亮的东西"。可能原因：
+    ///   ①相机支持的最大曝光比界面设定的上限还大 → 先查真实范围
+    ///   ②增益被限制在很小的范围 → 查 Gain 的 min/max
+    ///   ③镜头光圈/照明功率不足 → 查不到也解决不了，得换光源
+    /// 所以先把"相机允许什么"问清楚，再决定是调参数还是换光源。
+    /// </remarks>
+    public string GetParameterRanges()
+    {
+        if (_cam is not { IsOpen: true }) return "相机未打开";
+        var sb = new System.Text.StringBuilder();
+
+        void Try(string name, Func<string> get)
+        {
+            try { sb.AppendLine($"  {name}: {get()}"); }
+            catch (Exception ex) { sb.AppendLine($"  {name}: 读取失败 {ex.GetType().Name}"); }
+        }
+
+        // pylon 7.5 取值方式：GetValue() / GetMinimum() / GetMaximum()（不是 .Value/.Min/.Max）
+        Try("曝光模式", () => _cam.Parameters[PLCamera.ExposureMode].ToString());
+        Try("曝光时间", () =>
+        {
+            var p = _cam.Parameters[PLCamera.ExposureTime];
+            return $"当前 {p.GetValue()} us，范围 {p.GetMinimum()} ~ {p.GetMaximum()} us";
+        });
+        Try("增益", () =>
+        {
+            var p = _cam.Parameters[PLCamera.Gain];
+            return $"当前 {p.GetValue()}，范围 {p.GetMinimum()} ~ {p.GetMaximum()}";
+        });
+        Try("黑电平(Offset)", () =>
+        {
+            var p = _cam.Parameters[PLCamera.BlackLevel];
+            return $"当前 {p.GetValue()}，范围 {p.GetMinimum()} ~ {p.GetMaximum()}";
+        });
+        Try("gamma", () =>
+        {
+            var p = _cam.Parameters[PLCamera.Gamma];
+            return $"当前 {p.GetValue()}，范围 {p.GetMinimum()} ~ {p.GetMaximum()}";
+        });
+        Try("像素格式", () => _cam.Parameters[PLCamera.PixelFormat].ToString());
+        Try("Binning(水平/垂直)", () =>
+        {
+            var bh = _cam.Parameters[PLCamera.BinningHorizontal];
+            var bv = _cam.Parameters[PLCamera.BinningVertical];
+            return $"H={bh.GetValue()}({bh.GetMinimum()}~{bh.GetMaximum()}) V={bv.GetValue()}({bv.GetMinimum()}~{bv.GetMaximum()})";
+        });
+        Try("ROI", () =>
+        {
+            var w = _cam.Parameters[PLCamera.Width];
+            var h = _cam.Parameters[PLCamera.Height];
+            return $"{w.GetValue()} x {h.GetValue()}（最大 {w.GetMaximum()} x {h.GetMaximum()}）";
+        });
+        Try("传感器尺寸", () => _cam.Parameters[PLCamera.SensorWidth].GetValue() + " x " + _cam.Parameters[PLCamera.SensorHeight].GetValue() + " um");
+
+        string s = sb.ToString();
+        _log.Info("[相机] 参数范围：" + s.Replace("\n", " | "));
+        return s;
+    }
+
+    /// <summary>
+    /// 自动曝光扫描：按曝光时间从短到长逐档拍图，返回每档的平均/最大灰度与耗时。
+    /// 用于一次性摸清"当前照明条件下，多长曝光才够亮"，
+    /// 避免人工一条条试（现场每试一次都要重新摆工件，代价高）。
+    /// </summary>
+    /// <param name="exposureListUs">要试的曝光序列（us），升序</param>
+    public async Task<List<ExposureProbe>> ScanExposureAsync(IEnumerable<double> exposureListUs)
+    {
+        var results = new List<ExposureProbe>();
+        foreach (double us in exposureListUs)
+        {
+            try
+            {
+                await SetExposureUsAsync(us);
+                var frame = await GrabAsync(3000);
+                // 纯 C# 统计灰度（相机工程不引入 OpenCV 依赖，灰度统计自己算足够）
+                long sum = 0;
+                int max = 0;
+                foreach (byte b in frame.Gray)
+                {
+                    sum += b;
+                    if (b > max) max = b;
+                }
+                double mean = frame.Gray.Length > 0 ? (double)sum / frame.Gray.Length : 0;
+                results.Add(new ExposureProbe(us, mean, max, true));
+                _log.Info($"[扫描] 曝光 {us:F0}us → 均值 {mean:F1} 峰值 {max}");
+            }
+            catch (Exception ex)
+            {
+                results.Add(new ExposureProbe(us, 0, 0, false));
+                _log.Warn($"[扫描] 曝光 {us:F0}us 失败：{ex.Message}");
+            }
+        }
+        return results;
     }
 
     public void Dispose() => CloseAsync().GetAwaiter().GetResult();
