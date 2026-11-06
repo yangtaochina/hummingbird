@@ -1,3 +1,4 @@
+using System.Text;
 using Hummingbird.Core;
 using Opc.Ua;
 using Opc.Ua.Client;
@@ -20,8 +21,13 @@ namespace Hummingbird.Devices.OpcUa;
 /// ns=0=OPC UA 标准、ns=1=服务器实例（SinumerikServer）、ns=2=SinumerikVarProvider。
 /// 轴名可配（config.json 的 CncAxisX/Y/ZName），以 UaExpert 实际展开结果为准。
 /// </summary>
-public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess
+public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumerikVarProbe
 {
+    /// <summary>
+    /// 连接成功后是否自动跑一遍通用连接诊断（命名空间表 + XYZ 位置候选扫描）。
+    /// 现场「只读探测」按钮会自己跑更完整的转台专项探测，故置 false 避免重复刷屏/重复读节点。
+    /// </summary>
+    public bool RunConnectDiagnostics { get; set; } = true;
     /// <summary>程序下发用的网络共享路径（如 \\192.168.214.1\nc），由 App 配置注入。</summary>
     public string? ProgramSharePath { get; set; }
     /// <summary>变量命名空间匹配关键字（连接时在命名空间表里找包含它的 URI）。</summary>
@@ -120,7 +126,8 @@ public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess
         {
             _varNs = await ResolveVarNamespaceAsync(ct);
             _log.Info($"[数控] 会话建立成功（变量命名空间 ns={_varNs}）");
-            await LogDiagnosticsAsync(ct);   // 现场联调：打全候选节点可读性日志（只读不写）
+            // 现场探测按钮自带专项扫描，这里跳过通用诊断以免对真机重复读上百个节点
+            if (RunConnectDiagnostics) await LogDiagnosticsAsync(ct);   // 现场联调：打全候选节点可读性日志（只读不写）
         }
         else
         {
@@ -422,6 +429,181 @@ public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess
             _log.Warn($"[数控] 读变量失败 {nodePath}：{ex.Message}");
             return null;
         }
+    }
+
+    // ==================================================================
+    // ISinumerikVarProbe：OPC UA 已联通之后的「第一步」——只读探测
+    // 2026-11-06 客户确认网络打通。要清楚：**网络通 ≠ 能自动分度**，还差：
+    //   ① R 参数是否可写（GudWrite）② 转台实际角度节点路径
+    //   ③ PLC 触发位/到位位节点路径    ④ 机床侧 NC 子程序与 PLC 握手
+    // 本方法把 ①②③ 能自动查的都查出来并生成中文报告；④ 只能由机床侧提供。
+    // ⚠ 全程只读：读变量值 + 读节点 AccessLevel 属性 + 浏览目录，
+    //   绝不调用 Write、绝不写 R 参数、绝不触发任何轴运动。
+    // ==================================================================
+
+    /// <summary>转台自动分度前置条件的只读探测（要求已建立会话）。</summary>
+    public async Task<OpcUaProbeReport> ProbeRotaryAsync(int targetRNumber, CancellationToken ct = default)
+    {
+        var sb = new StringBuilder();
+        var candidates = new List<string>();
+        sb.AppendLine("SINUMERIK 828D OPC UA 现场只读探测报告（转台自动分度前置条件）");
+        sb.AppendLine("时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.AppendLine("端点：" + Endpoint);
+        sb.AppendLine("变量命名空间：ns=" + _varNs);
+        sb.AppendLine("★ 安全声明：本次探测只读变量值 / 节点属性 / 地址空间目录，未写入任何变量、未触发任何轴运动。");
+        sb.AppendLine();
+
+        if (!IsConnected)
+        {
+            sb.AppendLine("结果：OPC UA 会话未连接，探测中止（检查网线、IP、4840 端口、客户端证书是否被 828D 信任、账号权限）。");
+            _log.Warn("[探测] OPC UA 会话未连接，探测中止");
+            return new OpcUaProbeReport(false, Endpoint, sb.ToString(), candidates);
+        }
+
+        // ---- 1. 命名空间表：决定所有节点路径前缀的 ns 索引 ----
+        sb.AppendLine("=== 1. 服务器命名空间表（config.json 的 CncVarNamespace 以此为准）===");
+        try
+        {
+            var raw = (await _session!.ReadValueAsync(new NodeId(2255), ct)).Value as string[];
+            if (raw is not null)
+                for (int i = 0; i < raw.Length; i++) sb.AppendLine($"  ns={i}: {raw[i]}");
+            else sb.AppendLine("  读取为空（账号权限不足？）");
+        }
+        catch (Exception ex) { sb.AppendLine("  读取失败：" + ex.Message); }
+        sb.AppendLine();
+
+        // ---- 2. 目标角 R 参数：存在性 / 当前值 / 当前用户写权限 ----
+        string rPath = $"/Channel/Parameter/R[u1, {targetRNumber}]";
+        sb.AppendLine($"=== 2. 目标角 R 参数 R{targetRNumber} ===");
+        sb.AppendLine("  路径：" + rPath + $"（ns={_varNs}）");
+        var rRead = await ReadNodeTextAsync(rPath, ct);
+        sb.AppendLine("  读取：" + rRead.Text);
+        string access = ReadAccessText(rPath);
+        sb.AppendLine("  权限：" + access);
+        bool rWritable = access.Contains("当前用户可写", StringComparison.Ordinal);
+        sb.AppendLine(rWritable
+            ? "  ✔ 当前用户对该 R 参数有写权限 → 目标角可用标准路径写入，RotaryTargetRNode 留空即可。"
+            : "  ✘ 当前用户不可写 → HMI【调试→网络→OPC UA→设置】给该用户加 StateWrite/GudWrite 权限；或请机床厂换传值方式。");
+        if (!rRead.Ok)
+            sb.AppendLine("  ⚠ 该 R 参数节点没读到：请用 UaExpert 展开 /Channel/Parameter，把实际节点路径填到 RotaryTargetRNode。");
+        sb.AppendLine();
+
+        // ---- 3. 轴实际位置候选：找转台角度反馈节点 ----
+        sb.AppendLine("=== 3. 轴实际位置候选节点（找转台角度反馈）===");
+        sb.AppendLine("  判据：OPC UA 能读到且值为数值。请与 HMI 上 C/A 轴实际角度对照，挑数值一致的那条填 RotaryActualAngleNode。");
+        string[] dirs = { "/Channel/GeometricAxis", "/Channel/MachineAxis" };
+        string[] vars = { "actToolBasePos", "aaPos", "aaIm", "actPos" };
+        string[] axes = { "[u1, 1]", "[u1, 2]", "[u1, 3]", "[u1, 4]", "[u1, 5]",
+                          "[u1, 6]", "[u1, C]", "[u1, A]", "[u1, B]", "[u1, SP]" };
+        int hit = 0, tried = 0;
+        foreach (var dir in dirs)
+            foreach (var v in vars)
+                foreach (var ax in axes)
+                {
+                    if (ct.IsCancellationRequested) break;
+                    string p = $"{dir}/{v}{ax}";
+                    tried++;
+                    var rr = await ReadNodeTextAsync(p, ct);
+                    if (!rr.Ok) continue;
+                    candidates.Add(p);
+                    hit++;
+                    sb.AppendLine($"  命中 {p} = {rr.Text}");
+                }
+        sb.AppendLine($"  扫描 {tried} 个候选，命中 {hit} 个。⚠ 命中≠就是转台轴：X/Y/Z 线性轴也会命中，务必对照 HMI 数值。");
+        sb.AppendLine();
+
+        // ---- 4. 目录浏览：列出真实子节点名，用于拼 config 节点路径 ----
+        sb.AppendLine("=== 4. 地址空间目录浏览（真实子节点名，用来拼 config 里的节点路径）===");
+        foreach (var dir in new[] { "/Channel", "/Channel/Parameter", "/Channel/GeometricAxis",
+                                   "/Channel/MachineAxis", "/PLC", "/Plc", "/Channel/PLC" })
+        {
+            var names = BrowseChildNames(dir);
+            if (names.Count == 0) { sb.AppendLine($"  {dir}：浏览不到（节点不存在或权限不足）"); continue; }
+            sb.AppendLine($"  {dir}：{names.Count} 个子节点");
+            for (int i = 0; i < Math.Min(names.Count, 60); i++) sb.AppendLine("    " + names[i]);
+            if (names.Count > 60) sb.AppendLine($"    …（其余 {names.Count - 60} 个省略，用 UaExpert 展开看全）");
+        }
+        sb.AppendLine("  ⚠ PLC 触发位/到位位通常挂在 /PLC 下（如 DB99.DBX0.0）。若此处浏览不到，说明它在别的命名空间，用 UaExpert 展开后 Copy NodeId。");
+        sb.AppendLine();
+
+        // ---- 5. 结论：把「网络已通」之后还差什么一次讲清 ----
+        sb.AppendLine("=== 5. 结论 / 下一步（把本报告发回开发侧即可定死节点路径）===");
+        sb.AppendLine("  ① OPC UA 网络：已联通 ✔（本次会话建立成功，服务器地址空间可读）。");
+        sb.AppendLine($"  ② 目标角 R 参数：{(rRead.Ok ? "节点存在 ✔" : "节点未读到 ✘")}，当前用户{(rWritable ? "可写 ✔" : "不可写 ✘")}。");
+        sb.AppendLine($"  ③ 转台实际角度：{(candidates.Count > 0 ? $"有 {candidates.Count} 个候选，需对照 HMI 挑一条" : "没扫到候选，用 UaExpert 展开轴目录")}。");
+        sb.AppendLine("  ④ PLC 触发位 / 到位位：程序绝不臆造 NodeId，需机床厂给 DB 地址，UaExpert 核实后填 RotaryTriggerNode / RotaryDoneNode。");
+        sb.AppendLine("  ⑤ 机床侧还要：预置 NC 子程序（读 R90 → G0 C=R90 / POS[C]=R90）+ PLC 握手 + 安全联锁（门/夹紧/急停）。");
+        sb.AppendLine("  ⑥ 在 ②~⑤ 齐备前：DeviceMode 保持 Sim、RotaryMode 保持 ManualEntry（人工抄角照样能采多帧，不耽误视觉验证）。");
+        sb.AppendLine("     齐备后改 DeviceMode=Real、RotaryMode=OpcUaRPlc，先用 5° 小角度空跑验证握手，再上工件。");
+
+        _log.Info($"[探测] 只读探测完成：R 参数读得到={rRead.Ok}，当前用户可写={rWritable}，轴角度候选 {candidates.Count} 条");
+        return new OpcUaProbeReport(true, Endpoint, sb.ToString(), candidates);
+    }
+
+    /// <summary>读一个变量节点，返回「是否读成功 + 人话结果」。失败原因进报告，方便现场排错。</summary>
+    private async Task<(bool Ok, string Text)> ReadNodeTextAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            var dv = await _session!.ReadValueAsync(Node(path), ct);
+            if (!StatusCode.IsGood(dv.StatusCode))
+                return (false, $"状态码 {dv.StatusCode}（节点不存在 / 无读权限 / 索引写法不对）");
+            if (dv.Value is null) return (false, "值为空");
+            return (true, $"{dv.Value}（{dv.Value.GetType().Name}）");
+        }
+        catch (Exception ex) { return (false, "读取异常：" + ex.Message); }
+    }
+
+    /// <summary>
+    /// 读节点的 AccessLevel / UserAccessLevel 属性（**只读属性，不是写变量**），
+    /// 用来判断当前 OPC UA 账号有没有写 R 参数 / PLC 位的权限。
+    /// 位定义：0x01=CurrentRead，0x02=CurrentWrite。
+    /// </summary>
+    private string ReadAccessText(string path)
+    {
+        try
+        {
+            var id = Node(path);
+            var toRead = new ReadValueIdCollection
+            {
+                new ReadValueId { NodeId = id, AttributeId = Attributes.AccessLevel },
+                new ReadValueId { NodeId = id, AttributeId = Attributes.UserAccessLevel }
+            };
+#pragma warning disable CS0618 // 1.5.378 的同步 Read 在此版本可用
+            _session!.Read(null, 0, TimestampsToReturn.Neither, toRead,
+                           out DataValueCollection results, out _);
+#pragma warning restore CS0618
+            if (results.Count < 2) return "属性读取结果不完整";
+            byte a = Convert.ToByte(results[0].Value);
+            byte u = Convert.ToByte(results[1].Value);
+            string wa = (a & 0x02) != 0 ? "可写" : "只读";
+            string wu = (u & 0x02) != 0 ? "当前用户可写" : "当前用户不可写";
+            return $"AccessLevel=0x{a:X2}（{wa}），UserAccessLevel=0x{u:X2}（{wu}）";
+        }
+        catch (Exception ex) { return "权限属性读取失败：" + ex.Message; }
+    }
+
+    /// <summary>浏览一个目录的子节点，返回「显示名 | 节点标识符」列表，供现场拼节点路径。</summary>
+    private List<string> BrowseChildNames(string dirPath)
+    {
+        var list = new List<string>();
+        try
+        {
+#pragma warning disable CS0618 // Browser.Browse(同步) 在此版本仍可用，内部自动处理续页
+            var browser = new Browser(_session!)
+            {
+                BrowseDirection = BrowseDirection.Forward,
+                ReferenceTypeId = ReferenceTypeIds.HierarchicalReferences,
+                IncludeSubtypes = true,
+                NodeClassMask = 0,
+                ResultMask = (uint)BrowseResultMask.All
+            };
+            foreach (var r in browser.Browse(new NodeId(dirPath, _varNs)))
+                list.Add($"{r.DisplayName?.Text ?? "?"} | {r.NodeId?.Identifier}");
+#pragma warning restore CS0618
+        }
+        catch { /* 目录不存在/无浏览权限：返回空表，由调用方在报告里标注 */ }
+        return list;
     }
 
     public void Dispose() => DisconnectAsync().GetAwaiter().GetResult();

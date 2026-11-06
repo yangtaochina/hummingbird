@@ -635,6 +635,20 @@ static double AngleDiff(double a, double b)
     return d > 180 ? 360 - d : d;
 }
 
+Console.WriteLine("== 10) OPC UA 只读探测（离线可测部分：未连接时不得抛异常、不得伪装成功）==");
+{
+    // 真机节点扫描必须现场跑（界面【转台】页的探测按钮）；这里守住离线侧的安全语义：
+    // 没有会话时探测要优雅返回失败报告，绝不能假装读到节点、更不能触发任何写操作。
+    var probe = new OpcUaCncService();
+    Check(probe is ISinumerikVarProbe, "探测10.1：OpcUaCncService 实现 ISinumerikVarProbe 接口");
+    Check(probe.RunConnectDiagnostics, "探测10.2：默认仍开启连接通用诊断（主流程行为不变）");
+    var r = await probe.ProbeRotaryAsync(90);
+    Check(!r.Connected, "探测10.3：未连接时报告明确标记 Connected=false（不伪装成功）");
+    Check(r.CandidateAngleNodes.Count == 0, "探测10.4：未连接时节点候选为空");
+    Check(r.Text.Contains("未写入任何变量") && r.Text.Contains("探测中止"),
+          "探测10.5：报告含只读安全声明与中止说明");
+}
+
 Console.WriteLine(fails == 0 ? "===== ALL PASS =====" : $"===== {fails} 项 FAILED =====");
 return fails == 0 ? 0 : 1;
 

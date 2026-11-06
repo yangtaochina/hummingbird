@@ -53,6 +53,8 @@ public sealed class MainForm : Form
     private readonly Label _lblRotaryAngle = new() { AutoSize = true, Text = "当前角度：-", Padding = new Padding(0, 6, 0, 0) };
     private readonly NumericUpDown _numRotaryTarget = Num(-3600, 3600, 30, 0.1m);
     private readonly TextBox _txtRotaryManual = new() { Width = 100, Text = "0" };
+    /// <summary>只读探测防重复点击（一次探测会读几十个节点，连点会建多个 OPC UA 会话）。</summary>
+    private bool _probeBusy;
     private readonly NumericUpDown _numFreq = Num(50, 1000, 200, 10);
     private readonly NumericUpDown _numPulse = Num(1, 10, 5, 1);
     private readonly NumericUpDown _numR = Num(1, 999, 1, 1);
@@ -406,6 +408,21 @@ public sealed class MainForm : Form
         var tabRotary = new TabPage("转台");
         var rtRoot = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, Padding = new Padding(8) };
 
+        // ---- OPC UA 只读探测（2026-11-06 客户确认网络已联通 → 网络通之后的第一步）----
+        // 独立建会话、只读扫描、扫完断开，与主程序 DeviceMode(Sim/Real) 完全解耦：
+        // 即使主流程还在 Sim，也能一键核实真机的节点路径与写权限，且绝不写机床。
+        var gbRtProbe = new GroupBox { Text = "① OPC UA 只读探测（网络已通，先跑这个）", AutoSize = true, Padding = new Padding(8), MaximumSize = new Size(780, 0) };
+        var rtProbeFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, MaximumSize = new Size(760, 0) };
+        rtProbeFlow.Controls.Add(Btn("连接并探测节点/写权限（只读，不动机床）", async (_, _) => await ProbeOpcUaAsync()));
+        rtProbeFlow.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(740, 0), ForeColor = Color.DimGray,
+            Text = "自动保存 OPCUA探测-<时间>.txt 到程序目录，把文件发回开发侧即可定死节点路径。\r\n" +
+                   "探测内容：命名空间表、R90 是否存在及当前账号能否写、轴实际角度候选节点、PLC 目录浏览。全程只读。"
+        });
+        gbRtProbe.Controls.Add(rtProbeFlow);
+        rtRoot.Controls.Add(gbRtProbe);
+
         var gbRtState = new GroupBox { Text = "状态", AutoSize = true, Padding = new Padding(8), MaximumSize = new Size(780, 0) };
         var rtStateFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, MaximumSize = new Size(760, 0) };
         rtStateFlow.Controls.Add(_lblRotaryStatus);
@@ -435,9 +452,11 @@ public sealed class MainForm : Form
         rtRoot.Controls.Add(new Label
         {
             AutoSize = true, MaximumSize = new Size(760, 0), ForeColor = Color.DimGray,
-            Text = "【为什么默认人工抄角】OPC UA 网络还挂着（服务器在 PCU/IPC 的 X1）。但转台分度定位" +
-                   "只需要「每帧对应的角度」，不要求上位机自己驱动轴 —— 操作工手动转台、从 HMI 抄角度填进来，" +
-                   "程序照样能把多帧孔心逆旋转合并，做成完整孔组。等机床侧配合做好再切 OpcUaRPlc 自动模式。\r\n\r\n" +
+            Text = "【2026-11-06 状态更新】客户已确认 OPC UA 联通 ✔。但**网络通 ≠ 能自动分度**：\r\n" +
+                   "还差 R 参数写权限、转台实际角度节点、PLC 触发/到位位、机床侧 NC 子程序 + 握手。\r\n" +
+                   "所以主流程仍默认「人工抄角」：分度定位只需要每帧对应的角度，操作工手动转盘、从 HMI 抄角度填进来，\r\n" +
+                   "程序照样能把多帧孔心按已知角度逆旋转合并，不耽误视觉方案验证。\r\n" +
+                   "先用上面【只读探测】把能自动查的查清楚，再决定是否切 OpcUaRPlc 自动模式。\r\n\r\n" +
                    "【自动分度需要机床侧给的东西】①转台是数控轴（轴名、角度分辨率、有无回程间隙）；" +
                    "②一段预置 NC 子程序：读 R90 的目标角并执行 G0 C=R90 / POS[C]=R90；" +
                    "③PLC 握手：触发位 + 到位位（节点路径用 UaExpert 核实后填 config.json）；" +
@@ -674,6 +693,61 @@ public sealed class MainForm : Form
     // ==================================================================
     // 转台页签的动作（2026-11-06）
     // ==================================================================
+
+    /// <summary>
+    /// OPC UA 只读探测：单独建会话（与 DeviceMode=Sim/Real 无关）→ 扫节点与写权限 → 存报告 → 断开。
+    /// 网络通之后的第一步就该跑这个；全程不写任何机床变量、不触发任何轴运动。
+    /// </summary>
+    private async Task ProbeOpcUaAsync()
+    {
+        if (_probeBusy) return;
+        _probeBusy = true;
+        _log.Info($"[探测] 开始只读探测 → {_cfg.CncEndpoint}（独立会话；不写机床、不触发运动）");
+
+        var probe = new OpcUaCncService(_log)
+        {
+            VarNamespaceKeyword = _cfg.CncVarNamespace,
+            UserName = _cfg.CncUserName,
+            Password = _cfg.CncPassword,
+            UseSecureEndpoint = _cfg.CncUseSecurity,
+            RunConnectDiagnostics = false   // 专项探测自带更完整的扫描，跳过连接时的通用诊断
+        };
+        try
+        {
+            bool ok = await probe.ConnectAsync(_cfg.CncEndpoint);
+            if (!ok)
+            {
+                _log.Warn("[探测] 会话建立失败 → 检查 IP / 4840 端口 / 客户端证书是否被 828D 信任 / 账号权限");
+                MessageBox.Show("OPC UA 会话建立失败，请检查网络、端口 4840、客户端证书信任与账号权限。\r\n详细原因见下方日志。",
+                    "探测失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var report = await probe.ProbeRotaryAsync(_cfg.RotaryTargetRNumber);
+            string file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                                       $"OPCUA探测-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            File.WriteAllText(file, report.Text, new UTF8Encoding(true));   // BOM：记事本直接打开不乱码
+            foreach (var line in report.Text.Split('\n'))
+                if (line.Trim().Length > 0) _log.Info("[探测] " + line.TrimEnd('\r'));
+            _log.Info($"[探测] 报告已保存：{file}");
+
+            MessageBox.Show(
+                $"只读探测完成（未写机床、未触发运动）。\r\n\r\n" +
+                $"轴角度候选 {report.CandidateAngleNodes.Count} 条，报告已保存：\r\n{file}\r\n\r\n" +
+                "请把该文件发回开发侧，用来定死 config.json 里的节点路径。",
+                "OPC UA 探测完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("[探测] 异常：" + ex.Message);
+            MessageBox.Show("探测异常：" + ex.Message, "探测失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            try { await probe.DisconnectAsync(); } catch { /* 断开失败不阻塞界面 */ }
+            _probeBusy = false;
+        }
+    }
 
     private void RefreshRotaryUi()
     {
