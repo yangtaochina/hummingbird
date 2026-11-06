@@ -25,6 +25,7 @@ public sealed class MainForm : Form
     private readonly ICameraService? _camera;
     private readonly ICncService _cnc;
     private readonly ILaserService _laser;
+    private readonly IRotaryTableService _rotary;
     private readonly AutoRunWorkflow _wf;
 
     private PartPose? _lastPose;
@@ -48,6 +49,10 @@ public sealed class MainForm : Form
     private readonly NumericUpDown _numExp = Num(20, 1000000, 8000, 100);
     private readonly NumericUpDown _numGain = Num(0, 20, 1, 0.5m);
     private readonly NumericUpDown _numPower = Num(0, 10000, 6000, 100);
+    private readonly Label _lblRotaryStatus = new() { AutoSize = true, MaximumSize = new Size(760, 0), Text = "转台：未初始化" };
+    private readonly Label _lblRotaryAngle = new() { AutoSize = true, Text = "当前角度：-", Padding = new Padding(0, 6, 0, 0) };
+    private readonly NumericUpDown _numRotaryTarget = Num(-3600, 3600, 30, 0.1m);
+    private readonly TextBox _txtRotaryManual = new() { Width = 100, Text = "0" };
     private readonly NumericUpDown _numFreq = Num(50, 1000, 200, 10);
     private readonly NumericUpDown _numPulse = Num(1, 10, 5, 1);
     private readonly NumericUpDown _numR = Num(1, 999, 1, 1);
@@ -146,6 +151,24 @@ public sealed class MainForm : Form
             _camera = null;
 #endif
         }
+
+        // 转台服务（2026-11-06 客户新方案：转台分度 + 相机多帧定位）。
+        // 关键：与 OPC UA 网络解耦 —— 默认「人工抄角」，网络不通也能采多帧，不被机床通讯卡死。
+        var rotaryOpt = _cfg.BuildRotaryOptions();
+        bool autoRotary = _cfg.RotaryMode == nameof(RotaryTableMode.OpcUaRPlc) && _cnc is ISinumerikVarAccess;
+        if (autoRotary)
+        {
+            _rotary = new OpcUaRotaryTableService((ISinumerikVarAccess)_cnc, rotaryOpt, _log);
+        }
+        else
+        {
+            var mode = _cfg.RotaryMode == nameof(RotaryTableMode.Simulated)
+                ? RotaryTableMode.Simulated : RotaryTableMode.ManualEntry;
+            _rotary = new SimRotaryTableService(mode, rotaryOpt, _log);
+            if (_cfg.RotaryMode == nameof(RotaryTableMode.OpcUaRPlc))
+                _log.Warn("[转台] 配置要求自动分度，但当前不是 Real/OPC UA 设备模式 → 已降级为人工抄角");
+        }
+        _log.Info($"[转台] 模式={_rotary.Mode} 轴={rotaryOpt.AxisName}：{_rotary.ReadinessDetail}");
 
         // 策略模式：注册全部定位策略，界面可随时切换 _wf.Vision 指向哪一个。
         // 加工流程（AutoRunWorkflow）只认 IVisionService 抽象，切换策略零改动。
@@ -379,13 +402,61 @@ public sealed class MainForm : Form
         stRoot.Controls.Add(_txtStrategyCheck);
         tabStrategy.Controls.Add(stRoot);
 
+        // ---- 页签5：转台（2026-11-06 客户新方案：转台分度，让相机拍到更多信息）----
+        var tabRotary = new TabPage("转台");
+        var rtRoot = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoScroll = true, Padding = new Padding(8) };
+
+        var gbRtState = new GroupBox { Text = "状态", AutoSize = true, Padding = new Padding(8), MaximumSize = new Size(780, 0) };
+        var rtStateFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, MaximumSize = new Size(760, 0) };
+        rtStateFlow.Controls.Add(_lblRotaryStatus);
+        rtStateFlow.Controls.Add(_lblRotaryAngle);
+        rtStateFlow.Controls.Add(Btn("刷新状态", (_, _) => RefreshRotaryUi()));
+        gbRtState.Controls.Add(rtStateFlow);
+        rtRoot.Controls.Add(gbRtState);
+
+        var gbRtMove = new GroupBox { Text = "分度到角度（每转一次拍一帧）", AutoSize = true, Padding = new Padding(8) };
+        var rtMoveFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, WrapContents = true, MaximumSize = new Size(760, 0) };
+        rtMoveFlow.Controls.Add(Lbl("目标角度°"));
+        rtMoveFlow.Controls.Add(_numRotaryTarget);
+        rtMoveFlow.Controls.Add(Btn("转到目标角", async (_, _) => await MoveRotaryAsync()));
+        rtMoveFlow.Controls.Add(Btn("读回角度", async (_, _) => await ReadRotaryAngleAsync()));
+        gbRtMove.Controls.Add(rtMoveFlow);
+        rtRoot.Controls.Add(gbRtMove);
+
+        var gbRtManual = new GroupBox { Text = "人工抄角（OPC UA 没通时用它，不依赖机床通讯）", AutoSize = true, Padding = new Padding(8) };
+        var rtManualFlow = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, WrapContents = true, MaximumSize = new Size(760, 0) };
+        rtManualFlow.Controls.Add(Lbl("HMI 上读到的实际角度°"));
+        rtManualFlow.Controls.Add(_txtRotaryManual);
+        rtManualFlow.Controls.Add(Btn("已转到该角度", async (_, _) => await ConfirmManualAngleAsync()));
+        rtManualFlow.Controls.Add(Btn("设为 0°（回零位）", async (_, _) => { _txtRotaryManual.Text = "0"; await ConfirmManualAngleAsync(); }));
+        gbRtManual.Controls.Add(rtManualFlow);
+        rtRoot.Controls.Add(gbRtManual);
+
+        rtRoot.Controls.Add(new Label
+        {
+            AutoSize = true, MaximumSize = new Size(760, 0), ForeColor = Color.DimGray,
+            Text = "【为什么默认人工抄角】OPC UA 网络还挂着（服务器在 PCU/IPC 的 X1）。但转台分度定位" +
+                   "只需要「每帧对应的角度」，不要求上位机自己驱动轴 —— 操作工手动转台、从 HMI 抄角度填进来，" +
+                   "程序照样能把多帧孔心逆旋转合并，做成完整孔组。等机床侧配合做好再切 OpcUaRPlc 自动模式。\r\n\r\n" +
+                   "【自动分度需要机床侧给的东西】①转台是数控轴（轴名、角度分辨率、有无回程间隙）；" +
+                   "②一段预置 NC 子程序：读 R90 的目标角并执行 G0 C=R90 / POS[C]=R90；" +
+                   "③PLC 握手：触发位 + 到位位（节点路径用 UaExpert 核实后填 config.json）；" +
+                   "④OPC UA 用户要有变量写权限（StateWrite/GudWrite/PlcWrite）；" +
+                   "⑤安全联锁：门关、夹紧松开、急停、单次最大转角。\r\n" +
+                   "⚠ 828D 的轴位置变量是只读的，不能靠写轴位置驱动转台；本程序也绝不在未配置节点时臆造 NodeId。",
+            Padding = new Padding(4, 10, 0, 0)
+        });
+        tabRotary.Controls.Add(rtRoot);
+
         _tabs.TabPages.Add(tabAuto);
         _tabs.TabPages.Add(tabCal);
         _tabs.TabPages.Add(tabDbg);
         _tabs.TabPages.Add(tabStrategy);
+        _tabs.TabPages.Add(tabRotary);
 
         // 初始化策略下拉框 + 参数输入框
         InitStrategyUi();
+        RefreshRotaryUi();
 
         var logHost = new Panel { Dock = DockStyle.Bottom, Height = 180 };
         logHost.Controls.Add(_rtbLog);
@@ -598,6 +669,51 @@ public sealed class MainForm : Form
             MessageBox.Show(this, "已保存到：\n" + path, "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex) { _log.Error("保存策略配置失败：" + ex.Message); }
+    }
+
+    // ==================================================================
+    // 转台页签的动作（2026-11-06）
+    // ==================================================================
+
+    private void RefreshRotaryUi()
+    {
+        _lblRotaryStatus.Text = "转台模式：" + _rotary.Mode + " ｜ " + _rotary.ReadinessDetail;
+        _lblRotaryAngle.Text = $"当前角度：{_rotary.CurrentAngleDeg:F3}°";
+    }
+
+    private async Task MoveRotaryAsync()
+    {
+        double target = (double)_numRotaryTarget.Value;
+        _log.Info($"【转台】请求转到 {target:F3}°（模式 {_rotary.Mode}）");
+        var r = await _rotary.MoveToAsync(target);
+        if (r.Success) _log.Info("【转台】" + r.Detail);
+        else _log.Warn("【转台】未到位：" + r.Detail);
+        RefreshRotaryUi();
+        MessageBox.Show(r.Detail, r.Success ? "转台到位" : "转台未动作",
+            MessageBoxButtons.OK, r.Success ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
+    private async Task ReadRotaryAngleAsync()
+    {
+        var a = await _rotary.ReadAngleAsync();
+        _log.Info(a is null
+            ? "【转台】读不到实际角度（未配置 RotaryActualAngleNode / 未连接 / 人工模式）→ 人工模式请用左侧抄角"
+            : $"【转台】实际角度 = {a:F3}°");
+        RefreshRotaryUi();
+    }
+
+    private async Task ConfirmManualAngleAsync()
+    {
+        if (!double.TryParse(_txtRotaryManual.Text.Trim(), out double deg))
+        {
+            MessageBox.Show("角度填的不是数字。请照抄 HMI 上显示的转台实际角度。", "输入错误",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        bool ok = await _rotary.SetAngleAsync(deg);
+        if (ok) _log.Info($"【转台】人工抄角确认：{_rotary.CurrentAngleDeg:F3}° —— 可以拍下一帧了");
+        else _log.Warn("【转台】人工抄角被拒绝（角度超范围或单次转角过大）");
+        RefreshRotaryUi();
     }
 
     private void HookLog()

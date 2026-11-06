@@ -20,7 +20,7 @@ namespace Hummingbird.Devices.OpcUa;
 /// ns=0=OPC UA 标准、ns=1=服务器实例（SinumerikServer）、ns=2=SinumerikVarProvider。
 /// 轴名可配（config.json 的 CncAxisX/Y/ZName），以 UaExpert 实际展开结果为准。
 /// </summary>
-public sealed class OpcUaCncService : ICncService
+public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess
 {
     /// <summary>程序下发用的网络共享路径（如 \\192.168.214.1\nc），由 App 配置注入。</summary>
     public string? ProgramSharePath { get; set; }
@@ -369,6 +369,59 @@ public sealed class OpcUaCncService : ICncService
     {
         var dv = await _session!.ReadValueAsync(id, ct);
         return Convert.ToDouble(dv.Value, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    // ==================================================================
+    // ISinumerikVarAccess：转台服务复用同一个 OPC UA 会话读写任意节点。
+    // 节点路径由 config.json 提供（现场 UaExpert 核实），本类不做任何臆造映射。
+    // ==================================================================
+
+    /// <summary>写一个 SINUMERIK 变量（NC 变量或 PLC 位）。value 支持 double / bool / int。</summary>
+    public Task<bool> WriteVarAsync(string nodePath, object value, CancellationToken ct = default)
+    {
+        if (!IsConnected)
+        {
+            _log.Warn($"[数控] 写变量失败（未连接）：{nodePath}");
+            return Task.FromResult(false);
+        }
+        try
+        {
+            var wv = new WriteValue
+            {
+                NodeId = Node(nodePath),
+                AttributeId = Attributes.Value,
+                Value = new DataValue(new Variant(value))
+            };
+#pragma warning disable CS0618 // 1.5.378 的同步 Write 在此版本可用
+            _session!.Write(null, new WriteValueCollection { wv }, out var statuses, out _);
+#pragma warning restore CS0618
+            bool ok = statuses.Count == 1 && StatusCode.IsGood(statuses[0]);
+            if (ok) _log.Info($"[数控] 写变量成功 {nodePath} = {value}");
+            else _log.Error($"[数控] 写变量失败 {nodePath}（状态码 {statuses.FirstOrDefault()}）");
+            return Task.FromResult(ok);
+        }
+        catch (Exception ex)
+        {
+            _log.Error($"[数控] 写变量异常 {nodePath}：{ex.Message}");
+            return Task.FromResult(false);
+        }
+    }
+
+    /// <summary>读一个 SINUMERIK 变量的原始值（调用方自行转换 bool / double）。读不到返回 null。</summary>
+    public async Task<object?> ReadVarAsync(string nodePath, CancellationToken ct = default)
+    {
+        if (!IsConnected) return null;
+        try
+        {
+            var dv = await _session!.ReadValueAsync(Node(nodePath), ct);
+            if (!StatusCode.IsGood(dv.StatusCode)) return null;
+            return dv.Value;
+        }
+        catch (Exception ex)
+        {
+            _log.Warn($"[数控] 读变量失败 {nodePath}：{ex.Message}");
+            return null;
+        }
     }
 
     public void Dispose() => DisconnectAsync().GetAwaiter().GetResult();

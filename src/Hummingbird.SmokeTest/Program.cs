@@ -1,4 +1,5 @@
 using Hummingbird.Core;
+using Hummingbird.Devices.OpcUa;
 using Hummingbird.Devices.Sim;
 using Hummingbird.Vision;
 
@@ -563,6 +564,71 @@ Console.WriteLine("== 8) 多孔自主定位（2026-11-05 现场照片复核：�
           $"策略8.11：视觉解出的(画面外中心 + 转角)经标定换算后算出 18 个孔（实际 {targets8.Count}）");
 }
 
+// ================= 9) 转台分度（2026-11-06 客户新方案）=================
+Console.WriteLine("== 9) 转台分度（人工抄角 / 仿真 / OPC UA 握手）==");
+{
+    var rOpt = new RotaryTableOptions { MaxStepDeg = 90, SimSpeedDegPerSec = 3600 };
+
+    // 9.1 人工模式：完全不依赖 OPC UA，也能记录每帧对应的角度
+    var manual = new SimRotaryTableService(RotaryTableMode.ManualEntry, rOpt);
+    Check(manual.IsReady, "转台9.1：人工抄角模式不依赖 OPC UA，永远就绪");
+    Check(await manual.SetAngleAsync(30), "转台9.1：抄入 HMI 角度 30° 成功");
+    Check(Math.Abs(manual.CurrentAngleDeg - 30) < 1e-6, "转台9.1：当前角 = 30°");
+    Check((await manual.ReadAngleAsync()) == 30, "转台9.1：读回角度一致");
+
+    // 9.2 人工模式绝不假装驱动了轴
+    var m = await manual.MoveToAsync(60);
+    Check(!m.Success && m.Detail.Contains("手动"), "转台9.2：人工模式明确提示需手动转台，不假装到位");
+
+    // 9.3 仿真模式能转到目标角
+    var sim = new SimRotaryTableService(RotaryTableMode.Simulated, rOpt);
+    var s1 = await sim.MoveToAsync(45);
+    Check(s1.Success && Math.Abs(s1.ActualAngleDeg - 45) < 1e-6, "转台9.3：仿真转到 45° 并确认到位");
+
+    // 9.4 单次转角安全联锁
+    var s2 = await sim.MoveToAsync(300);
+    Check(!s2.Success && s2.Detail.Contains("安全联锁"), "转台9.4：单次转角超 90° 被安全联锁拒绝（防飞车）");
+
+    // 9.5 角度范围校验
+    Check(!await sim.SetAngleAsync(99999), "转台9.5：超出允许角度范围被拒绝");
+
+    // 9.6 OPC UA 节点未核实 → 明确拒绝，绝不臆造 NodeId
+    var fake0 = new FakeVarAccess();
+    var unconfigured = new OpcUaRotaryTableService(fake0, new RotaryTableOptions());
+    Check(!unconfigured.IsReady && unconfigured.ReadinessDetail.Contains("UaExpert"),
+          "转台9.6：节点路径未核实时拒绝动作，并提示用 UaExpert 展开确认");
+    var rFail = await unconfigured.MoveToAsync(30);
+    Check(!rFail.Success && fake0.Writes.Count == 0, "转台9.6：未配置时 MoveTo 不产生任何写入");
+
+    // 9.7 配置齐全 + 假机床：验证「R参数 → 触发 → 到位 → 复位」完整握手序列
+    var optAuto = new RotaryTableOptions
+    {
+        TargetRNumber = 90,
+        TriggerNode = "/Plc/DB99.DBX0.0",
+        DoneNode = "/Plc/DB99.DBX0.1",
+        ActualAngleNode = "/Channel/GeometricAxis/actToolBasePos[u1, 4]",
+        PollIntervalMs = 1, TimeoutMs = 500, ToleranceDeg = 0.05
+    };
+    var fake2 = new FakeVarAccess { Angle = 30 };
+    var auto = new OpcUaRotaryTableService(fake2, optAuto);
+    Check(auto.IsReady, "转台9.7：节点齐全 + 已连接时自动模式就绪");
+    var rOk = await auto.MoveToAsync(30);
+    Check(rOk.Success, "转台9.7：自动分度成功" + (rOk.Success ? "" : " —— " + rOk.Detail));
+    Check(fake2.Writes.Any(w => w.Path.Contains("R[u1, 90]")), "转台9.7：目标角写进 R90");
+    Check(fake2.Writes.Any(w => w.Path == optAuto.TriggerNode && w.Value is true), "转台9.7：写触发位 true");
+    Check(fake2.Writes.Any(w => w.Path == optAuto.TriggerNode && w.Value is false), "转台9.7：结束复位触发位 false");
+
+    // 9.8 PLC 报到位但读回角度不对 → 硬校验拒绝（防误判打废工件）
+    var fake3 = new FakeVarAccess { Angle = 12.5 };
+    var rBad = await new OpcUaRotaryTableService(fake3, optAuto).MoveToAsync(30);
+    Check(!rBad.Success && rBad.Detail.Contains("偏差"), "转台9.8：PLC 报到位但角度不对 → 拒绝后续动作");
+
+    // 9.9 触发前完成信号残留 → 拒绝动作
+    var fake4 = new FakeVarAccess { Angle = 30, StaleBeforeTrigger = true };
+    var rStale = await new OpcUaRotaryTableService(fake4, optAuto).MoveToAsync(30);
+    Check(!rStale.Success && rStale.Detail.Contains("残留"), "转台9.9：完成信号残留时拒绝触发（握手异常保护）");
+}
+
 static double AngleDiff(double a, double b)
 {
     double d = Math.Abs(a - b) % 360;
@@ -571,3 +637,31 @@ static double AngleDiff(double a, double b)
 
 Console.WriteLine(fails == 0 ? "===== ALL PASS =====" : $"===== {fails} 项 FAILED =====");
 return fails == 0 ? 0 : 1;
+
+/// <summary>假 SINUMERIK 变量访问：离线验证转台握手序列，不连真机床。</summary>
+sealed class FakeVarAccess : ISinumerikVarAccess
+{
+    public bool IsConnected { get; set; } = true;
+    /// <summary>模拟转台实际角度（读回值）。</summary>
+    public double Angle { get; set; }
+    /// <summary>触发后 PLC「到位」位。</summary>
+    public bool DoneAfterTrigger { get; set; } = true;
+    /// <summary>触发前「到位」位就为 true（模拟上一次握手残留）。</summary>
+    public bool StaleBeforeTrigger { get; set; }
+    public List<(string Path, object Value)> Writes { get; } = new();
+    private bool _triggered;
+
+    public Task<bool> WriteVarAsync(string nodePath, object value, CancellationToken ct = default)
+    {
+        Writes.Add((nodePath, value));
+        if (nodePath.Contains("DBX0.0")) _triggered = value is true;
+        return Task.FromResult(true);
+    }
+
+    public Task<object?> ReadVarAsync(string nodePath, CancellationToken ct = default)
+    {
+        if (nodePath.Contains("actToolBasePos")) return Task.FromResult<object?>(Angle);
+        if (nodePath.Contains("DBX0.1")) return Task.FromResult<object?>(_triggered ? DoneAfterTrigger : StaleBeforeTrigger);
+        return Task.FromResult<object?>(null);
+    }
+}

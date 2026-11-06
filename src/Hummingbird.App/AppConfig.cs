@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Hummingbird.Core;
 
 namespace Hummingbird.App;
 
@@ -57,6 +58,63 @@ public sealed class AppConfig
     public string CncPosNodeX { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, X]";
     public string CncPosNodeY { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Y]";
     public string CncPosNodeZ { get; set; } = "/Channel/GeometricAxis/actToolBasePos[u1, Z1]";
+
+    // ==================================================================
+    // 转台（2026-11-06 客户新方案：转台分度 + 相机多帧定位）
+    // ⚠ 所有 OPC UA 节点路径默认留空 —— 绝不预设臆造 NodeId。
+    //   现场用 UaExpert 展开地址空间、确认可写后填进来，否则自动模式会明确拒绝动作。
+    // ==================================================================
+
+    /// <summary>转台工作模式：ManualEntry（人工转盘+界面抄角，默认，不依赖 OPC UA）
+    /// / Simulated（离线仿真）/ OpcUaRPlc（自动分度，需机床侧配合）。</summary>
+    public string RotaryMode { get; set; } = "ManualEntry";
+
+    /// <summary>转台数控轴名（C / A / SP 等），仅用于日志与现场核实。</summary>
+    public string RotaryAxisName { get; set; } = "C";
+
+    /// <summary>目标角度写入的 R 参数号（需与机床侧预置子程序读的 R 参数一致）。</summary>
+    public int RotaryTargetRNumber { get; set; } = 90;
+
+    /// <summary>目标角节点（留空则用标准 /Channel/Parameter/R[u1, n]）。</summary>
+    public string RotaryTargetRNode { get; set; } = "";
+
+    /// <summary>PLC 触发位节点（写 true 启动转位、写 false 复位）。现场 UaExpert 核实。</summary>
+    public string RotaryTriggerNode { get; set; } = "";
+
+    /// <summary>PLC「到位」完成位节点（可选）。现场 UaExpert 核实。</summary>
+    public string RotaryDoneNode { get; set; } = "";
+
+    /// <summary>转台实际角度节点（如 C 轴实际位置，只读）。用于读回与到位硬校验。</summary>
+    public string RotaryActualAngleNode { get; set; } = "";
+
+    public bool RotaryNormalize360 { get; set; } = true;
+    public double RotaryMinAngleDeg { get; set; } = -3600;
+    public double RotaryMaxAngleDeg { get; set; } = 3600;
+    /// <summary>单次最大转角（安全联锁，防误输入导致飞车）。</summary>
+    public double RotaryMaxStepDeg { get; set; } = 90;
+    public double RotaryToleranceDeg { get; set; } = 0.05;
+    public int RotaryTimeoutMs { get; set; } = 15000;
+    public int RotaryPollIntervalMs { get; set; } = 200;
+    public double RotarySimSpeedDegPerSec { get; set; } = 30;
+
+    /// <summary>把配置组装成 Core 层转台参数。</summary>
+    public RotaryTableOptions BuildRotaryOptions() => new()
+    {
+        AxisName = RotaryAxisName,
+        TargetRNumber = RotaryTargetRNumber,
+        TargetRNode = RotaryTargetRNode,
+        TriggerNode = RotaryTriggerNode,
+        DoneNode = RotaryDoneNode,
+        ActualAngleNode = RotaryActualAngleNode,
+        Normalize360 = RotaryNormalize360,
+        MinAngleDeg = RotaryMinAngleDeg,
+        MaxAngleDeg = RotaryMaxAngleDeg,
+        MaxStepDeg = RotaryMaxStepDeg,
+        ToleranceDeg = RotaryToleranceDeg,
+        TimeoutMs = RotaryTimeoutMs,
+        PollIntervalMs = RotaryPollIntervalMs,
+        SimSpeedDegPerSec = RotarySimSpeedDegPerSec
+    };
 
     /// <summary>激光器 232转USB 的串口号（设备管理器里查，如 COM3）。</summary>
     public string LaserComPort { get; set; } = "COM3";
