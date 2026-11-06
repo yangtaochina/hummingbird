@@ -219,31 +219,68 @@ public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
     /// 避免人工一条条试（现场每试一次都要重新摆工件，代价高）。
     /// </summary>
     /// <param name="exposureListUs">要试的曝光序列（us），升序</param>
+    /// <remarks>
+    /// ⚠ 2026-11-06 现场事故修复：扫描会逐档**改写相机寄存器里的曝光**，
+    /// 序列最后一档是 1000000us（全白过曝档）。早期版本扫完没有恢复，
+    /// 导致相机一直停在 1000000us：pylon Viewer 里看到 1000000.0、后续「视野诊断」
+    /// 拍到全白一片、量不到任何尺寸特征。现在无论正常结束还是异常，finally 必恢复扫描前的值。
+    /// UI 层还会再下发一次 config.json 的配置值，形成双保险。
+    /// </remarks>
     public async Task<List<ExposureProbe>> ScanExposureAsync(IEnumerable<double> exposureListUs)
     {
         var results = new List<ExposureProbe>();
-        foreach (double us in exposureListUs)
+
+        // ---- 记住扫描前的曝光，结束时原样还回去 ----
+        double original = double.NaN;
+        try
         {
-            try
+            if (_cam is { IsOpen: true })
+                original = Convert.ToDouble(_cam.Parameters[PLCamera.ExposureTime].GetValue(),
+                                            System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("[扫描] 读取当前曝光失败（结束时无法恢复原值，将由界面下发配置值兜底）：" + ex.Message);
+        }
+
+        try
+        {
+            foreach (double us in exposureListUs)
             {
-                await SetExposureUsAsync(us);
-                var frame = await GrabAsync(3000);
-                // 纯 C# 统计灰度（相机工程不引入 OpenCV 依赖，灰度统计自己算足够）
-                long sum = 0;
-                int max = 0;
-                foreach (byte b in frame.Gray)
+                try
                 {
-                    sum += b;
-                    if (b > max) max = b;
+                    await SetExposureUsAsync(us);
+                    var frame = await GrabAsync(3000);
+                    // 纯 C# 统计灰度（相机工程不引入 OpenCV 依赖，灰度统计自己算足够）
+                    long sum = 0;
+                    int max = 0;
+                    foreach (byte b in frame.Gray)
+                    {
+                        sum += b;
+                        if (b > max) max = b;
+                    }
+                    double mean = frame.Gray.Length > 0 ? (double)sum / frame.Gray.Length : 0;
+                    results.Add(new ExposureProbe(us, mean, max, true));
+                    _log.Info($"[扫描] 曝光 {us:F0}us → 均值 {mean:F1} 峰值 {max}");
                 }
-                double mean = frame.Gray.Length > 0 ? (double)sum / frame.Gray.Length : 0;
-                results.Add(new ExposureProbe(us, mean, max, true));
-                _log.Info($"[扫描] 曝光 {us:F0}us → 均值 {mean:F1} 峰值 {max}");
+                catch (Exception ex)
+                {
+                    results.Add(new ExposureProbe(us, 0, 0, false));
+                    _log.Warn($"[扫描] 曝光 {us:F0}us 失败：{ex.Message}");
+                }
             }
-            catch (Exception ex)
+        }
+        finally
+        {
+            // 扫描是诊断动作，绝不能改变相机的加工参数。异常路径也必须恢复。
+            if (!double.IsNaN(original))
             {
-                results.Add(new ExposureProbe(us, 0, 0, false));
-                _log.Warn($"[扫描] 曝光 {us:F0}us 失败：{ex.Message}");
+                await SetExposureUsAsync(original);
+                _log.Info($"[扫描] 扫描结束，曝光已恢复为扫描前的 {original:F0}us（防止相机停在 1000000us 全白档）");
+            }
+            else
+            {
+                _log.Warn("[扫描] 未记录到扫描前曝光，恢复由界面下发配置值兜底");
             }
         }
         return results;

@@ -116,6 +116,16 @@ public sealed class MainForm : Form
         _cfg = AppConfig.LoadOrDefault("config.json");
         _log.Info($"读取配置 config.json：DeviceMode={_cfg.DeviceMode} 数控端点={_cfg.CncEndpoint} 串口={_cfg.LaserComPort}@{_cfg.LaserBaud}");
 
+        // 界面默认曝光/增益与 config.json 保持一致（2026-11-06 修正）：
+        // 原来界面写死 8000us / 增益 1，配置是 5000us / 增益 0 —— 点一次「应用参数」
+        // 就会把相机又改回 8000us，现场会以为配置没生效。现在只保留一套权威值。
+        if (_cfg.CameraExposureUs > 0)
+            _numExp.Value = (decimal)Math.Clamp(_cfg.CameraExposureUs,
+                (double)_numExp.Minimum, (double)_numExp.Maximum);
+        if (_cfg.CameraGain >= 0)
+            _numGain.Value = (decimal)Math.Clamp(_cfg.CameraGain,
+                (double)_numGain.Minimum, (double)_numGain.Maximum);
+
         // 孔位模板：以 DWG 权威图纸为准（P26009G打孔图纸 2026.11.2，18 个待加工单环孔）
         var template = HolePatternTemplate.LoadJson("templates/dial_18holes.json");
         _template = template;
@@ -846,14 +856,16 @@ public sealed class MainForm : Form
         }
     }
 
-    /// <summary>config.json 配置了曝光/增益（>0）时，打开相机后强制下发——
-    /// 防止 pylon Viewer 或其他人改乱的相机参数被带进加工流程（2026-11-02 现场教训）。</summary>
+    /// <summary>config.json 配置了曝光/增益时，打开相机后强制下发——
+    /// 防止 pylon Viewer 或其他人改乱的相机参数被带进加工流程（2026-11-02 现场教训）。
+    /// 2026-11-06 修正：增益 0 是现场要的合法值，不能当成「不设置」跳过，
+    /// 否则 pylon 里被调高的增益会一直留在相机里。曝光仍保留 0=不下发的语义。</summary>
     private async Task ApplyConfiguredCameraParams()
     {
         if (_camera == null) return;
         if (_cfg.CameraExposureUs > 0)
             await _camera.SetExposureUsAsync(_cfg.CameraExposureUs);
-        if (_cfg.CameraGain > 0)
+        if (_cfg.CameraGain >= 0)
             await _camera.SetGainAsync(_cfg.CameraGain);
     }
 
@@ -1256,7 +1268,9 @@ public sealed class MainForm : Form
             if (usable.Count > 0)
             {
                 var best = usable.OrderBy(p => p.ExposureUs).First();
-                var safe = usable.OrderBy(p => p.MeanGray).First();   // 均值最接近"适中"的那档
+                // 「更稳的一档」= 均值最接近可用区间中点 120 的档，而不是均值最小的档。
+                // 早期写成 OrderBy(MeanGray).First() 会恒等于上面最短曝光那档，报告里重复输出同一档。
+                var safe = usable.OrderBy(p => Math.Abs(p.MeanGray - 120)).First();
                 sb.AppendLine($"结论：✅ 可用曝光区间 {usable.Min(p => p.ExposureUs):F0} ~ {usable.Max(p => p.ExposureUs):F0}us");
                 sb.AppendLine($"      推荐起点：{best.ExposureUs:F0}us（均值 {best.MeanGray:F1}）；" +
                               $"更稳的一档：{safe.ExposureUs:F0}us（均值 {safe.MeanGray:F1}）");
@@ -1290,7 +1304,31 @@ public sealed class MainForm : Form
             sb.AppendLine("扫描失败：" + ex.Message);
             _log.Error("曝光扫描失败：" + ex.Message);
         }
-        _txtDiag.Text = sb.ToString();
+        finally
+        {
+            // ⚠ 2026-11-06 现场事故：扫描最后一档 1000000us 会把相机留在全白过曝档。
+            // 设备层已恢复「扫描前值」，这里再强制下发 config.json 的配置值双保险：
+            // 即使扫描前相机本来就被 pylon 改乱，扫完也必须落到 5000us / 增益 0。
+            // 异常路径同样执行，保证相机永远不会因为诊断动作被改坏。
+            try
+            {
+                await ApplyConfiguredCameraParams();
+                if (_cfg.CameraExposureUs > 0)
+                    _numExp.Value = (decimal)Math.Clamp(_cfg.CameraExposureUs,
+                        (double)_numExp.Minimum, (double)_numExp.Maximum);
+                if (_cfg.CameraGain >= 0)
+                    _numGain.Value = (decimal)Math.Clamp(_cfg.CameraGain,
+                        (double)_numGain.Minimum, (double)_numGain.Maximum);
+                sb.AppendLine($"扫描结束：曝光已恢复为配置值 {_cfg.CameraExposureUs:F0}us、增益 {_cfg.CameraGain:F1}（相机不会停在过曝档）");
+                _log.Info($"[诊断②] 曝光已恢复为配置值 {_cfg.CameraExposureUs:F0}us / 增益 {_cfg.CameraGain:F1}");
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine("⚠ 恢复曝光失败：" + ex.Message + " —— 请手动点『应用参数』把曝光改回 5000us");
+                _log.Error("[诊断②] 恢复曝光失败：" + ex.Message);
+            }
+            _txtDiag.Text = sb.ToString();
+        }
     }
 
     /// <summary>③ 视野诊断：用**白色外环（Ø34.2mm，图纸已知）**反算 mm/px，判断基准孔在不在画面内。</summary>
