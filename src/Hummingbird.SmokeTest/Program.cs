@@ -206,7 +206,8 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
     // 原来这里读仓库外的 Image__2026-11-05__14-04-13.bmp，文件不在 → 5 项断言长期被 [跳过]。
     // 按验收纪律「Skipped 不算通过」，改成用合成图复现同一个决定性工况，保证每次都真跑：
     //   Ø34.2 外环 R=700px → mm/px≈0.0244、视野 46.9×29.3mm；
-    //   基准孔 R14.45mm = 591px，垂直半高 600px → 勉强在视野内，但环带上没有任何孔（红光下不反光）。
+    //   基准孔 R14.45mm = 591px，垂直半高 600px → 勉强在视野内，但整盘环带上没有可检出的孔组
+    //   （注意：局部特写视野里 1 个双环孔是看得清的，只是同帧凑不出 2~3 个）。
     var frameE = MakeFrameWithOuterRing(1920, 1200, 700.0);
     var rE = fdiag.Analyze(frameE, 14.45);
     Check(rE.Success, "视野诊断E：成功量到标尺");
@@ -235,6 +236,11 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
     var rF2 = fdiag.Analyze(frameF, 14.45, 34.2, 0.0125);
     Check(!rF2.Success && rF2.Detail.Contains("高光饱和"),
           "视野诊断F2：标尺作废时同样附上高光饱和提示");
+
+    // 2026-11-06 纠错：模板 datumHoleAnglesDeg = 30/60/120/150/210/240/300/330，
+    // 是 30° 栅格，不是 8 孔等分 45°。曾误按 45° 写几何校验，会把真孔全判成误检。
+    Check(Math.Abs(FieldDiagnosis.DatumHoleSpacingDeg - 30.0) < 1e-9,
+          "视野诊断G：双环孔角向栅格必须是 30°（与 dial_18holes.json 一致），不是 45°");
 
     // 若现场把真机 bmp 放到仓库根目录，额外复现一次（仅作补充记录，不作为通过条件）
     string realImg = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",

@@ -62,6 +62,13 @@ public sealed class FieldDiagnosis
     /// <summary>白色外环标称外径（mm）：图纸 Ø3420 DIAL = Ø34.2mm。这是现役主标尺。</summary>
     public const double OuterRingDiameterMm = 34.2;
 
+    /// <summary>
+    /// 8 个双环基准孔的角向栅格（度）。取自 src/templates/dial_18holes.json 的
+    /// datumHoleAnglesDeg = 30/60/120/150/210/240/300/330 —— **30° 栅格**（每 90° 缺一个），
+    /// 不是 8 孔等分 45°。2026-11-06 曾误按 45° 写几何校验，会把真孔全判成误检，已纠正。
+    /// </summary>
+    public const double DatumHoleSpacingDeg = 30.0;
+
     /// <summary>中央孔候选标称直径（mm）：沉孔边 Ø2.9 与通孔 Ø2.5。仅作次要参考。</summary>
     private static readonly double[] CenterHoleNominalMm = { 2.90, 2.50 };
 
@@ -385,7 +392,8 @@ public sealed class FieldDiagnosis
     ///   **几乎全黑，标准差仅 4.9/255**，看不到任何周期性结构。
     ///   而外环亮弧所在半径（R700~780）标准差高达 54.5 —— 有强信号。
     ///   ⇒ "基准孔在视野内" 是假象：**在视野内 ≠ 看得见**。
-    ///   红光下工件自带的双环孔不反光，角向基准方案不可用。
+    ///   整盘视野下红光高光淹没双环孔环带（局部特写能看到 1 个双环孔，但同帧凑不出孔组），
+    ///   角向基准方案不可用。
     ///
     /// 检测方法：极坐标展开 → 对基准孔环带做角度方向的高通 → 统计显著峰数量。
     ///   有孔时，8 个孔（30° 均布）会在展开图上形成 8 组周期性暗点。
@@ -471,19 +479,20 @@ public sealed class FieldDiagnosis
         double ringStd = BandStdDev(band, r0, r1, nAng);
 
         // ===== 2026-11-06 硬闸：孔必须满足几何约束，光有"峰"不算 =====
-        // 8 个双环孔在 R14.45mm 同一圆周上、等角间隔 45°、直径约 Ø0.8mm。
-        // 视野可能只框住其中几个，但任意两个相邻可见孔的角间隔仍应是 45° 的整数倍。
-        // 现场曾检出「9 个显著特征 ✅ 方案可用」，而实际连 2 个真孔都拍不到 ——
-        // 辉光边缘/噪声产生的伪峰不会满足等角约束，且 9 > 8 个孔上限，必须判误检。
+        // 8 个双环孔在 R14.45mm 同一圆周上，名义角 30/60/120/150/210/240/300/330
+        // （30° 栅格、每 90° 缺一个，间隔呈 30°/60° 交替），带 Ø0.8 倒角口。
+        // 视野可能只框住其中几个，但任意两个可见孔的角间隔仍应是 30° 的整数倍。
+        // 现场曾检出「9 个显著特征 ✅ 方案可用」，而实际同帧连 2 个真孔都拍不到 ——
+        // 辉光边缘/噪声产生的伪峰不会满足角向栅格约束，且 9 > 8 个孔上限，必须判误检。
         bool countOk = peaks >= 2 && peaks <= 8;                 // 8 个孔最多 8 个
-        bool spacingOk = HasNominalSpacing(peakAngles, 45.0, 12.0);
+        bool spacingOk = HasNominalSpacing(peakAngles, DatumHoleSpacingDeg, 8.0);
         bool visible = ringStd >= 12 && countOk && spacingOk;
 
         string note;
         if (visible)
         {
             note = $"【基准孔可见性】✅ 环带 R{r0}~{r1}px 上检出 {peaks} 个特征（环带对比度 {ringStd:F1}/255），" +
-                   $"且相邻间隔符合 45° 等角约束 → 角向基准方案可用。";
+                   $"且相邻间隔符合 {DatumHoleSpacingDeg:F0}° 栅格约束 → 角向基准方案可用。";
         }
         else
         {
@@ -491,9 +500,12 @@ public sealed class FieldDiagnosis
                 ? $"检出 {peaks} 个特征**超过 8 个双环孔的上限**，必然含误检"
                 : !countOk
                     ? $"检出 {peaks} 个特征，少于判定所需的 2 个"
-                    : $"检出 {peaks} 个特征，但相邻角间隔不符合 45° 等角约束（多半是辉光/噪声）";
+                    : $"检出 {peaks} 个特征，但相邻角间隔不符合 {DatumHoleSpacingDeg:F0}° 栅格（多半是辉光/噪声）";
             note = $"【基准孔可见性】❌ **不能认定基准孔可见**（{reason}；环带对比度 {ringStd:F1}/255）。\n" +
-                   $"     → 极坐标展开验证：8 个双环孔在红光下不反光，画面里的亮斑是灯光反射辉光，不是孔。\n" +
+                   $"     → 极坐标展开未检出符合 {DatumHoleSpacingDeg:F0}° 栅格的孔组。\n" +
+                   $"       注意区分两件事：**整盘视野**下 8 个双环孔被红光高光淹没、环带看不到周期结构；\n" +
+                   $"       但**当前局部特写视野**下 1 个双环孔是看得清的（2026-11-06 现场确认），\n" +
+                   $"       只是同帧凑不出 2~3 个，所以整盘 datumHoles 方案仍不可用。\n" +
                    $"     → **\"基准孔在视野内\"是假象**——在视野内 ≠ 看得见；datumHoles 角向基准方案**实际不可用**。\n" +
                    $"     → 现场已确认的可行路线：上料定位到 1 孔 + 转台分度拍多帧，每帧只需看清 1 个孔。";
         }
@@ -569,7 +581,7 @@ public sealed class FieldDiagnosis
 
     /// <summary>
     /// 返回能量曲线中低于阈值的连续段**中心角度（度）**（暗段 = 孔候选）。
-    /// 2026-11-06 由原来只返回个数改为返回角度，是为了做 45° 等角间隔几何校验：
+    /// 2026-11-06 由原来只返回个数改为返回角度，是为了做 30° 栅格几何校验：
     /// 只看个数时，辉光边缘/噪声凑出的 9 个伪峰会被误判成「基准孔可见」。
     /// </summary>
     private static List<double> FindPeakAngles(double[] energy, double threshold, bool[] valid)
@@ -592,7 +604,8 @@ public sealed class FieldDiagnosis
 
     /// <summary>
     /// 校验候选峰的相邻角间隔是否为 nominalDeg 的整数倍（容差 tolDeg）。
-    /// 8 个双环孔等角 45° 分布；视野只框住部分孔时，可见孔之间仍应相隔 45°/90°/135°…
+    /// 8 个双环孔按 30° 栅格分布（30/60/120/150/210/240/300/330）；
+    /// 视野只框住部分孔时，可见孔之间仍应相隔 30°/60°/90°…
     /// 随机噪声峰不满足这个约束。要求 ≥60% 的相邻间隔命中。
     /// </summary>
     private static bool HasNominalSpacing(List<double> anglesDeg, double nominalDeg, double tolDeg)

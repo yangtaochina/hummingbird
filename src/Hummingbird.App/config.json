@@ -36,6 +36,7 @@
   "LaserPulseCount": 5,
   "ExpectedOuterDiameterMm": 34.2,
   "VisionPixelSizeMm": 0.0234,
+  "_comment_PixelSize": "⚠ 0.0234 是整盘视野下的标定值。2026-11-06 现场把相机调到特写后，1 个双环孔实测约 230px，而 Ø0.8/0.0234 应只有 34px → 当前视野该值已失效。现场最小标定：机床 XY 精确移 1.00mm，量孔心位移 px，得 mm/px=1.00/位移px 后回填，并核对 FiducialDiameterMm 是否为实物倒角口直径。未重新标定前，单孔检测器会按 12~102px 筛孔、把 230px 的双环孔过滤掉。",
   "PositioningStrategyId": "twoFiducials",
   "_comment_Strategy": "④多孔自主定位（离线/换镜头后备选）：同时看 3 个相邻双环孔，中心/转角/mm-per-px 全由图像解出，第 3 孔消镜像圆心二义性。⚠ 2026-11-06 现场事实：白光全黑必须红光（疑似红色窄带滤光片），且相机连 2~3 个双环孔都拍不到 → 同帧多孔现场不可行；现行路线是上料定位到 1 孔 + 转台分度多帧",
   "_comment_FixtureCenter": "夹具中心像素未标定时请省略 FixtureCenterPxX/Y 两键（不要写 null，double 反序列化会失败）",

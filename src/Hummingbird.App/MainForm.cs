@@ -76,7 +76,7 @@ public sealed class MainForm : Form
     // ⚠ 2026-11-05 现场照片复核：托板只是三根金属条拼的，随手摆在回转台上靠一根挡块限位，
     //   既没有定位销锁中心、也没有角向定位 → 「夹具锁心」必须默认勾掉。
     private readonly CheckBox _chkFixtureCenters = new() { Text = "夹具定位销/止口能锁死工件中心（现场照片：没有，默认否）", AutoSize = true, Checked = false };
-    private readonly CheckBox _chkFiducialAvailable = new() { Text = "有相机看得清的标记孔（红光下不可见，默认否）", AutoSize = true, Checked = false };
+    private readonly CheckBox _chkFiducialAvailable = new() { Text = "有相机看得清的标记孔（局部特写下 1 个双环孔可见，默认否）", AutoSize = true, Checked = false };
     private readonly CheckBox _chkFiducialRotates = new() { Text = "标记孔随工件一起转动（用工件自带的双环孔，默认是）", AutoSize = true, Checked = true };
     private readonly CheckBox _chkFullInView = new() { Text = "整盘能入画（视野短边 ≥ 34.2mm）", AutoSize = true, Checked = false };
     private readonly CheckBox _chkDatumVisible = new() { Text = "8 个双环基准孔在画面里清晰可见", AutoSize = true, Checked = false };
@@ -1357,9 +1357,12 @@ public sealed class MainForm : Form
             {
                 MessageBox.Show(this,
                     "诊断结论：**不能认定基准孔可见，datumHoles 整盘方案不可用**\n\n" +
-                    "8 个双环孔在红光下不反光；画面里的亮斑是灯光反射辉光，不是孔。\n" +
+                    "整盘视野下红光高光把双环孔环带淹没了，检不出符合 30° 栅格的孔组。\n" +
+                    "但局部特写视野里 1 个双环孔是看得清的（现场已确认）——同帧凑不出 2~3 个，\n" +
+                    "所以 datumHoles 整盘方案不可用，不是「孔不存在」。\n" +
                     "白光拍照全黑（现场已确认，疑似镜头前装了红色窄带滤光片），不要再试换白光。\n\n" +
                     "现场已定的路线：上料定位到 1 孔 + 转台分度拍多帧，每帧只需看清 1 个孔。\n" +
+                    "⚠ 当前特写视野的 mm/px 与配置里 0.0234 不一致，先做「XY 移 1.00mm 量像素」重新标定。\n" +
                     "详细判据见下方诊断文本。",
                     "诊断③：基准孔不可见", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
