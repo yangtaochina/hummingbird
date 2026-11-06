@@ -139,12 +139,27 @@ public sealed class FieldDiagnosis
             {
                 string whyOver = $"画面**整体过曝**（均值 {m0:F0}/255、标准差 {s0:F1}）—— 全白一片、没有结构，" +
                              "量不到任何尺寸特征。\n" +
-                             "→ 把曝光调低（当前扫描显示 50000μs 起就全白了，建议 3000~8000μs 区间试）" +
+                             "→ 把曝光调低（曝光扫描显示 50000μs 起就全白了，先在 1000~8000μs 区间试）" +
                              "或把增益降到 0 附近。";
                 _log?.Warn("[诊断] " + whyOver);
                 return new Result(false, 0, 0, 0, 0, datumRadiusMm, false, 0, "无", whyOver);
             }
         }
+
+        // ---------- 局部高光饱和检测（2026-11-06 现场真图教训） ----------
+        // fail_103914_105.bmp（曝光 5000us）：全局均值 46.4、标准差 61.3，
+        // 既不是全黑、也不是"整体过曝"（那要求均值>245 且 std<8），
+        // 但有 5.1% 像素顶到 250~255 饱和，金属曲面的镜面反射把孔边和环带整个吞掉。
+        // 旧版只判"全白"，对这种局部饱和毫无提示，才让辉光边缘被当成外环。
+        int satPixels = 0;
+        foreach (byte g in frame.Gray) if (g >= 250) satPixels++;
+        double satRatio = frame.Gray.Length > 0 ? (double)satPixels / frame.Gray.Length : 0;
+        string satNote = satRatio > 0.02
+            ? $"【高光饱和】⚠ {satRatio * 100:F1}% 像素已达 250~255 饱和（镜面反射过强），" +
+              "孔边缘/环带细节会被吞掉，本帧量到的半径很可能来自高光边界而非实体轮廓。\n" +
+              "  → 把曝光降到 1000~2000us 再拍一张：全局会偏暗，但高光区不再饱和，" +
+              "中央圆斑内部是否真有同心双环/锐利孔边才能看清。\n"
+            : "";
 
         // ---------- 主标尺：白色外环半径（径向峰值法） ----------
         var ring = MeasureOuterRingRadius(src, frame.Width, frame.Height);
@@ -176,7 +191,8 @@ public sealed class FieldDiagnosis
                     $"  → 拟合到的是局部弧段 / 辉光边缘，不是完整 Ø{outerRingDiameterMm:F1} 外环。\n" +
                     $"  ⚠ 当前相机很可能只对着工件上的 1 个双环孔（局部视野），**本工具是整盘视野诊断，此视野下不适用**。\n" +
                     $"  → 要么把相机/工件移回能看完整外环的位置再诊断；\n" +
-                    $"  → 要么按已定的「上料定位到 1 孔 + 转台分度」路线走，不要用 datumHoles 整盘策略。";
+                    $"  → 要么按已定的「上料定位到 1 孔 + 转台分度」路线走，不要用 datumHoles 整盘策略。\n" +
+                    satNote;
                 _log?.Warn("[诊断] " + whyBad.Replace("\n", " | "));
                 return new Result(false, ring.RadiusPx * 2, mmPerPx, 0, 0,
                                   datumRadiusMm, false, 0, "无（标尺不可信）", whyBad, false);
@@ -214,6 +230,7 @@ public sealed class FieldDiagnosis
             // ---------- 基准孔"可见性"检测（关键：在视野内 ≠ 看得见） ----------
             var vis = MeasureDatumVisibility(src, frame.Width, frame.Height, datumPx, ring.RadiusPx);
             detail += "\n" + vis.Note;
+            if (satNote.Length > 0) detail += "\n" + satNote;
 
             _log?.Info("[诊断] " + detail.Replace("\n", " | "));
             return new Result(true, ring.RadiusPx * 2, mmPerPx, fovW, fovH, datumRadiusMm, inView, marginMm,

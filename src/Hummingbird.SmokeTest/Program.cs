@@ -221,6 +221,21 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
     Check(rE.Success && !rE.DatumVisible,
           "视野诊断E：判定基准孔在视野内但**实际不可见**——必须与'在视野内'区分开");
 
+    // ---------- 情形 F：局部高光饱和（2026-11-06 真图 fail_103914_105.bmp） ----------
+    // 该帧曝光 5000us：全局均值 46.4 / 标准差 61.3，既不是全黑也不是"整体过曝"
+    // （整体过曝判据要求均值>245 且 std<8），却有 5.1% 像素顶到 250~255 饱和。
+    // 旧版对这种局部饱和毫无提示，辉光边缘才被当成外环。现在必须给出降曝光建议。
+    var satGray = (byte[])frameA.Gray.Clone();
+    for (int y = 0; y < 400; y++)
+        for (int x = 0; x < 400; x++) satGray[y * 1920 + x] = 255;   // 约 6.9% 面积饱和
+    var frameF = new CameraFrame(satGray, 1920, 1200, DateTime.Now);
+    var rF = fdiag.Analyze(frameF, 14.45);
+    Check(rF.Detail.Contains("高光饱和") && rF.Detail.Contains("1000~2000us"),
+          "视野诊断F：局部高光饱和（非全白）必须给出降曝光提示");
+    var rF2 = fdiag.Analyze(frameF, 14.45, 34.2, 0.0125);
+    Check(!rF2.Success && rF2.Detail.Contains("高光饱和"),
+          "视野诊断F2：标尺作废时同样附上高光饱和提示");
+
     // 若现场把真机 bmp 放到仓库根目录，额外复现一次（仅作补充记录，不作为通过条件）
     string realImg = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
                                                    "Image__2026-11-05__14-04-13.bmp"));
