@@ -82,6 +82,7 @@ public sealed class FieldDiagnosis
     /// 角向基准孔在环带上**是否真的看得见**（不是"在不在视野内"）。
     /// 2026-11-05 真图实测：在视野内 ≠ 看得见 —— 红光下 8 个基准孔在极坐标展开图上
     /// 完全不可见（环带标准差仅 4.9/255），角向基准方案实际不可用。
+    /// ⚠ 默认 false：没做过可见性检测的分支（如中央孔副标尺）不许默认宣称"可见"。
     /// </param>
     public sealed record Result(
         bool Success,
@@ -94,7 +95,7 @@ public sealed class FieldDiagnosis
         double MarginMm,
         string ScaleSource,
         string Detail,
-        bool DatumVisible = true);
+        bool DatumVisible = false);
 
     /// <summary>
     /// 分析一帧图：优先用白色外环反算 mm/px → 判断基准孔是否在视野内。
@@ -102,7 +103,14 @@ public sealed class FieldDiagnosis
     /// <param name="frame">灰度帧</param>
     /// <param name="datumRadiusMm">角向基准孔半径（mm），图纸标称 14.45</param>
     /// <param name="outerRingDiameterMm">白色外环标称外径（mm），图纸 Ø34.2</param>
-    public Result Analyze(CameraFrame frame, double datumRadiusMm = 14.45, double outerRingDiameterMm = OuterRingDiameterMm)
+    /// <param name="expectedMmPerPx">
+    /// 已标定的像素尺寸（config.json 的 VisionPixelSizeMm，现场 0.0234）。
+    /// 传 >0 时做**交叉校验**：反算值偏差超过 ±25% 就判定标尺不可信、整份结论作废。
+    /// 0 = 不校验（离线合成图测试用）。
+    /// </param>
+    public Result Analyze(CameraFrame frame, double datumRadiusMm = 14.45,
+                          double outerRingDiameterMm = OuterRingDiameterMm,
+                          double expectedMmPerPx = 0)
     {
         using var src = new Mat(frame.Height, frame.Width, MatType.CV_8UC1);
         Marshal.Copy(frame.Gray, 0, src.Data, frame.Gray.Length);
@@ -143,6 +151,37 @@ public sealed class FieldDiagnosis
         if (ring.RadiusPx > 0)
         {
             double mmPerPx = (outerRingDiameterMm / 2.0) / ring.RadiusPx;
+
+            // ===== 2026-11-06 硬闸：不许把「局部弧 / 辉光边缘」当成整圆标尺 =====
+            // 现场事故：相机只对着图纸右上角那 1 个双环孔（局部视野），画面中心是
+            // 直径 550px 的红光漫射亮斑。径向峰值法把辉光边缘/局部弧凑出 R=305px
+            // → mm/px=0.056066（标定值 0.0234 的 2.4 倍），却仍输出「✅ datumHoles 方案可行」。
+            // 假阳性比不给结论更危险，所以量到标尺后必须先过这两道质量闸。
+            double relStd = ring.RadiusPx > 0 ? ring.StdRadiusPx / ring.RadiusPx : 1.0;
+            double scaleRatio = expectedMmPerPx > 0 ? mmPerPx / expectedMmPerPx : 1.0;
+            bool badResidual = relStd > 0.05;                        // 真圆拟合残差应 < 5%
+            bool badScale = expectedMmPerPx > 0 &&
+                            (scaleRatio > 1.25 || scaleRatio < 0.80); // 与标定值差 > 25%
+            if (badResidual || badScale)
+            {
+                string whyBad =
+                    $"【诊断作废】外环标尺不可信，本帧所有结论（含「基准孔在视野内 / 方案可行」）一律不能使用。\n" +
+                    $"  实测 R = {ring.RadiusPx:F1}px → mm/px = {mmPerPx:F6}" +
+                    (expectedMmPerPx > 0
+                        ? $"，而标定值 = {expectedMmPerPx:F6}（config VisionPixelSizeMm）→ 相差 {scaleRatio:F2} 倍" +
+                          (badScale ? "，**超过 ±25% 上限**" : "")
+                        : "（未提供标定值，未做交叉校验）") + "\n" +
+                    $"  外环拟合残差 = {ring.StdRadiusPx:F1}/{ring.RadiusPx:F1} = {relStd * 100:F1}%" +
+                    (badResidual ? "，**真圆应 <5%**" : "（合格）") + "\n" +
+                    $"  → 拟合到的是局部弧段 / 辉光边缘，不是完整 Ø{outerRingDiameterMm:F1} 外环。\n" +
+                    $"  ⚠ 当前相机很可能只对着工件上的 1 个双环孔（局部视野），**本工具是整盘视野诊断，此视野下不适用**。\n" +
+                    $"  → 要么把相机/工件移回能看完整外环的位置再诊断；\n" +
+                    $"  → 要么按已定的「上料定位到 1 孔 + 转台分度」路线走，不要用 datumHoles 整盘策略。";
+                _log?.Warn("[诊断] " + whyBad.Replace("\n", " | "));
+                return new Result(false, ring.RadiusPx * 2, mmPerPx, 0, 0,
+                                  datumRadiusMm, false, 0, "无（标尺不可信）", whyBad, false);
+            }
+
             double fovW = mmPerPx * frame.Width;
             double fovH = mmPerPx * frame.Height;
             // 判据用**垂直方向**（图幅 1920×1200，垂直半高 600px 才是限制）
@@ -202,8 +241,10 @@ public sealed class FieldDiagnosis
                 (inView ? $"✅ 在视野内（余量 {marginMm:F2}mm）" : $"❌ 不在视野内（超 {Math.Abs(marginMm):F2}mm）");
 
             _log?.Info("[诊断] " + detail.Replace("\n", " | "));
+            // 副标尺分支没做极坐标可见性检测 → DatumVisible 必须显式 false，
+            // 不许靠默认值宣称"基准孔可见"（2026-11-06 修正）。
             return new Result(true, hole.DiameterPx, mmPerPx, fovW, fovH, datumRadiusMm, inView, marginMm,
-                              $"中央孔 Ø{pick:F2}mm（次要）", detail);
+                              $"中央孔 Ø{pick:F2}mm（次要）", detail, false);
         }
 
         string why = $"既没找到白色外环，也没找到中央孔亮环（全图最亮 {maxGray:F0}，全图均值 {meanGray:F1}）。\n" +
@@ -405,29 +446,39 @@ public sealed class FieldDiagnosis
         double std = Math.Sqrt(validEnergy.Select(v => (v - avg) * (v - avg)).Average());
 
         // 角度方向能量的峰谷比：孔会产生局部凹陷（暗）或反光凸起（亮）
-        // 统计显著偏离均值的角度段数
-        int peaks = CountPeaks(energy, avg - Math.Max(3, std * 1.2), valid);
+        // 统计显著偏离均值的角度段，并取每段中心角度用于几何校验
+        var peakAngles = FindPeakAngles(energy, avg - Math.Max(3, std * 1.2), valid);
+        int peaks = peakAngles.Count;
 
         // 环带整体对比度（灰度域）
         double ringStd = BandStdDev(band, r0, r1, nAng);
 
-        bool visible = ringStd >= 12 && peaks >= 4;
+        // ===== 2026-11-06 硬闸：孔必须满足几何约束，光有"峰"不算 =====
+        // 8 个双环孔在 R14.45mm 同一圆周上、等角间隔 45°、直径约 Ø0.8mm。
+        // 视野可能只框住其中几个，但任意两个相邻可见孔的角间隔仍应是 45° 的整数倍。
+        // 现场曾检出「9 个显著特征 ✅ 方案可用」，而实际连 2 个真孔都拍不到 ——
+        // 辉光边缘/噪声产生的伪峰不会满足等角约束，且 9 > 8 个孔上限，必须判误检。
+        bool countOk = peaks >= 2 && peaks <= 8;                 // 8 个孔最多 8 个
+        bool spacingOk = HasNominalSpacing(peakAngles, 45.0, 12.0);
+        bool visible = ringStd >= 12 && countOk && spacingOk;
 
         string note;
         if (visible)
         {
-            note = $"【基准孔可见性】✅ 环带 R{r0}~{r1}px 上检出 {peaks} 个显著特征（环带对比度 {ringStd:F1}/255），" +
-                   $"角向基准方案可用。";
+            note = $"【基准孔可见性】✅ 环带 R{r0}~{r1}px 上检出 {peaks} 个特征（环带对比度 {ringStd:F1}/255），" +
+                   $"且相邻间隔符合 45° 等角约束 → 角向基准方案可用。";
         }
         else
         {
-            note = $"【基准孔可见性】❌ **基准孔在视野内但完全不可见**" +
-                   $"（环带 R{r0}~{r1}px 对比度仅 {ringStd:F1}/255，显著特征 {peaks} 个，需 ≥12 且 ≥4 个）。\n" +
-                   $"     → 极坐标展开验证：该环带**看不到任何周期性结构**，8 个双环孔在红光下不反光。\n" +
-                   $"     → **\"基准孔在视野内\"是假象**——在视野内 ≠ 看得见。datumHoles 角向基准方案**实际不可用**。\n" +
-                   $"     → 退路：①换成**白光/蓝光**照明或加窄带滤光片（红光对工件金属不形成反差）" +
-                   $"②或改用**双相机/一次两工位**方案：一次拍中心定位、一次拍角向基准" +
-                   $"③或客户确认：打孔孔位本身是否对称（18 孔不具 90° 对称，必须有角向基准）";
+            string reason = peaks > 8
+                ? $"检出 {peaks} 个特征**超过 8 个双环孔的上限**，必然含误检"
+                : !countOk
+                    ? $"检出 {peaks} 个特征，少于判定所需的 2 个"
+                    : $"检出 {peaks} 个特征，但相邻角间隔不符合 45° 等角约束（多半是辉光/噪声）";
+            note = $"【基准孔可见性】❌ **不能认定基准孔可见**（{reason}；环带对比度 {ringStd:F1}/255）。\n" +
+                   $"     → 极坐标展开验证：8 个双环孔在红光下不反光，画面里的亮斑是灯光反射辉光，不是孔。\n" +
+                   $"     → **\"基准孔在视野内\"是假象**——在视野内 ≠ 看得见；datumHoles 角向基准方案**实际不可用**。\n" +
+                   $"     → 现场已确认的可行路线：上料定位到 1 孔 + 转台分度拍多帧，每帧只需看清 1 个孔。";
         }
         return new VisibilityResult(visible, peaks, ringStd, note);
     }
@@ -499,18 +550,47 @@ public sealed class FieldDiagnosis
         return new[] { m[0, 3] / m[0, 0], m[1, 3] / m[1, 1], m[2, 3] / m[2, 2] };
     }
 
-    /// <summary>统计能量曲线中低于阈值的连续段数量（暗点 = 孔）。</summary>
-    private static int CountPeaks(double[] energy, double threshold, bool[] valid)
+    /// <summary>
+    /// 返回能量曲线中低于阈值的连续段**中心角度（度）**（暗段 = 孔候选）。
+    /// 2026-11-06 由原来只返回个数改为返回角度，是为了做 45° 等角间隔几何校验：
+    /// 只看个数时，辉光边缘/噪声凑出的 9 个伪峰会被误判成「基准孔可见」。
+    /// </summary>
+    private static List<double> FindPeakAngles(double[] energy, double threshold, bool[] valid)
     {
-        int count = 0; bool inSeg = false;
-        for (int i = 0; i < energy.Length; i++)
+        var centers = new List<double>();
+        int start = -1;
+        for (int i = 0; i <= energy.Length; i++)
         {
-            if (!valid[i]) { inSeg = false; continue; }
-            bool low = energy[i] < threshold;
-            if (low && !inSeg) { count++; inSeg = true; }
-            else if (!low) inSeg = false;
+            bool low = i < energy.Length && valid[i] && energy[i] < threshold;
+            if (low && start < 0) start = i;
+            else if (!low && start >= 0)
+            {
+                double mid = (start + i - 1) / 2.0;
+                centers.Add(mid * 360.0 / energy.Length);   // nAng 列铺满 360°
+                start = -1;
+            }
         }
-        return count;
+        return centers;
+    }
+
+    /// <summary>
+    /// 校验候选峰的相邻角间隔是否为 nominalDeg 的整数倍（容差 tolDeg）。
+    /// 8 个双环孔等角 45° 分布；视野只框住部分孔时，可见孔之间仍应相隔 45°/90°/135°…
+    /// 随机噪声峰不满足这个约束。要求 ≥60% 的相邻间隔命中。
+    /// </summary>
+    private static bool HasNominalSpacing(List<double> anglesDeg, double nominalDeg, double tolDeg)
+    {
+        if (anglesDeg.Count < 2) return false;
+        int ok = 0, total = 0;
+        for (int i = 1; i < anglesDeg.Count; i++)
+        {
+            double d = anglesDeg[i] - anglesDeg[i - 1];
+            double k = Math.Round(d / nominalDeg);
+            if (k < 1) continue;   // 同一段被拆成两个峰，跳过不计
+            total++;
+            if (Math.Abs(d - k * nominalDeg) <= tolDeg) ok++;
+        }
+        return total > 0 && (double)ok / total >= 0.6;
     }
 
     /// <summary>环带的灰度标准差（衡量该环带有没有结构）。</summary>

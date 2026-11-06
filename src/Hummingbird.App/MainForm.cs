@@ -378,11 +378,12 @@ public sealed class MainForm : Form
         condFlow.Controls.Add(new Label
         {
             AutoSize = true, MaximumSize = new Size(700, 0), ForeColor = Color.DimGray,
-            Text = "2026-11-05 现场复核：①整盘放不进画面、红光下基准孔不可见 → 勾掉；" +
-                   "②照片里的托板没有定位销 → 「夹具锁心」勾掉；" +
-                   "③但手机白光照片里那圈小孔清晰可见 → 换白光 + 视野调到能同时框住 3 个相邻孔后" +
-                   "（约 6×20mm，现有 28.1mm 视野够，不用改镜头），把最后一项勾上，策略④即可用。" +
-                   "第 3 个孔用来消掉孔组 180° 对称造成的镜像圆心二义性，否则 18 孔会整体打偏。",
+            Text = "2026-11-06 现场复核（推翻 11-05 的换白光判断）：①白光/手机手电拍照**全黑**，" +
+                   "必须开红光才有图像（疑似镜头前红色窄带滤光片）→ 换白光这条路作废；" +
+                   "②托板没有定位销 → 「夹具锁心」勾掉；" +
+                   "③真机连 2~3 个双环小孔都拍不到 → 策略④「同帧多孔」现场不可行，最后一项默认勾掉。\r\n" +
+                   "现行路线：上料定位到 1 孔 + 转台分度拍多帧，每帧只需看清 1 个孔，按已知角度逆旋转合并。" +
+                   "第 3 孔一致性仍是消镜像二义性的数学前提，保留作换镜头后的备选。",
             Padding = new Padding(4, 6, 0, 0)
         });
         gbCond.Controls.Add(condFlow);
@@ -1294,9 +1295,10 @@ public sealed class MainForm : Form
             else
             {
                 sb.AppendLine("结论：❌ 所有曝光档位画面都明显偏暗 → 不是曝光设置问题，是**照明光强不足**。");
-                sb.AppendLine("      处理：①加装高功率同轴/环形照明；②换用白光LED并加大光通量；");
-                sb.AppendLine("            ③确认红光是否需要窄带滤光片（若是激光引光，还要评估强光对相机的污染）；");
-                sb.AppendLine("            ④检查镜头光圈是否被拧到最小、是否装了减光片。");
+                sb.AppendLine("      处理：①改红光照明方式（同轴 / 低角度斜照明 / 偏振片 / 入射角），不是换光源颜色；");
+                sb.AppendLine("            ②白光全黑已确认，别换白光LED；向客户/机床厂确认镜头前是否装了红色窄带滤光片、截止波长多少；");
+                sb.AppendLine("            ③检查镜头光圈是否被拧到最小、是否装了减光片；");
+                sb.AppendLine("            ④确认红光光源功率与工作距离 —— 照明光强不足才是根因。");
             }
         }
         catch (Exception ex)
@@ -1344,20 +1346,21 @@ public sealed class MainForm : Form
             double datumR = _template.DatumHoleRadiusMm > 0 ? _template.DatumHoleRadiusMm : 14.45;
             double outerD = _template.PartOuterDiameterMm > 0 ? _template.PartOuterDiameterMm : 34.2;
             var diag = new FieldDiagnosis(_log);
-            var r = diag.Analyze(frame, datumR, outerD);
+            // 传入已标定的 mm/px 做交叉校验（2026-11-06）：现场曾把局部弧/辉光边缘
+            // 拟合成假外环（0.056066 vs 标定 0.0234，差 2.4 倍）却仍报「✅ 方案可行」。
+            // 有标定值时必须拦住这种假阳性，宁可报"作废"也不给错误结论。
+            var r = diag.Analyze(frame, datumR, outerD, _cfg.VisionPixelSizeMm);
             _txtDiag.Text = r.Detail;
 
             // 结论分级提示：现场最关心的不是数字，而是"能不能干"
             if (r.Success && !r.DatumVisible)
             {
                 MessageBox.Show(this,
-                    "诊断结论：**角向基准孔在视野内，但画面里根本看不见**\n\n" +
-                    "极坐标展开验证：基准孔环带对比度极低，8 个双环孔在当前红光下不反光。\n" +
-                    "⇒ datumHoles 角向基准方案当前**不可用**，18 个孔无法确定角向。\n\n" +
-                    "建议动作：\n" +
-                    "① 先把曝光改到 5000~8000μs、增益 0 重拍（本张图是 3114μs）\n" +
-                    "② 试白光/蓝光照明（红光对金属工件不形成反差）\n" +
-                    "③ 若仍不可见 → 需改硬件方案（双工位/加装第二个相机/改用机械对刀）",
+                    "诊断结论：**不能认定基准孔可见，datumHoles 整盘方案不可用**\n\n" +
+                    "8 个双环孔在红光下不反光；画面里的亮斑是灯光反射辉光，不是孔。\n" +
+                    "白光拍照全黑（现场已确认，疑似镜头前装了红色窄带滤光片），不要再试换白光。\n\n" +
+                    "现场已定的路线：上料定位到 1 孔 + 转台分度拍多帧，每帧只需看清 1 个孔。\n" +
+                    "详细判据见下方诊断文本。",
                     "诊断③：基准孔不可见", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             else if (r.Success)
@@ -1369,6 +1372,15 @@ public sealed class MainForm : Form
                     $"基准孔余量 = {r.MarginMm:F2} mm" +
                     (r.MarginMm < 1.5 ? "（⚠ 余量很小，装夹精度要严格控制）" : ""),
                     "诊断③", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                // 标尺不可信 / 全黑 / 全白 / 未量到：明确告诉现场"这帧不能用来做判断"，
+                // 避免只把文字塞进文本框、现场却拿旧结论继续干。
+                string brief = r.Detail.Length > 600 ? r.Detail[..600] + "…" : r.Detail;
+                MessageBox.Show(this,
+                    "诊断未通过，本帧结论作废（不要据此判断能不能定位/打孔）。\n\n" + brief,
+                    "诊断③：标尺不可信 / 画面不可用", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 
             if (r.Success)

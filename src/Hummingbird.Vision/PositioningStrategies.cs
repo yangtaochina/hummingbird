@@ -25,7 +25,10 @@ namespace Hummingbird.Vision;
 /// ⚠ 2026-11-05 现场照片复核结论（推翻了策略②的前提）：
 ///   客户现有「夹具」只是三根金属条拼出的托板，随手摆在回转台上靠一根挡块限位，
 ///   既没有定位销锁中心、也没有角向定位 —— 策略②在现场**根本用不了**。
-///   但照片同时证明：白光下工件自带的那圈双环小孔清晰可见（红光下才看不见）。
+///   ⚠ 2026-11-06 用户已纠正：手机白光/手电拍照**全黑，必须开红光才有图像**
+///   （疑似镜头前装了红色窄带滤光片），「换白光让孔可见」这条路已作废。
+///   且真机确认相机连 2~3 个双环小孔都拍不到 → 策略④「同帧多孔」在现场实际不可行，
+///   现行路线是「上料定位到 1 孔 + 转台分度多帧」。本策略保留作离线/换镜头后的备选。
 ///   于是新增策略④：同时看 **3 个**相邻基准孔 → 中心、转角、mm/px 全部由图像实时解出，
 ///   **夹具什么都不用锁**。为什么是 3 个不是 2 个：孔组有 180° 旋转对称，
 ///   只看两个孔时弦两侧各有一个自洽圆心（相距 27.9mm），第三孔才能消掉这个镜像。
@@ -398,7 +401,7 @@ public sealed class TwoFiducialStrategy : IPositioningStrategy
     public StrategyReadiness Check(StrategyContext ctx)
     {
         var missing = new List<string>();
-        if (!ctx.TwoHolesInView) missing.Add("视野还没同时看清 3 个相邻基准孔（换白光后先拍一张确认）");
+        if (!ctx.TwoHolesInView) missing.Add("视野还没同时看清 3 个相邻基准孔（白光全黑，别换白光；先调红光照明方式/视野，或改走转台多帧方案）");
         if (!ctx.FiducialRotatesWithPart) missing.Add("孔不随工件转动（用工件自带的双环孔就没这问题）");
         if (!ctx.CalibrationValid) missing.Add("九点标定未完成（孔位无法换算到机床系）");
         if (!ctx.CoarseAlignProvided) missing.Add("未填人工粗对齐角（90° 对称无法消歧）");
@@ -436,7 +439,7 @@ public sealed class TwoFiducialStrategy : IPositioningStrategy
         var holes = SingleFiducialStrategy.DetectFiducialHoles(frame, opt, _log);
         if (holes.Count < 2)
             return Fail($"画面只检出 {holes.Count} 个孔，多孔定位至少需要 2 个孔（推荐 3 个）。检查：" +
-                        "①换白光/手机手电照明（红光下这些孔不反光，真机图已证实看不见）" +
+                        "①白光全黑是已确认事实（疑似红色窄带滤光片），别换白光；只能改红光照明方式（同轴/斜照明/偏振/入射角）" +
                         "②曝光 5000~8000μs、增益 0 ③视野是否同时框住相邻两个孔 " +
                         "④FiducialDiameterMm 与实际孔径是否差太多");
         if (holes.Count > 4)
@@ -530,7 +533,7 @@ public sealed class TwoFiducialStrategy : IPositioningStrategy
             if (usable.Count == 0)
                 return Fail("画面里有 3 个以上圆，但没有任何一组解能让第三个孔同时满足" +
                             "「落在半径圈上」和「方位角吻合模板」。可能混入了划痕/污点，或配对被反光干扰。" +
-                            "⚠ 已拒绝输出坐标，请换白光重拍或缩小视野只框住相邻的 3 个基准孔。");
+                            "⚠ 已拒绝输出坐标，请调整红光照明方式或缩小视野只框住相邻的 3 个基准孔（白光全黑，换白光无效）。");
         }
         else                                     // 恰好 2 孔
         {

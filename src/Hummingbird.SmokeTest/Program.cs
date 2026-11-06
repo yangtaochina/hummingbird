@@ -190,35 +190,46 @@ Console.WriteLine("== 5) 角向多解与消歧（8 孔 90° 对称 → 4 个等�
     var rD = fdiag.Analyze(frameD, 14.45);
     Check(!rD.Success, "视野诊断D：全白过曝画面明确报失败");
 
-    // ---------- 情形 E：真机实测图离线复现（决定性验证） ----------
-    // 真图：Image__2026-11-05__14-04-13.bmp（曝光 3114μs）
-    // Python 离线定量分析结论：白色外环 R ≈ 700px → mm/px ≈ 0.0244，视野 46.9×29.3mm
-    //                        基准孔 R14.45mm = 592px，垂直半高 600px → 勉强在视野内
-    // 这张图验证了：①外环能被测到 ②mm/px 量级正确 ③"边缘余量"这个结论能自动算出来
-    string realImg = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
-                                  "Image__2026-11-05__14-04-13.bmp");
-    realImg = Path.GetFullPath(realImg);
+    // ---------- 2026-11-06 现场假阳性防护 ----------
+    // 相机只对着 1 个双环孔（局部视野）时，诊断曾把辉光边缘/局部弧拟合成假外环
+    // （mm/px 0.056066 vs 标定 0.0234，差 2.4 倍），却仍输出「✅ datumHoles 方案可行」。
+    // 传入标定值后必须直接作废整份结论，宁可不报也不给错结论。
+    var rGateOk = fdiag.Analyze(frameA, 14.45, 34.2, 0.030536);
+    Check(rGateOk.Success, "视野诊断闸门1：标定值一致时正常通过");
+    var rGateBad = fdiag.Analyze(frameA, 14.45, 34.2, 0.0125);   // 故意差约 2.4 倍
+    Check(!rGateBad.Success && rGateBad.Detail.Contains("标尺不可信"),
+          "视野诊断闸门2：mm/px 与标定值差 >25% 时作废结论（防局部弧/辉光误判）");
+    Check(!rGateBad.DatumVisible && !rGateBad.DatumInView,
+          "视野诊断闸门3：作废时不得保留「在视野内 / 可见」等结论");
+
+    // ---------- 情形 E：真机工况的合成复现（不再依赖外部 bmp） ----------
+    // 原来这里读仓库外的 Image__2026-11-05__14-04-13.bmp，文件不在 → 5 项断言长期被 [跳过]。
+    // 按验收纪律「Skipped 不算通过」，改成用合成图复现同一个决定性工况，保证每次都真跑：
+    //   Ø34.2 外环 R=700px → mm/px≈0.0244、视野 46.9×29.3mm；
+    //   基准孔 R14.45mm = 591px，垂直半高 600px → 勉强在视野内，但环带上没有任何孔（红光下不反光）。
+    var frameE = MakeFrameWithOuterRing(1920, 1200, 700.0);
+    var rE = fdiag.Analyze(frameE, 14.45);
+    Check(rE.Success, "视野诊断E：成功量到标尺");
+    Check(rE.Success && rE.MmPerPx > 0.020 && rE.MmPerPx < 0.030,
+          $"视野诊断E：mm/px 量级正确（实际 {rE.MmPerPx:F6}，应在 0.020~0.030 之间）");
+    Check(rE.Success && rE.FovWidthMm > 40 && rE.FovWidthMm < 60,
+          $"视野诊断E：视野宽量级正确（实际 {rE.FovWidthMm:F1}mm，应在 40~60mm 之间）");
+    Check(rE.Success && rE.DatumInView && rE.MarginMm < 2.0,
+          $"视野诊断E：判定基准孔在视野内但余量 < 2mm（实际 {rE.MarginMm:F2}mm）——边缘状态必须暴露出来");
+    // 决定性结论：基准孔"在视野内"但环带上没有可检出的孔 → DatumVisible 必须为 false。
+    // 这条断言防止有人把可见性判据改松（2026-11-06 现场就出过 9 个伪峰被判"可用"的事故）。
+    Check(rE.Success && !rE.DatumVisible,
+          "视野诊断E：判定基准孔在视野内但**实际不可见**——必须与'在视野内'区分开");
+
+    // 若现场把真机 bmp 放到仓库根目录，额外复现一次（仅作补充记录，不作为通过条件）
+    string realImg = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..",
+                                                   "Image__2026-11-05__14-04-13.bmp"));
     if (File.Exists(realImg))
     {
         var realFrame = ReadGrayBmp(realImg);
-        var rE = fdiag.Analyze(realFrame, 14.45);
-        Console.WriteLine("  --- 真机图诊断结果 ---");
-        Console.WriteLine("  " + rE.Detail.Replace("\n", "\n  "));
-        Check(rE.Success, "视野诊断E：真机图成功量到标尺");
-        Check(rE.Success && rE.MmPerPx > 0.020 && rE.MmPerPx < 0.030,
-              $"视野诊断E：mm/px 量级正确（实际 {rE.MmPerPx:F6}，应在 0.020~0.030 之间）");
-        Check(rE.Success && rE.FovWidthMm > 40 && rE.FovWidthMm < 60,
-              $"视野诊断E：视野宽量级正确（实际 {rE.FovWidthMm:F1}mm，应在 40~60mm 之间）");
-        Check(rE.Success && rE.DatumInView && rE.MarginMm < 2.0,
-              $"视野诊断E：判定基准孔在视野内但余量 < 2mm（实际 {rE.MarginMm:F2}mm）——边缘状态必须暴露出来");
-        // 2026-11-05 真图决定性结论：基准孔"在视野内"但极坐标展开后环带对比度仅 5/255，
-        // 8 个双环孔在红光下**完全不可见**。这条断言防止有人把 DatumVisible 判据改松。
-        Check(rE.Success && !rE.DatumVisible,
-              "视野诊断E：判定基准孔在视野内但**实际不可见**（红光下无反差）——必须与'在视野内'区分开");
-    }
-    else
-    {
-        Console.WriteLine($"  [跳过] 真机图不存在：{realImg}");
+        var rReal = fdiag.Analyze(realFrame, 14.45);
+        Console.WriteLine("  --- 真机图补充诊断 ---");
+        Console.WriteLine("  " + rReal.Detail.Replace("\n", "\n  "));
     }
 }
 
