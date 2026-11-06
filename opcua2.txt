@@ -1,0 +1,259 @@
+SINUMERIK 828D OPC UA 现场只读探测报告（转台自动分度前置条件）
+时间：2026-11-06 17:38:44
+端点：opc.tcp://192.168.214.241:4840
+变量命名空间：ns=2
+★ 安全声明：本次探测只读变量值 / 节点属性 / 地址空间目录，未写入任何变量、未触发任何轴运动。
+
+=== 1. 服务器命名空间表（config.json 的 CncVarNamespace 以此为准）===
+  ns=0: http://opcfoundation.org/UA/
+  ns=1: urn:DESKTOP-7JGCBQ6:SiemensAG:SinumerikServer
+  ns=2: SinumerikVarProvider
+
+=== 2. 目标角 R 参数 R90 ===
+  路径：/Channel/Parameter/R[u1, 90]（ns=2）
+  读取：0（Double）
+  权限：AccessLevel=0x03（可写），UserAccessLevel=0x03（当前用户可写）
+  ✔ 当前用户对该 R 参数有写权限 → 目标角可用标准路径写入，RotaryTargetRNode 留空即可。
+
+=== 3. 轴实际位置候选节点（找转台角度反馈）===
+  判据：OPC UA 能读到且值为数值。请与 HMI 上 C/A 轴实际角度对照，挑数值一致的那条填 RotaryActualAngleNode。
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 4] = 0（Double）
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+  命中 /Channel/GeometricAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 4] = 0（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+  命中 /Channel/MachineAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 1] = -132.77519018630684（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 2] = -191.75536542488405（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 3] = -202.27873512783393（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 4] = 0.0006379583358764649（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 5] = 87.53028730812073（Double）
+  命中 /Channel/MachineAxis/aaIm[u1, 6] = -238.51028130087155（Double）
+  扫描 80 个候选，命中 18 个。⚠ 命中≠就是转台轴：X/Y/Z 线性轴也会命中，务必对照 HMI 数值。
+
+=== 4. 地址空间目录浏览（真实子节点名，用来拼 config 里的节点路径）===
+  /Channel：31 个子节点
+    AuxiliaryFunctions | /Channel/AuxiliaryFunctions
+    GenericCoupling | /Channel/GenericCoupling
+    Diagnose | /Channel/Diagnose
+    ChannelDiagnose | /Channel/ChannelDiagnose
+    ProtocolEvent | /Channel/ProtocolEvent
+    ActualFrame | /Channel/ActualFrame
+    BaseFrame | /Channel/BaseFrame
+    ExternFrame | /Channel/ExternFrame
+    GrindingFrame | /Channel/GrindingFrame
+    SystemFrame | /Channel/SystemFrame
+    UserFrame | /Channel/UserFrame
+    Drive | /Channel/Drive
+    Nibbling | /Channel/Nibbling
+    ProtectedArea | /Channel/ProtectedArea
+    Parameter | /Channel/Parameter
+    State | /Channel/State
+    Settings | /Channel/Settings
+    GeometricAxis | /Channel/GeometricAxis
+    MachineAxis | /Channel/MachineAxis
+    ProgramModification | /Channel/ProgramModification
+    SelectedFunctions | /Channel/SelectedFunctions
+    ProgramInfo | /Channel/ProgramInfo
+    Search | /Channel/Search
+    InterruptionSearch | /Channel/InterruptionSearch
+    ProgramPointer | /Channel/ProgramPointer
+    Spindle | /Channel/Spindle
+    LogicalSpindle | /Channel/LogicalSpindle
+    Compensation | /Channel/Compensation
+    SelectedFunctionData | /Channel/SelectedFunctionData
+    CoordSysWorkAreaLimits | /Channel/CoordSysWorkAreaLimits
+    Configuration | /Channel/Configuration
+  /Channel/Parameter：3 个子节点
+    rpa | /Channel/Parameter/rpa
+    R | /Channel/Parameter/R
+    R[u1, 90] | /Channel/Parameter/R[u1, 90]
+  /Channel/GeometricAxis：94 个子节点
+    aaDelt | /Channel/GeometricAxis/aaDelt
+    aaDtbw | /Channel/GeometricAxis/aaDtbw
+    aaDtepw | /Channel/GeometricAxis/aaDtepw
+    aaDtew | /Channel/GeometricAxis/aaDtew
+    aaDtsb | /Channel/GeometricAxis/aaDtsb
+    aaDtsw | /Channel/GeometricAxis/aaDtsw
+    aaIb | /Channel/GeometricAxis/aaIb
+    aaIbCorr | /Channel/GeometricAxis/aaIbCorr
+    aaIwCorr | /Channel/GeometricAxis/aaIwCorr
+    aaMw1 | /Channel/GeometricAxis/aaMw1
+    aaMw2 | /Channel/GeometricAxis/aaMw2
+    aaMw3 | /Channel/GeometricAxis/aaMw3
+    aaMw4 | /Channel/GeometricAxis/aaMw4
+    aaMw | /Channel/GeometricAxis/aaMw
+    aaTOff | /Channel/GeometricAxis/aaTOff
+    aaTOffLimit | /Channel/GeometricAxis/aaTOffLimit
+    aaTOffPrepDiff | /Channel/GeometricAxis/aaTOffPrepDiff
+    aaTOffVal | /Channel/GeometricAxis/aaTOffVal
+    aaVactW | /Channel/GeometricAxis/aaVactW
+    acRetpoint | /Channel/GeometricAxis/acRetpoint
+    actDistToGoEns | /Channel/GeometricAxis/actDistToGoEns
+    actFeedRate | /Channel/GeometricAxis/actFeedRate
+    actFeedRateIpo | /Channel/GeometricAxis/actFeedRateIpo
+    actProgPosBKS | /Channel/GeometricAxis/actProgPosBKS
+    actToolBasPosBN | /Channel/GeometricAxis/actToolBasPosBN
+    actToolBasPosBNDiam | /Channel/GeometricAxis/actToolBasPosBNDiam
+    actToolBasPosEN | /Channel/GeometricAxis/actToolBasPosEN
+    actToolBasPosENitc | /Channel/GeometricAxis/actToolBasPosENitc
+    actToolBasPosENjmp | /Channel/GeometricAxis/actToolBasPosENjmp
+    actToolBasePosBasic | /Channel/GeometricAxis/actToolBasePosBasic
+    actToolBasePosBasicDiam | /Channel/GeometricAxis/actToolBasePosBasicDiam
+    actToolBasePosDiam | /Channel/GeometricAxis/actToolBasePosDiam
+    actToolEdgeCenterPosEns | /Channel/GeometricAxis/actToolEdgeCenterPosEns
+    axisActiveInChan | /Channel/GeometricAxis/axisActiveInChan
+    axisFeedRateIpoUnit | /Channel/GeometricAxis/axisFeedRateIpoUnit
+    axisFeedRateUnit | /Channel/GeometricAxis/axisFeedRateUnit
+    cmdFeedRate | /Channel/GeometricAxis/cmdFeedRate
+    cmdFeedRateIpo | /Channel/GeometricAxis/cmdFeedRateIpo
+    cmdToolBasPosENS | /Channel/GeometricAxis/cmdToolBasPosENS
+    cmdToolEdgeCenterPosEnsS | /Channel/GeometricAxis/cmdToolEdgeCenterPosEnsS
+    cmdToolEdgeCenterPosEns | /Channel/GeometricAxis/cmdToolEdgeCenterPosEns
+    diamonInfo | /Channel/GeometricAxis/diamonInfo
+    displayAxis | /Channel/GeometricAxis/displayAxis
+    drfVal | /Channel/GeometricAxis/drfVal
+    effComp | /Channel/GeometricAxis/effComp
+    feedRateOvr | /Channel/GeometricAxis/feedRateOvr
+    geoAxisNr | /Channel/GeometricAxis/geoAxisNr
+    handwheelAss | /Channel/GeometricAxis/handwheelAss
+    index | /Channel/GeometricAxis/index
+    motEnd | /Channel/GeometricAxis/motEnd
+    spec | /Channel/GeometricAxis/spec
+    subSpec | /Channel/GeometricAxis/subSpec
+    type | /Channel/GeometricAxis/type
+    aaDiamStat | /Channel/GeometricAxis/aaDiamStat
+    aaSccStat | /Channel/GeometricAxis/aaSccStat
+    aaPcsRel | /Channel/GeometricAxis/aaPcsRel
+    aaAcsRel | /Channel/GeometricAxis/aaAcsRel
+    aaIbc | /Channel/GeometricAxis/aaIbc
+    vaIw | /Channel/GeometricAxis/vaIw
+    vaIb | /Channel/GeometricAxis/vaIb
+    …（其余 34 个省略，用 UaExpert 展开看全）
+  /Channel/MachineAxis：310 个子节点
+    PRESETActive | /Channel/MachineAxis/PRESETActive
+    PRESETVal | /Channel/MachineAxis/PRESETVal
+    aaAccPercent | /Channel/MachineAxis/aaAccPercent
+    aaActIndexAxPosNo | /Channel/MachineAxis/aaActIndexAxPosNo
+    aaAlarmStat | /Channel/MachineAxis/aaAlarmStat
+    aaAxChangeStat | /Channel/MachineAxis/aaAxChangeStat
+    aaAxChangeTyp | /Channel/MachineAxis/aaAxChangeTyp
+    aaAxDisable | /Channel/MachineAxis/aaAxDisable
+    aaAxDisableSrc | /Channel/MachineAxis/aaAxDisableSrc
+    aaBcsOffset | /Channel/MachineAxis/aaBcsOffset
+    aaBrakeCondB | /Channel/MachineAxis/aaBrakeCondB
+    aaBrakeCondM | /Channel/MachineAxis/aaBrakeCondM
+    aaBrakeState | /Channel/MachineAxis/aaBrakeState
+    aaChanNo | /Channel/MachineAxis/aaChanNo
+    aaCoupAct | /Channel/MachineAxis/aaCoupAct
+    aaCoupOffs | /Channel/MachineAxis/aaCoupOffs
+    aaCurr | /Channel/MachineAxis/aaCurr
+    aaDepAxO | /Channel/MachineAxis/aaDepAxO
+    aaDtbb | /Channel/MachineAxis/aaDtbb
+    aaDtbreb | /Channel/MachineAxis/aaDtbreb
+    aaDtbrebCmd | /Channel/MachineAxis/aaDtbrebCmd
+    aaDtbrebCorr | /Channel/MachineAxis/aaDtbrebCorr
+    aaDtbrebDep | /Channel/MachineAxis/aaDtbrebDep
+    aaDtbrem | /Channel/MachineAxis/aaDtbrem
+    aaDtbremCmd | /Channel/MachineAxis/aaDtbremCmd
+    aaDtbremCorr | /Channel/MachineAxis/aaDtbremCorr
+    aaDtbremDep | /Channel/MachineAxis/aaDtbremDep
+    aaDteb | /Channel/MachineAxis/aaDteb
+    aaDtepb | /Channel/MachineAxis/aaDtepb
+    aaEnc1Active | /Channel/MachineAxis/aaEnc1Active
+    aaEnc2Active | /Channel/MachineAxis/aaEnc2Active
+    aaEncActive | /Channel/MachineAxis/aaEncActive
+    aaEsrEnable | /Channel/MachineAxis/aaEsrEnable
+    aaEsrStat | /Channel/MachineAxis/aaEsrStat
+    aaEsrTrigger | /Channel/MachineAxis/aaEsrTrigger
+    aaFixPointSelected | /Channel/MachineAxis/aaFixPointSelected
+    aaIbnCorr | /Channel/MachineAxis/aaIbnCorr
+    aaIenCorr | /Channel/MachineAxis/aaIenCorr
+    aaInSync | /Channel/MachineAxis/aaInSync
+    aaInposStat | /Channel/MachineAxis/aaInposStat
+    aaJerkCount | /Channel/MachineAxis/aaJerkCount
+    aaJerkTime | /Channel/MachineAxis/aaJerkTime
+    aaJerkTotal | /Channel/MachineAxis/aaJerkTotal
+    aaLeadP | /Channel/MachineAxis/aaLeadP
+    aaLeadPTurn | /Channel/MachineAxis/aaLeadPTurn
+    aaLeadSp | /Channel/MachineAxis/aaLeadSp
+    aaLeadSv | /Channel/MachineAxis/aaLeadSv
+    aaLeadV | /Channel/MachineAxis/aaLeadV
+    aaLoad | /Channel/MachineAxis/aaLoad
+    aaMaslState | /Channel/MachineAxis/aaMaslState
+    aaMeaAct | /Channel/MachineAxis/aaMeaAct
+    aaMm1 | /Channel/MachineAxis/aaMm1
+    aaMm2 | /Channel/MachineAxis/aaMm2
+    aaMm3 | /Channel/MachineAxis/aaMm3
+    aaMm4 | /Channel/MachineAxis/aaMm4
+    aaMm | /Channel/MachineAxis/aaMm
+    aaOff | /Channel/MachineAxis/aaOff
+    aaOffLimit | /Channel/MachineAxis/aaOffLimit
+    aaOffVal | /Channel/MachineAxis/aaOffVal
+    aaOnFixPoint | /Channel/MachineAxis/aaOnFixPoint
+    …（其余 250 个省略，用 UaExpert 展开看全）
+  /PLC：浏览不到（节点不存在或权限不足）
+  /Plc：46 个子节点
+    C | /Plc/C
+    T | /Plc/T
+    connect_state | /Plc/connect_state
+    I | /Plc/I
+    IB | /Plc/IB
+    IW | /Plc/IW
+    ID | /Plc/ID
+    M | /Plc/M
+    MB | /Plc/MB
+    MW | /Plc/MW
+    MD | /Plc/MD
+    Q | /Plc/Q
+    QB | /Plc/QB
+    QW | /Plc/QW
+    QD | /Plc/QD
+    DB9000 | /Plc/DB9000
+    DB9003 | /Plc/DB9003
+    DB9004 | /Plc/DB9004
+    DB9005 | /Plc/DB9005
+    DB9007 | /Plc/DB9007
+    DB9008 | /Plc/DB9008
+    DB9011 | /Plc/DB9011
+    DB9012 | /Plc/DB9012
+    DB9013 | /Plc/DB9013
+    DB9017 | /Plc/DB9017
+    DB9018 | /Plc/DB9018
+    DB9021 | /Plc/DB9021
+    DB9022 | /Plc/DB9022
+    DB9023 | /Plc/DB9023
+    DB9024 | /Plc/DB9024
+    DB9027 | /Plc/DB9027
+    DB9030 | /Plc/DB9030
+    DB9031 | /Plc/DB9031
+    DB9035 | /Plc/DB9035
+    DB9037 | /Plc/DB9037
+    DB9050 | /Plc/DB9050
+    DB9051 | /Plc/DB9051
+    DB9052 | /Plc/DB9052
+    DB9063 | /Plc/DB9063
+    DB9900 | /Plc/DB9900
+    DB9901 | /Plc/DB9901
+    DB9902 | /Plc/DB9902
+    DB9905 | /Plc/DB9905
+    Inputs | IArea
+    Outputs | QArea
+    Memory | MArea
+  /Channel/PLC：浏览不到（节点不存在或权限不足）
+  ⚠ PLC 触发位/到位位通常挂在 /PLC 下（如 DB99.DBX0.0）。若此处浏览不到，说明它在别的命名空间，用 UaExpert 展开后 Copy NodeId。
+
+=== 5. 结论 / 下一步（把本报告发回开发侧即可定死节点路径）===
+  ① OPC UA 网络：已联通 ✔（本次会话建立成功，服务器地址空间可读）。
+  ② 目标角 R 参数：节点存在 ✔，当前用户可写 ✔。
+  ③ 转台实际角度：有 18 个候选，需对照 HMI 挑一条。
+  ④ PLC 触发位 / 到位位：程序绝不臆造 NodeId，需机床厂给 DB 地址，UaExpert 核实后填 RotaryTriggerNode / RotaryDoneNode。
+  ⑤ 机床侧还要：预置 NC 子程序（读 R90 → G0 C=R90 / POS[C]=R90）+ PLC 握手 + 安全联锁（门/夹紧/急停）。
+  ⑥ 在 ②~⑤ 齐备前：DeviceMode 保持 Sim、RotaryMode 保持 ManualEntry（人工抄角照样能采多帧，不耽误视觉验证）。
+     齐备后改 DeviceMode=Real、RotaryMode=OpcUaRPlc，先用 5° 小角度空跑验证握手，再上工件。

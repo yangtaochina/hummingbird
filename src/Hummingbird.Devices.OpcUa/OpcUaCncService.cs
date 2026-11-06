@@ -24,8 +24,9 @@ namespace Hummingbird.Devices.OpcUa;
 public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumerikVarProbe
 {
     /// <summary>
-    /// 连接成功后是否自动跑一遍通用连接诊断（命名空间表 + XYZ 位置候选扫描）。
-    /// 现场「只读探测」按钮会自己跑更完整的转台专项探测，故置 false 避免重复刷屏/重复读节点。
+    /// 连接成功后是否自动跑一遍通用连接诊断（命名空间表 + XYZ 位置候选扫描）。默认 true。
+    /// 现场「只读探测」按钮会显式置 false（MainForm.ProbeOpcUaAsync）改跑更完整的转台专项探测，
+    /// 避免对真机重复读上百个节点。
     /// </summary>
     public bool RunConnectDiagnostics { get; set; } = true;
     /// <summary>程序下发用的网络共享路径（如 \\192.168.214.1\nc），由 App 配置注入。</summary>
@@ -512,10 +513,40 @@ public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumer
         sb.AppendLine($"  扫描 {tried} 个候选，命中 {hit} 个。⚠ 命中≠就是转台轴：X/Y/Z 线性轴也会命中，务必对照 HMI 数值。");
         sb.AppendLine();
 
+        // ---- 3b. 轴名 / 轴类型识别（2026-11-06 现场报告复盘后新增）----
+        // 只列 18 个数值无法判断哪个索引是回转轴，现场报告只能写"请对照 HMI"。
+        // 但人不在现场时 HMI 也看不了，所以这里尽量把轴名/类型节点一起读出来，
+        // 读得到就能远程认出转台轴；读不到就明确写"仍需 HMI 对照"，绝不臆造索引→轴名映射。
+        // type / spec / displayAxis / index 这几个名字在本机 828D 的轴目录里是真实存在的
+        // （见第 4 节目录列表），axisName / axName 只是常见写法候选，读不到属正常。
+        sb.AppendLine("=== 3b. 轴名 / 轴类型识别（用来远程认出哪个索引是回转轴）===");
+        string[] metaVars = { "type", "spec", "displayAxis", "index", "axisName", "axName" };
+        int metaHit = 0;
+        foreach (var dir in dirs)
+            foreach (var v in metaVars)
+                for (int n = 1; n <= 6; n++)
+                {
+                    if (ct.IsCancellationRequested) break;
+                    string p = $"{dir}/{v}[u1, {n}]";
+                    var rr = await ReadNodeTextAsync(p, ct);
+                    if (!rr.Ok) continue;
+                    sb.AppendLine($"  命中 {p} = {rr.Text}");
+                    metaHit++;
+                }
+        if (metaHit == 0)
+            sb.AppendLine("  未读到轴名/类型节点 → 仍需现场对照 HMI，或在 MDA 敲 G0 C10 看哪个索引变化，才能确认转台轴。");
+        else
+            sb.AppendLine($"  共命中 {metaHit} 条。⚠ type/spec 的枚举含义由机床厂定义，不要凭数值猜；以 HMI 轴名为准。");
+        sb.AppendLine();
+
         // ---- 4. 目录浏览：列出真实子节点名，用于拼 config 节点路径 ----
         sb.AppendLine("=== 4. 地址空间目录浏览（真实子节点名，用来拼 config 里的节点路径）===");
         foreach (var dir in new[] { "/Channel", "/Channel/Parameter", "/Channel/GeometricAxis",
-                                   "/Channel/MachineAxis", "/PLC", "/Plc", "/Channel/PLC" })
+                                   "/Channel/MachineAxis",
+                                   // 2026-11-06 现场报告实测：PLC 区的真实前缀是 /Plc（不是 /PLC），
+                                   // 下面几个子目录展开后能看到真实的位/DB 变量，供机床厂对号入座。
+                                   "/Plc", "/Plc/M", "/Plc/MB", "/Plc/DB9000",
+                                   "/PLC", "/Channel/PLC" })
         {
             var names = BrowseChildNames(dir);
             if (names.Count == 0) { sb.AppendLine($"  {dir}：浏览不到（节点不存在或权限不足）"); continue; }
@@ -523,16 +554,24 @@ public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumer
             for (int i = 0; i < Math.Min(names.Count, 60); i++) sb.AppendLine("    " + names[i]);
             if (names.Count > 60) sb.AppendLine($"    …（其余 {names.Count - 60} 个省略，用 UaExpert 展开看全）");
         }
-        sb.AppendLine("  ⚠ PLC 触发位/到位位通常挂在 /PLC 下（如 DB99.DBX0.0）。若此处浏览不到，说明它在别的命名空间，用 UaExpert 展开后 Copy NodeId。");
+        sb.AppendLine("  ✔ 2026-11-06 实测：PLC 变量区真实前缀是 /Plc（大写 P + 小写 lc），可浏览；/PLC 不存在。");
+        sb.AppendLine("    该区含 I/IB/IW/ID、Q/QB/QW/QD、M/MB/MW/MD 及 DB9000~DB9905 等数据块 —— 位空间其实能访问。");
+        sb.AppendLine("  ⚠ 但「目录能浏览」≠「知道哪一位是触发/到位位」。具体 DB 地址（如 DB9xxx.DBXx.y）");
+        sb.AppendLine("    必须由机床厂给出，再用 UaExpert 核实读写权限后填 RotaryTriggerNode / RotaryDoneNode。程序绝不臆造。");
         sb.AppendLine();
 
         // ---- 5. 结论：把「网络已通」之后还差什么一次讲清 ----
         sb.AppendLine("=== 5. 结论 / 下一步（把本报告发回开发侧即可定死节点路径）===");
         sb.AppendLine("  ① OPC UA 网络：已联通 ✔（本次会话建立成功，服务器地址空间可读）。");
         sb.AppendLine($"  ② 目标角 R 参数：{(rRead.Ok ? "节点存在 ✔" : "节点未读到 ✘")}，当前用户{(rWritable ? "可写 ✔" : "不可写 ✘")}。");
-        sb.AppendLine($"  ③ 转台实际角度：{(candidates.Count > 0 ? $"有 {candidates.Count} 个候选，需对照 HMI 挑一条" : "没扫到候选，用 UaExpert 展开轴目录")}。");
+        sb.AppendLine($"  ③ 转台实际角度：{(candidates.Count > 0 ? $"有 {candidates.Count} 个数值候选，看第 3b 节能否远程认出回转轴" : "没扫到候选，用 UaExpert 展开轴目录")}。");
         sb.AppendLine("  ④ PLC 触发位 / 到位位：程序绝不臆造 NodeId，需机床厂给 DB 地址，UaExpert 核实后填 RotaryTriggerNode / RotaryDoneNode。");
         sb.AppendLine("  ⑤ 机床侧还要：预置 NC 子程序（读 R90 → G0 C=R90 / POS[C]=R90）+ PLC 握手 + 安全联锁（门/夹紧/急停）。");
+        sb.AppendLine("  ★ 2026-11-06 17:38 现场实测已确认：ns=2（SinumerikVarProvider）；R90=/Channel/Parameter/R[u1, 90] 可读、");
+        sb.AppendLine("    当前值 0、AccessLevel/UserAccessLevel=0x03（当前用户可写）；PLC 区前缀 /Plc 可浏览。");
+        sb.AppendLine("    ⚠ **R 参数可写 ≠ 转台能自动转**：现在没有任何节点会去执行运动，写 R90 只是改了一个数字。");
+        sb.AppendLine("      绝对不要因为「可写」就把 DeviceMode/RotaryMode 切成 Real/OpcUaRPlc —— 缺 ④⑤ 时触发位为空，程序会明确拒绝动作。");
+        sb.AppendLine("      也绝不能试图写轴位置变量或直接启动程序来驱动轴：828D 轴位置只读，且那样会绕过机床 PLC 的安全联锁。");
         sb.AppendLine("  ⑥ 在 ②~⑤ 齐备前：DeviceMode 保持 Sim、RotaryMode 保持 ManualEntry（人工抄角照样能采多帧，不耽误视觉验证）。");
         sb.AppendLine("     齐备后改 DeviceMode=Real、RotaryMode=OpcUaRPlc，先用 5° 小角度空跑验证握手，再上工件。");
 

@@ -1,0 +1,534 @@
+[17:37:11] [INFO] 【转台】请求转到 30.000°（模式 ManualEntry）
+[17:37:11] [WARN] 【转台】未到位：人工模式：程序不能驱动转台。请手动转到 30.000°，确认 HMI 读数后点界面【已转到该角度】，再拍下一帧。
+[17:38:23] [INFO] [探测] 开始只读探测 → opc.tcp://192.168.214.241:4840（独立会话；不写机床、不触发运动）
+[17:38:23] [INFO] [数控] 连接步骤1/4：组装客户端配置 → opc.tcp://192.168.214.241:4840
+[17:38:23] [INFO] [数控] 连接步骤2/4：生成/检查本机证书
+[17:38:23] [INFO] [数控] 连接步骤3/4：发现服务器端点（不通=检查网线/IP/4840端口）
+[17:38:23] [INFO] [数控] 端点确认：opc.tcp://192.168.214.241:4840/ 安全策略=http://opcfoundation.org/UA/SecurityPolicy#None
+[17:38:23] [INFO] [数控] 连接步骤4/4：建立会话（不通=在828D上信任客户端证书）
+[17:38:23] [INFO] [数控] 登录方式：用户名 OpcUaClient（读取被拒=检查该用户在 HMI 里是否被赋变量读写权限）
+[17:38:23] [INFO] [数控] 变量命名空间：ns=2（SinumerikVarProvider）
+[17:38:23] [INFO] [数控] 会话建立成功（变量命名空间 ns=2）
+[17:38:24] [INFO] [探测] 只读探测完成：R 参数读得到=True，当前用户可写=True，轴角度候选 18 条
+[17:38:24] [INFO] [探测] SINUMERIK 828D OPC UA 现场只读探测报告（转台自动分度前置条件）
+[17:38:24] [INFO] [探测] 时间：2026-11-06 17:38:23
+[17:38:24] [INFO] [探测] 端点：opc.tcp://192.168.214.241:4840
+[17:38:24] [INFO] [探测] 变量命名空间：ns=2
+[17:38:24] [INFO] [探测] ★ 安全声明：本次探测只读变量值 / 节点属性 / 地址空间目录，未写入任何变量、未触发任何轴运动。
+[17:38:24] [INFO] [探测] === 1. 服务器命名空间表（config.json 的 CncVarNamespace 以此为准）===
+[17:38:24] [INFO] [探测]   ns=0: http://opcfoundation.org/UA/
+[17:38:24] [INFO] [探测]   ns=1: urn:DESKTOP-7JGCBQ6:SiemensAG:SinumerikServer
+[17:38:24] [INFO] [探测]   ns=2: SinumerikVarProvider
+[17:38:24] [INFO] [探测] === 2. 目标角 R 参数 R90 ===
+[17:38:24] [INFO] [探测]   路径：/Channel/Parameter/R[u1, 90]（ns=2）
+[17:38:24] [INFO] [探测]   读取：0（Double）
+[17:38:24] [INFO] [探测]   权限：AccessLevel=0x03（可写），UserAccessLevel=0x03（当前用户可写）
+[17:38:24] [INFO] [探测]   ✔ 当前用户对该 R 参数有写权限 → 目标角可用标准路径写入，RotaryTargetRNode 留空即可。
+[17:38:24] [INFO] [探测] === 3. 轴实际位置候选节点（找转台角度反馈）===
+[17:38:24] [INFO] [探测]   判据：OPC UA 能读到且值为数值。请与 HMI 上 C/A 轴实际角度对照，挑数值一致的那条填 RotaryActualAngleNode。
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 4] = 0（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 4] = 0（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 1] = -132.7751901863066（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 2] = -191.75536542488405（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 3] = -202.27878513803392（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 4] = 0.0006540515899658203（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 5] = 87.53030340137482（Double）
+[17:38:24] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 6] = -238.51028130087155（Double）
+[17:38:24] [INFO] [探测]   扫描 80 个候选，命中 18 个。⚠ 命中≠就是转台轴：X/Y/Z 线性轴也会命中，务必对照 HMI 数值。
+[17:38:24] [INFO] [探测] === 4. 地址空间目录浏览（真实子节点名，用来拼 config 里的节点路径）===
+[17:38:24] [INFO] [探测]   /Channel：31 个子节点
+[17:38:24] [INFO] [探测]     AuxiliaryFunctions | /Channel/AuxiliaryFunctions
+[17:38:24] [INFO] [探测]     GenericCoupling | /Channel/GenericCoupling
+[17:38:24] [INFO] [探测]     Diagnose | /Channel/Diagnose
+[17:38:24] [INFO] [探测]     ChannelDiagnose | /Channel/ChannelDiagnose
+[17:38:24] [INFO] [探测]     ProtocolEvent | /Channel/ProtocolEvent
+[17:38:24] [INFO] [探测]     ActualFrame | /Channel/ActualFrame
+[17:38:24] [INFO] [探测]     BaseFrame | /Channel/BaseFrame
+[17:38:24] [INFO] [探测]     ExternFrame | /Channel/ExternFrame
+[17:38:24] [INFO] [探测]     GrindingFrame | /Channel/GrindingFrame
+[17:38:24] [INFO] [探测]     SystemFrame | /Channel/SystemFrame
+[17:38:24] [INFO] [探测]     UserFrame | /Channel/UserFrame
+[17:38:24] [INFO] [探测]     Drive | /Channel/Drive
+[17:38:24] [INFO] [探测]     Nibbling | /Channel/Nibbling
+[17:38:24] [INFO] [探测]     ProtectedArea | /Channel/ProtectedArea
+[17:38:24] [INFO] [探测]     Parameter | /Channel/Parameter
+[17:38:24] [INFO] [探测]     State | /Channel/State
+[17:38:24] [INFO] [探测]     Settings | /Channel/Settings
+[17:38:24] [INFO] [探测]     GeometricAxis | /Channel/GeometricAxis
+[17:38:24] [INFO] [探测]     MachineAxis | /Channel/MachineAxis
+[17:38:24] [INFO] [探测]     ProgramModification | /Channel/ProgramModification
+[17:38:24] [INFO] [探测]     SelectedFunctions | /Channel/SelectedFunctions
+[17:38:24] [INFO] [探测]     ProgramInfo | /Channel/ProgramInfo
+[17:38:24] [INFO] [探测]     Search | /Channel/Search
+[17:38:24] [INFO] [探测]     InterruptionSearch | /Channel/InterruptionSearch
+[17:38:24] [INFO] [探测]     ProgramPointer | /Channel/ProgramPointer
+[17:38:24] [INFO] [探测]     Spindle | /Channel/Spindle
+[17:38:24] [INFO] [探测]     LogicalSpindle | /Channel/LogicalSpindle
+[17:38:24] [INFO] [探测]     Compensation | /Channel/Compensation
+[17:38:24] [INFO] [探测]     SelectedFunctionData | /Channel/SelectedFunctionData
+[17:38:24] [INFO] [探测]     CoordSysWorkAreaLimits | /Channel/CoordSysWorkAreaLimits
+[17:38:24] [INFO] [探测]     Configuration | /Channel/Configuration
+[17:38:24] [INFO] [探测]   /Channel/Parameter：3 个子节点
+[17:38:24] [INFO] [探测]     rpa | /Channel/Parameter/rpa
+[17:38:24] [INFO] [探测]     R | /Channel/Parameter/R
+[17:38:24] [INFO] [探测]     R[u1, 90] | /Channel/Parameter/R[u1, 90]
+[17:38:24] [INFO] [探测]   /Channel/GeometricAxis：94 个子节点
+[17:38:24] [INFO] [探测]     aaDelt | /Channel/GeometricAxis/aaDelt
+[17:38:24] [INFO] [探测]     aaDtbw | /Channel/GeometricAxis/aaDtbw
+[17:38:24] [INFO] [探测]     aaDtepw | /Channel/GeometricAxis/aaDtepw
+[17:38:24] [INFO] [探测]     aaDtew | /Channel/GeometricAxis/aaDtew
+[17:38:24] [INFO] [探测]     aaDtsb | /Channel/GeometricAxis/aaDtsb
+[17:38:24] [INFO] [探测]     aaDtsw | /Channel/GeometricAxis/aaDtsw
+[17:38:24] [INFO] [探测]     aaIb | /Channel/GeometricAxis/aaIb
+[17:38:24] [INFO] [探测]     aaIbCorr | /Channel/GeometricAxis/aaIbCorr
+[17:38:24] [INFO] [探测]     aaIwCorr | /Channel/GeometricAxis/aaIwCorr
+[17:38:24] [INFO] [探测]     aaMw1 | /Channel/GeometricAxis/aaMw1
+[17:38:24] [INFO] [探测]     aaMw2 | /Channel/GeometricAxis/aaMw2
+[17:38:24] [INFO] [探测]     aaMw3 | /Channel/GeometricAxis/aaMw3
+[17:38:24] [INFO] [探测]     aaMw4 | /Channel/GeometricAxis/aaMw4
+[17:38:24] [INFO] [探测]     aaMw | /Channel/GeometricAxis/aaMw
+[17:38:24] [INFO] [探测]     aaTOff | /Channel/GeometricAxis/aaTOff
+[17:38:24] [INFO] [探测]     aaTOffLimit | /Channel/GeometricAxis/aaTOffLimit
+[17:38:24] [INFO] [探测]     aaTOffPrepDiff | /Channel/GeometricAxis/aaTOffPrepDiff
+[17:38:24] [INFO] [探测]     aaTOffVal | /Channel/GeometricAxis/aaTOffVal
+[17:38:24] [INFO] [探测]     aaVactW | /Channel/GeometricAxis/aaVactW
+[17:38:24] [INFO] [探测]     acRetpoint | /Channel/GeometricAxis/acRetpoint
+[17:38:24] [INFO] [探测]     actDistToGoEns | /Channel/GeometricAxis/actDistToGoEns
+[17:38:24] [INFO] [探测]     actFeedRate | /Channel/GeometricAxis/actFeedRate
+[17:38:24] [INFO] [探测]     actFeedRateIpo | /Channel/GeometricAxis/actFeedRateIpo
+[17:38:24] [INFO] [探测]     actProgPosBKS | /Channel/GeometricAxis/actProgPosBKS
+[17:38:24] [INFO] [探测]     actToolBasPosBN | /Channel/GeometricAxis/actToolBasPosBN
+[17:38:24] [INFO] [探测]     actToolBasPosBNDiam | /Channel/GeometricAxis/actToolBasPosBNDiam
+[17:38:24] [INFO] [探测]     actToolBasPosEN | /Channel/GeometricAxis/actToolBasPosEN
+[17:38:24] [INFO] [探测]     actToolBasPosENitc | /Channel/GeometricAxis/actToolBasPosENitc
+[17:38:24] [INFO] [探测]     actToolBasPosENjmp | /Channel/GeometricAxis/actToolBasPosENjmp
+[17:38:24] [INFO] [探测]     actToolBasePosBasic | /Channel/GeometricAxis/actToolBasePosBasic
+[17:38:24] [INFO] [探测]     actToolBasePosBasicDiam | /Channel/GeometricAxis/actToolBasePosBasicDiam
+[17:38:24] [INFO] [探测]     actToolBasePosDiam | /Channel/GeometricAxis/actToolBasePosDiam
+[17:38:24] [INFO] [探测]     actToolEdgeCenterPosEns | /Channel/GeometricAxis/actToolEdgeCenterPosEns
+[17:38:24] [INFO] [探测]     axisActiveInChan | /Channel/GeometricAxis/axisActiveInChan
+[17:38:24] [INFO] [探测]     axisFeedRateIpoUnit | /Channel/GeometricAxis/axisFeedRateIpoUnit
+[17:38:24] [INFO] [探测]     axisFeedRateUnit | /Channel/GeometricAxis/axisFeedRateUnit
+[17:38:24] [INFO] [探测]     cmdFeedRate | /Channel/GeometricAxis/cmdFeedRate
+[17:38:24] [INFO] [探测]     cmdFeedRateIpo | /Channel/GeometricAxis/cmdFeedRateIpo
+[17:38:24] [INFO] [探测]     cmdToolBasPosENS | /Channel/GeometricAxis/cmdToolBasPosENS
+[17:38:24] [INFO] [探测]     cmdToolEdgeCenterPosEnsS | /Channel/GeometricAxis/cmdToolEdgeCenterPosEnsS
+[17:38:24] [INFO] [探测]     cmdToolEdgeCenterPosEns | /Channel/GeometricAxis/cmdToolEdgeCenterPosEns
+[17:38:24] [INFO] [探测]     diamonInfo | /Channel/GeometricAxis/diamonInfo
+[17:38:24] [INFO] [探测]     displayAxis | /Channel/GeometricAxis/displayAxis
+[17:38:24] [INFO] [探测]     drfVal | /Channel/GeometricAxis/drfVal
+[17:38:24] [INFO] [探测]     effComp | /Channel/GeometricAxis/effComp
+[17:38:24] [INFO] [探测]     feedRateOvr | /Channel/GeometricAxis/feedRateOvr
+[17:38:24] [INFO] [探测]     geoAxisNr | /Channel/GeometricAxis/geoAxisNr
+[17:38:24] [INFO] [探测]     handwheelAss | /Channel/GeometricAxis/handwheelAss
+[17:38:24] [INFO] [探测]     index | /Channel/GeometricAxis/index
+[17:38:24] [INFO] [探测]     motEnd | /Channel/GeometricAxis/motEnd
+[17:38:24] [INFO] [探测]     spec | /Channel/GeometricAxis/spec
+[17:38:24] [INFO] [探测]     subSpec | /Channel/GeometricAxis/subSpec
+[17:38:24] [INFO] [探测]     type | /Channel/GeometricAxis/type
+[17:38:24] [INFO] [探测]     aaDiamStat | /Channel/GeometricAxis/aaDiamStat
+[17:38:24] [INFO] [探测]     aaSccStat | /Channel/GeometricAxis/aaSccStat
+[17:38:24] [INFO] [探测]     aaPcsRel | /Channel/GeometricAxis/aaPcsRel
+[17:38:24] [INFO] [探测]     aaAcsRel | /Channel/GeometricAxis/aaAcsRel
+[17:38:24] [INFO] [探测]     aaIbc | /Channel/GeometricAxis/aaIbc
+[17:38:24] [INFO] [探测]     vaIw | /Channel/GeometricAxis/vaIw
+[17:38:24] [INFO] [探测]     vaIb | /Channel/GeometricAxis/vaIb
+[17:38:24] [INFO] [探测]     …（其余 34 个省略，用 UaExpert 展开看全）
+[17:38:24] [INFO] [探测]   /Channel/MachineAxis：310 个子节点
+[17:38:24] [INFO] [探测]     PRESETActive | /Channel/MachineAxis/PRESETActive
+[17:38:24] [INFO] [探测]     PRESETVal | /Channel/MachineAxis/PRESETVal
+[17:38:24] [INFO] [探测]     aaAccPercent | /Channel/MachineAxis/aaAccPercent
+[17:38:24] [INFO] [探测]     aaActIndexAxPosNo | /Channel/MachineAxis/aaActIndexAxPosNo
+[17:38:24] [INFO] [探测]     aaAlarmStat | /Channel/MachineAxis/aaAlarmStat
+[17:38:24] [INFO] [探测]     aaAxChangeStat | /Channel/MachineAxis/aaAxChangeStat
+[17:38:24] [INFO] [探测]     aaAxChangeTyp | /Channel/MachineAxis/aaAxChangeTyp
+[17:38:24] [INFO] [探测]     aaAxDisable | /Channel/MachineAxis/aaAxDisable
+[17:38:24] [INFO] [探测]     aaAxDisableSrc | /Channel/MachineAxis/aaAxDisableSrc
+[17:38:24] [INFO] [探测]     aaBcsOffset | /Channel/MachineAxis/aaBcsOffset
+[17:38:24] [INFO] [探测]     aaBrakeCondB | /Channel/MachineAxis/aaBrakeCondB
+[17:38:24] [INFO] [探测]     aaBrakeCondM | /Channel/MachineAxis/aaBrakeCondM
+[17:38:24] [INFO] [探测]     aaBrakeState | /Channel/MachineAxis/aaBrakeState
+[17:38:24] [INFO] [探测]     aaChanNo | /Channel/MachineAxis/aaChanNo
+[17:38:24] [INFO] [探测]     aaCoupAct | /Channel/MachineAxis/aaCoupAct
+[17:38:24] [INFO] [探测]     aaCoupOffs | /Channel/MachineAxis/aaCoupOffs
+[17:38:24] [INFO] [探测]     aaCurr | /Channel/MachineAxis/aaCurr
+[17:38:24] [INFO] [探测]     aaDepAxO | /Channel/MachineAxis/aaDepAxO
+[17:38:24] [INFO] [探测]     aaDtbb | /Channel/MachineAxis/aaDtbb
+[17:38:24] [INFO] [探测]     aaDtbreb | /Channel/MachineAxis/aaDtbreb
+[17:38:24] [INFO] [探测]     aaDtbrebCmd | /Channel/MachineAxis/aaDtbrebCmd
+[17:38:24] [INFO] [探测]     aaDtbrebCorr | /Channel/MachineAxis/aaDtbrebCorr
+[17:38:24] [INFO] [探测]     aaDtbrebDep | /Channel/MachineAxis/aaDtbrebDep
+[17:38:24] [INFO] [探测]     aaDtbrem | /Channel/MachineAxis/aaDtbrem
+[17:38:24] [INFO] [探测]     aaDtbremCmd | /Channel/MachineAxis/aaDtbremCmd
+[17:38:24] [INFO] [探测]     aaDtbremCorr | /Channel/MachineAxis/aaDtbremCorr
+[17:38:24] [INFO] [探测]     aaDtbremDep | /Channel/MachineAxis/aaDtbremDep
+[17:38:24] [INFO] [探测]     aaDteb | /Channel/MachineAxis/aaDteb
+[17:38:24] [INFO] [探测]     aaDtepb | /Channel/MachineAxis/aaDtepb
+[17:38:24] [INFO] [探测]     aaEnc1Active | /Channel/MachineAxis/aaEnc1Active
+[17:38:24] [INFO] [探测]     aaEnc2Active | /Channel/MachineAxis/aaEnc2Active
+[17:38:24] [INFO] [探测]     aaEncActive | /Channel/MachineAxis/aaEncActive
+[17:38:24] [INFO] [探测]     aaEsrEnable | /Channel/MachineAxis/aaEsrEnable
+[17:38:24] [INFO] [探测]     aaEsrStat | /Channel/MachineAxis/aaEsrStat
+[17:38:24] [INFO] [探测]     aaEsrTrigger | /Channel/MachineAxis/aaEsrTrigger
+[17:38:24] [INFO] [探测]     aaFixPointSelected | /Channel/MachineAxis/aaFixPointSelected
+[17:38:24] [INFO] [探测]     aaIbnCorr | /Channel/MachineAxis/aaIbnCorr
+[17:38:24] [INFO] [探测]     aaIenCorr | /Channel/MachineAxis/aaIenCorr
+[17:38:24] [INFO] [探测]     aaInSync | /Channel/MachineAxis/aaInSync
+[17:38:24] [INFO] [探测]     aaInposStat | /Channel/MachineAxis/aaInposStat
+[17:38:24] [INFO] [探测]     aaJerkCount | /Channel/MachineAxis/aaJerkCount
+[17:38:24] [INFO] [探测]     aaJerkTime | /Channel/MachineAxis/aaJerkTime
+[17:38:24] [INFO] [探测]     aaJerkTotal | /Channel/MachineAxis/aaJerkTotal
+[17:38:24] [INFO] [探测]     aaLeadP | /Channel/MachineAxis/aaLeadP
+[17:38:24] [INFO] [探测]     aaLeadPTurn | /Channel/MachineAxis/aaLeadPTurn
+[17:38:24] [INFO] [探测]     aaLeadSp | /Channel/MachineAxis/aaLeadSp
+[17:38:24] [INFO] [探测]     aaLeadSv | /Channel/MachineAxis/aaLeadSv
+[17:38:24] [INFO] [探测]     aaLeadV | /Channel/MachineAxis/aaLeadV
+[17:38:24] [INFO] [探测]     aaLoad | /Channel/MachineAxis/aaLoad
+[17:38:24] [INFO] [探测]     aaMaslState | /Channel/MachineAxis/aaMaslState
+[17:38:24] [INFO] [探测]     aaMeaAct | /Channel/MachineAxis/aaMeaAct
+[17:38:24] [INFO] [探测]     aaMm1 | /Channel/MachineAxis/aaMm1
+[17:38:24] [INFO] [探测]     aaMm2 | /Channel/MachineAxis/aaMm2
+[17:38:24] [INFO] [探测]     aaMm3 | /Channel/MachineAxis/aaMm3
+[17:38:24] [INFO] [探测]     aaMm4 | /Channel/MachineAxis/aaMm4
+[17:38:24] [INFO] [探测]     aaMm | /Channel/MachineAxis/aaMm
+[17:38:24] [INFO] [探测]     aaOff | /Channel/MachineAxis/aaOff
+[17:38:24] [INFO] [探测]     aaOffLimit | /Channel/MachineAxis/aaOffLimit
+[17:38:24] [INFO] [探测]     aaOffVal | /Channel/MachineAxis/aaOffVal
+[17:38:24] [INFO] [探测]     aaOnFixPoint | /Channel/MachineAxis/aaOnFixPoint
+[17:38:24] [INFO] [探测]     …（其余 250 个省略，用 UaExpert 展开看全）
+[17:38:24] [INFO] [探测]   /PLC：浏览不到（节点不存在或权限不足）
+[17:38:24] [INFO] [探测]   /Plc：46 个子节点
+[17:38:24] [INFO] [探测]     C | /Plc/C
+[17:38:24] [INFO] [探测]     T | /Plc/T
+[17:38:24] [INFO] [探测]     connect_state | /Plc/connect_state
+[17:38:24] [INFO] [探测]     I | /Plc/I
+[17:38:24] [INFO] [探测]     IB | /Plc/IB
+[17:38:24] [INFO] [探测]     IW | /Plc/IW
+[17:38:24] [INFO] [探测]     ID | /Plc/ID
+[17:38:24] [INFO] [探测]     M | /Plc/M
+[17:38:24] [INFO] [探测]     MB | /Plc/MB
+[17:38:24] [INFO] [探测]     MW | /Plc/MW
+[17:38:24] [INFO] [探测]     MD | /Plc/MD
+[17:38:24] [INFO] [探测]     Q | /Plc/Q
+[17:38:24] [INFO] [探测]     QB | /Plc/QB
+[17:38:24] [INFO] [探测]     QW | /Plc/QW
+[17:38:24] [INFO] [探测]     QD | /Plc/QD
+[17:38:24] [INFO] [探测]     DB9000 | /Plc/DB9000
+[17:38:24] [INFO] [探测]     DB9003 | /Plc/DB9003
+[17:38:24] [INFO] [探测]     DB9004 | /Plc/DB9004
+[17:38:24] [INFO] [探测]     DB9005 | /Plc/DB9005
+[17:38:24] [INFO] [探测]     DB9007 | /Plc/DB9007
+[17:38:24] [INFO] [探测]     DB9008 | /Plc/DB9008
+[17:38:24] [INFO] [探测]     DB9011 | /Plc/DB9011
+[17:38:24] [INFO] [探测]     DB9012 | /Plc/DB9012
+[17:38:24] [INFO] [探测]     DB9013 | /Plc/DB9013
+[17:38:24] [INFO] [探测]     DB9017 | /Plc/DB9017
+[17:38:24] [INFO] [探测]     DB9018 | /Plc/DB9018
+[17:38:24] [INFO] [探测]     DB9021 | /Plc/DB9021
+[17:38:24] [INFO] [探测]     DB9022 | /Plc/DB9022
+[17:38:24] [INFO] [探测]     DB9023 | /Plc/DB9023
+[17:38:24] [INFO] [探测]     DB9024 | /Plc/DB9024
+[17:38:24] [INFO] [探测]     DB9027 | /Plc/DB9027
+[17:38:24] [INFO] [探测]     DB9030 | /Plc/DB9030
+[17:38:24] [INFO] [探测]     DB9031 | /Plc/DB9031
+[17:38:24] [INFO] [探测]     DB9035 | /Plc/DB9035
+[17:38:24] [INFO] [探测]     DB9037 | /Plc/DB9037
+[17:38:24] [INFO] [探测]     DB9050 | /Plc/DB9050
+[17:38:24] [INFO] [探测]     DB9051 | /Plc/DB9051
+[17:38:24] [INFO] [探测]     DB9052 | /Plc/DB9052
+[17:38:24] [INFO] [探测]     DB9063 | /Plc/DB9063
+[17:38:24] [INFO] [探测]     DB9900 | /Plc/DB9900
+[17:38:24] [INFO] [探测]     DB9901 | /Plc/DB9901
+[17:38:24] [INFO] [探测]     DB9902 | /Plc/DB9902
+[17:38:24] [INFO] [探测]     DB9905 | /Plc/DB9905
+[17:38:24] [INFO] [探测]     Inputs | IArea
+[17:38:24] [INFO] [探测]     Outputs | QArea
+[17:38:24] [INFO] [探测]     Memory | MArea
+[17:38:24] [INFO] [探测]   /Channel/PLC：浏览不到（节点不存在或权限不足）
+[17:38:24] [INFO] [探测]   ⚠ PLC 触发位/到位位通常挂在 /PLC 下（如 DB99.DBX0.0）。若此处浏览不到，说明它在别的命名空间，用 UaExpert 展开后 Copy NodeId。
+[17:38:24] [INFO] [探测] === 5. 结论 / 下一步（把本报告发回开发侧即可定死节点路径）===
+[17:38:24] [INFO] [探测]   ① OPC UA 网络：已联通 ✔（本次会话建立成功，服务器地址空间可读）。
+[17:38:24] [INFO] [探测]   ② 目标角 R 参数：节点存在 ✔，当前用户可写 ✔。
+[17:38:24] [INFO] [探测]   ③ 转台实际角度：有 18 个候选，需对照 HMI 挑一条。
+[17:38:24] [INFO] [探测]   ④ PLC 触发位 / 到位位：程序绝不臆造 NodeId，需机床厂给 DB 地址，UaExpert 核实后填 RotaryTriggerNode / RotaryDoneNode。
+[17:38:24] [INFO] [探测]   ⑤ 机床侧还要：预置 NC 子程序（读 R90 → G0 C=R90 / POS[C]=R90）+ PLC 握手 + 安全联锁（门/夹紧/急停）。
+[17:38:24] [INFO] [探测]   ⑥ 在 ②~⑤ 齐备前：DeviceMode 保持 Sim、RotaryMode 保持 ManualEntry（人工抄角照样能采多帧，不耽误视觉验证）。
+[17:38:24] [INFO] [探测]      齐备后改 DeviceMode=Real、RotaryMode=OpcUaRPlc，先用 5° 小角度空跑验证握手，再上工件。
+[17:38:24] [INFO] [探测] 报告已保存：D:\net10.0-windows\net10.0-windows\OPCUA探测-20261106-173824.txt
+[17:38:38] [INFO] [数控] 已断开连接
+[17:38:44] [INFO] [探测] 开始只读探测 → opc.tcp://192.168.214.241:4840（独立会话；不写机床、不触发运动）
+[17:38:44] [INFO] [数控] 连接步骤1/4：组装客户端配置 → opc.tcp://192.168.214.241:4840
+[17:38:44] [INFO] [数控] 连接步骤2/4：生成/检查本机证书
+[17:38:44] [INFO] [数控] 连接步骤3/4：发现服务器端点（不通=检查网线/IP/4840端口）
+[17:38:44] [INFO] [数控] 端点确认：opc.tcp://192.168.214.241:4840/ 安全策略=http://opcfoundation.org/UA/SecurityPolicy#None
+[17:38:44] [INFO] [数控] 连接步骤4/4：建立会话（不通=在828D上信任客户端证书）
+[17:38:44] [INFO] [数控] 登录方式：用户名 OpcUaClient（读取被拒=检查该用户在 HMI 里是否被赋变量读写权限）
+[17:38:44] [INFO] [数控] 变量命名空间：ns=2（SinumerikVarProvider）
+[17:38:44] [INFO] [数控] 会话建立成功（变量命名空间 ns=2）
+[17:38:45] [INFO] [探测] 只读探测完成：R 参数读得到=True，当前用户可写=True，轴角度候选 18 条
+[17:38:45] [INFO] [探测] SINUMERIK 828D OPC UA 现场只读探测报告（转台自动分度前置条件）
+[17:38:45] [INFO] [探测] 时间：2026-11-06 17:38:44
+[17:38:45] [INFO] [探测] 端点：opc.tcp://192.168.214.241:4840
+[17:38:45] [INFO] [探测] 变量命名空间：ns=2
+[17:38:45] [INFO] [探测] ★ 安全声明：本次探测只读变量值 / 节点属性 / 地址空间目录，未写入任何变量、未触发任何轴运动。
+[17:38:45] [INFO] [探测] === 1. 服务器命名空间表（config.json 的 CncVarNamespace 以此为准）===
+[17:38:45] [INFO] [探测]   ns=0: http://opcfoundation.org/UA/
+[17:38:45] [INFO] [探测]   ns=1: urn:DESKTOP-7JGCBQ6:SiemensAG:SinumerikServer
+[17:38:45] [INFO] [探测]   ns=2: SinumerikVarProvider
+[17:38:45] [INFO] [探测] === 2. 目标角 R 参数 R90 ===
+[17:38:45] [INFO] [探测]   路径：/Channel/Parameter/R[u1, 90]（ns=2）
+[17:38:45] [INFO] [探测]   读取：0（Double）
+[17:38:45] [INFO] [探测]   权限：AccessLevel=0x03（可写），UserAccessLevel=0x03（当前用户可写）
+[17:38:45] [INFO] [探测]   ✔ 当前用户对该 R 参数有写权限 → 目标角可用标准路径写入，RotaryTargetRNode 留空即可。
+[17:38:45] [INFO] [探测] === 3. 轴实际位置候选节点（找转台角度反馈）===
+[17:38:45] [INFO] [探测]   判据：OPC UA 能读到且值为数值。请与 HMI 上 C/A 轴实际角度对照，挑数值一致的那条填 RotaryActualAngleNode。
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 4] = 0（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/GeometricAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 1] = -132.77521（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 2] = -191.75543（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 3] = -202.27878（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 4] = 0（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 5] = 87.5303（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/actToolBasePos[u1, 6] = -238.51028（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 1] = -132.77519018630684（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 2] = -191.75536542488405（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 3] = -202.27873512783393（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 4] = 0.0006379583358764649（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 5] = 87.53028730812073（Double）
+[17:38:45] [INFO] [探测]   命中 /Channel/MachineAxis/aaIm[u1, 6] = -238.51028130087155（Double）
+[17:38:45] [INFO] [探测]   扫描 80 个候选，命中 18 个。⚠ 命中≠就是转台轴：X/Y/Z 线性轴也会命中，务必对照 HMI 数值。
+[17:38:45] [INFO] [探测] === 4. 地址空间目录浏览（真实子节点名，用来拼 config 里的节点路径）===
+[17:38:45] [INFO] [探测]   /Channel：31 个子节点
+[17:38:45] [INFO] [探测]     AuxiliaryFunctions | /Channel/AuxiliaryFunctions
+[17:38:45] [INFO] [探测]     GenericCoupling | /Channel/GenericCoupling
+[17:38:45] [INFO] [探测]     Diagnose | /Channel/Diagnose
+[17:38:45] [INFO] [探测]     ChannelDiagnose | /Channel/ChannelDiagnose
+[17:38:45] [INFO] [探测]     ProtocolEvent | /Channel/ProtocolEvent
+[17:38:45] [INFO] [探测]     ActualFrame | /Channel/ActualFrame
+[17:38:45] [INFO] [探测]     BaseFrame | /Channel/BaseFrame
+[17:38:45] [INFO] [探测]     ExternFrame | /Channel/ExternFrame
+[17:38:45] [INFO] [探测]     GrindingFrame | /Channel/GrindingFrame
+[17:38:45] [INFO] [探测]     SystemFrame | /Channel/SystemFrame
+[17:38:45] [INFO] [探测]     UserFrame | /Channel/UserFrame
+[17:38:45] [INFO] [探测]     Drive | /Channel/Drive
+[17:38:45] [INFO] [探测]     Nibbling | /Channel/Nibbling
+[17:38:45] [INFO] [探测]     ProtectedArea | /Channel/ProtectedArea
+[17:38:45] [INFO] [探测]     Parameter | /Channel/Parameter
+[17:38:45] [INFO] [探测]     State | /Channel/State
+[17:38:45] [INFO] [探测]     Settings | /Channel/Settings
+[17:38:45] [INFO] [探测]     GeometricAxis | /Channel/GeometricAxis
+[17:38:45] [INFO] [探测]     MachineAxis | /Channel/MachineAxis
+[17:38:45] [INFO] [探测]     ProgramModification | /Channel/ProgramModification
+[17:38:45] [INFO] [探测]     SelectedFunctions | /Channel/SelectedFunctions
+[17:38:45] [INFO] [探测]     ProgramInfo | /Channel/ProgramInfo
+[17:38:45] [INFO] [探测]     Search | /Channel/Search
+[17:38:45] [INFO] [探测]     InterruptionSearch | /Channel/InterruptionSearch
+[17:38:45] [INFO] [探测]     ProgramPointer | /Channel/ProgramPointer
+[17:38:45] [INFO] [探测]     Spindle | /Channel/Spindle
+[17:38:45] [INFO] [探测]     LogicalSpindle | /Channel/LogicalSpindle
+[17:38:45] [INFO] [探测]     Compensation | /Channel/Compensation
+[17:38:45] [INFO] [探测]     SelectedFunctionData | /Channel/SelectedFunctionData
+[17:38:45] [INFO] [探测]     CoordSysWorkAreaLimits | /Channel/CoordSysWorkAreaLimits
+[17:38:45] [INFO] [探测]     Configuration | /Channel/Configuration
+[17:38:45] [INFO] [探测]   /Channel/Parameter：3 个子节点
+[17:38:45] [INFO] [探测]     rpa | /Channel/Parameter/rpa
+[17:38:45] [INFO] [探测]     R | /Channel/Parameter/R
+[17:38:45] [INFO] [探测]     R[u1, 90] | /Channel/Parameter/R[u1, 90]
+[17:38:45] [INFO] [探测]   /Channel/GeometricAxis：94 个子节点
+[17:38:45] [INFO] [探测]     aaDelt | /Channel/GeometricAxis/aaDelt
+[17:38:45] [INFO] [探测]     aaDtbw | /Channel/GeometricAxis/aaDtbw
+[17:38:45] [INFO] [探测]     aaDtepw | /Channel/GeometricAxis/aaDtepw
+[17:38:45] [INFO] [探测]     aaDtew | /Channel/GeometricAxis/aaDtew
+[17:38:45] [INFO] [探测]     aaDtsb | /Channel/GeometricAxis/aaDtsb
+[17:38:45] [INFO] [探测]     aaDtsw | /Channel/GeometricAxis/aaDtsw
+[17:38:45] [INFO] [探测]     aaIb | /Channel/GeometricAxis/aaIb
+[17:38:45] [INFO] [探测]     aaIbCorr | /Channel/GeometricAxis/aaIbCorr
+[17:38:45] [INFO] [探测]     aaIwCorr | /Channel/GeometricAxis/aaIwCorr
+[17:38:45] [INFO] [探测]     aaMw1 | /Channel/GeometricAxis/aaMw1
+[17:38:45] [INFO] [探测]     aaMw2 | /Channel/GeometricAxis/aaMw2
+[17:38:45] [INFO] [探测]     aaMw3 | /Channel/GeometricAxis/aaMw3
+[17:38:45] [INFO] [探测]     aaMw4 | /Channel/GeometricAxis/aaMw4
+[17:38:45] [INFO] [探测]     aaMw | /Channel/GeometricAxis/aaMw
+[17:38:45] [INFO] [探测]     aaTOff | /Channel/GeometricAxis/aaTOff
+[17:38:45] [INFO] [探测]     aaTOffLimit | /Channel/GeometricAxis/aaTOffLimit
+[17:38:45] [INFO] [探测]     aaTOffPrepDiff | /Channel/GeometricAxis/aaTOffPrepDiff
+[17:38:45] [INFO] [探测]     aaTOffVal | /Channel/GeometricAxis/aaTOffVal
+[17:38:45] [INFO] [探测]     aaVactW | /Channel/GeometricAxis/aaVactW
+[17:38:45] [INFO] [探测]     acRetpoint | /Channel/GeometricAxis/acRetpoint
+[17:38:45] [INFO] [探测]     actDistToGoEns | /Channel/GeometricAxis/actDistToGoEns
+[17:38:45] [INFO] [探测]     actFeedRate | /Channel/GeometricAxis/actFeedRate
+[17:38:45] [INFO] [探测]     actFeedRateIpo | /Channel/GeometricAxis/actFeedRateIpo
+[17:38:45] [INFO] [探测]     actProgPosBKS | /Channel/GeometricAxis/actProgPosBKS
+[17:38:45] [INFO] [探测]     actToolBasPosBN | /Channel/GeometricAxis/actToolBasPosBN
+[17:38:45] [INFO] [探测]     actToolBasPosBNDiam | /Channel/GeometricAxis/actToolBasPosBNDiam
+[17:38:45] [INFO] [探测]     actToolBasPosEN | /Channel/GeometricAxis/actToolBasPosEN
+[17:38:45] [INFO] [探测]     actToolBasPosENitc | /Channel/GeometricAxis/actToolBasPosENitc
+[17:38:45] [INFO] [探测]     actToolBasPosENjmp | /Channel/GeometricAxis/actToolBasPosENjmp
+[17:38:45] [INFO] [探测]     actToolBasePosBasic | /Channel/GeometricAxis/actToolBasePosBasic
+[17:38:45] [INFO] [探测]     actToolBasePosBasicDiam | /Channel/GeometricAxis/actToolBasePosBasicDiam
+[17:38:45] [INFO] [探测]     actToolBasePosDiam | /Channel/GeometricAxis/actToolBasePosDiam
+[17:38:45] [INFO] [探测]     actToolEdgeCenterPosEns | /Channel/GeometricAxis/actToolEdgeCenterPosEns
+[17:38:45] [INFO] [探测]     axisActiveInChan | /Channel/GeometricAxis/axisActiveInChan
+[17:38:45] [INFO] [探测]     axisFeedRateIpoUnit | /Channel/GeometricAxis/axisFeedRateIpoUnit
+[17:38:45] [INFO] [探测]     axisFeedRateUnit | /Channel/GeometricAxis/axisFeedRateUnit
+[17:38:45] [INFO] [探测]     cmdFeedRate | /Channel/GeometricAxis/cmdFeedRate
+[17:38:45] [INFO] [探测]     cmdFeedRateIpo | /Channel/GeometricAxis/cmdFeedRateIpo
+[17:38:45] [INFO] [探测]     cmdToolBasPosENS | /Channel/GeometricAxis/cmdToolBasPosENS
+[17:38:45] [INFO] [探测]     cmdToolEdgeCenterPosEnsS | /Channel/GeometricAxis/cmdToolEdgeCenterPosEnsS
+[17:38:45] [INFO] [探测]     cmdToolEdgeCenterPosEns | /Channel/GeometricAxis/cmdToolEdgeCenterPosEns
+[17:38:45] [INFO] [探测]     diamonInfo | /Channel/GeometricAxis/diamonInfo
+[17:38:45] [INFO] [探测]     displayAxis | /Channel/GeometricAxis/displayAxis
+[17:38:45] [INFO] [探测]     drfVal | /Channel/GeometricAxis/drfVal
+[17:38:45] [INFO] [探测]     effComp | /Channel/GeometricAxis/effComp
+[17:38:45] [INFO] [探测]     feedRateOvr | /Channel/GeometricAxis/feedRateOvr
+[17:38:45] [INFO] [探测]     geoAxisNr | /Channel/GeometricAxis/geoAxisNr
+[17:38:45] [INFO] [探测]     handwheelAss | /Channel/GeometricAxis/handwheelAss
+[17:38:45] [INFO] [探测]     index | /Channel/GeometricAxis/index
+[17:38:45] [INFO] [探测]     motEnd | /Channel/GeometricAxis/motEnd
+[17:38:45] [INFO] [探测]     spec | /Channel/GeometricAxis/spec
+[17:38:45] [INFO] [探测]     subSpec | /Channel/GeometricAxis/subSpec
+[17:38:45] [INFO] [探测]     type | /Channel/GeometricAxis/type
+[17:38:45] [INFO] [探测]     aaDiamStat | /Channel/GeometricAxis/aaDiamStat
+[17:38:45] [INFO] [探测]     aaSccStat | /Channel/GeometricAxis/aaSccStat
+[17:38:45] [INFO] [探测]     aaPcsRel | /Channel/GeometricAxis/aaPcsRel
+[17:38:45] [INFO] [探测]     aaAcsRel | /Channel/GeometricAxis/aaAcsRel
+[17:38:45] [INFO] [探测]     aaIbc | /Channel/GeometricAxis/aaIbc
+[17:38:45] [INFO] [探测]     vaIw | /Channel/GeometricAxis/vaIw
+[17:38:45] [INFO] [探测]     vaIb | /Channel/GeometricAxis/vaIb
+[17:38:45] [INFO] [探测]     …（其余 34 个省略，用 UaExpert 展开看全）
+[17:38:45] [INFO] [探测]   /Channel/MachineAxis：310 个子节点
+[17:38:45] [INFO] [探测]     PRESETActive | /Channel/MachineAxis/PRESETActive
+[17:38:45] [INFO] [探测]     PRESETVal | /Channel/MachineAxis/PRESETVal
+[17:38:45] [INFO] [探测]     aaAccPercent | /Channel/MachineAxis/aaAccPercent
+[17:38:45] [INFO] [探测]     aaActIndexAxPosNo | /Channel/MachineAxis/aaActIndexAxPosNo
+[17:38:45] [INFO] [探测]     aaAlarmStat | /Channel/MachineAxis/aaAlarmStat
+[17:38:45] [INFO] [探测]     aaAxChangeStat | /Channel/MachineAxis/aaAxChangeStat
+[17:38:45] [INFO] [探测]     aaAxChangeTyp | /Channel/MachineAxis/aaAxChangeTyp
+[17:38:45] [INFO] [探测]     aaAxDisable | /Channel/MachineAxis/aaAxDisable
+[17:38:45] [INFO] [探测]     aaAxDisableSrc | /Channel/MachineAxis/aaAxDisableSrc
+[17:38:45] [INFO] [探测]     aaBcsOffset | /Channel/MachineAxis/aaBcsOffset
+[17:38:45] [INFO] [探测]     aaBrakeCondB | /Channel/MachineAxis/aaBrakeCondB
+[17:38:45] [INFO] [探测]     aaBrakeCondM | /Channel/MachineAxis/aaBrakeCondM
+[17:38:45] [INFO] [探测]     aaBrakeState | /Channel/MachineAxis/aaBrakeState
+[17:38:45] [INFO] [探测]     aaChanNo | /Channel/MachineAxis/aaChanNo
+[17:38:45] [INFO] [探测]     aaCoupAct | /Channel/MachineAxis/aaCoupAct
+[17:38:45] [INFO] [探测]     aaCoupOffs | /Channel/MachineAxis/aaCoupOffs
+[17:38:45] [INFO] [探测]     aaCurr | /Channel/MachineAxis/aaCurr
+[17:38:45] [INFO] [探测]     aaDepAxO | /Channel/MachineAxis/aaDepAxO
+[17:38:45] [INFO] [探测]     aaDtbb | /Channel/MachineAxis/aaDtbb
+[17:38:45] [INFO] [探测]     aaDtbreb | /Channel/MachineAxis/aaDtbreb
+[17:38:45] [INFO] [探测]     aaDtbrebCmd | /Channel/MachineAxis/aaDtbrebCmd
+[17:38:45] [INFO] [探测]     aaDtbrebCorr | /Channel/MachineAxis/aaDtbrebCorr
+[17:38:45] [INFO] [探测]     aaDtbrebDep | /Channel/MachineAxis/aaDtbrebDep
+[17:38:45] [INFO] [探测]     aaDtbrem | /Channel/MachineAxis/aaDtbrem
+[17:38:45] [INFO] [探测]     aaDtbremCmd | /Channel/MachineAxis/aaDtbremCmd
+[17:38:45] [INFO] [探测]     aaDtbremCorr | /Channel/MachineAxis/aaDtbremCorr
+[17:38:45] [INFO] [探测]     aaDtbremDep | /Channel/MachineAxis/aaDtbremDep
+[17:38:45] [INFO] [探测]     aaDteb | /Channel/MachineAxis/aaDteb
+[17:38:45] [INFO] [探测]     aaDtepb | /Channel/MachineAxis/aaDtepb
+[17:38:45] [INFO] [探测]     aaEnc1Active | /Channel/MachineAxis/aaEnc1Active
+[17:38:45] [INFO] [探测]     aaEnc2Active | /Channel/MachineAxis/aaEnc2Active
+[17:38:45] [INFO] [探测]     aaEncActive | /Channel/MachineAxis/aaEncActive
+[17:38:45] [INFO] [探测]     aaEsrEnable | /Channel/MachineAxis/aaEsrEnable
+[17:38:45] [INFO] [探测]     aaEsrStat | /Channel/MachineAxis/aaEsrStat
+[17:38:45] [INFO] [探测]     aaEsrTrigger | /Channel/MachineAxis/aaEsrTrigger
+[17:38:45] [INFO] [探测]     aaFixPointSelected | /Channel/MachineAxis/aaFixPointSelected
+[17:38:45] [INFO] [探测]     aaIbnCorr | /Channel/MachineAxis/aaIbnCorr
+[17:38:45] [INFO] [探测]     aaIenCorr | /Channel/MachineAxis/aaIenCorr
+[17:38:45] [INFO] [探测]     aaInSync | /Channel/MachineAxis/aaInSync
+[17:38:45] [INFO] [探测]     aaInposStat | /Channel/MachineAxis/aaInposStat
+[17:38:45] [INFO] [探测]     aaJerkCount | /Channel/MachineAxis/aaJerkCount
+[17:38:45] [INFO] [探测]     aaJerkTime | /Channel/MachineAxis/aaJerkTime
+[17:38:45] [INFO] [探测]     aaJerkTotal | /Channel/MachineAxis/aaJerkTotal
+[17:38:45] [INFO] [探测]     aaLeadP | /Channel/MachineAxis/aaLeadP
+[17:38:45] [INFO] [探测]     aaLeadPTurn | /Channel/MachineAxis/aaLeadPTurn
+[17:38:45] [INFO] [探测]     aaLeadSp | /Channel/MachineAxis/aaLeadSp
+[17:38:45] [INFO] [探测]     aaLeadSv | /Channel/MachineAxis/aaLeadSv
+[17:38:45] [INFO] [探测]     aaLeadV | /Channel/MachineAxis/aaLeadV
+[17:38:45] [INFO] [探测]     aaLoad | /Channel/MachineAxis/aaLoad
+[17:38:45] [INFO] [探测]     aaMaslState | /Channel/MachineAxis/aaMaslState
+[17:38:45] [INFO] [探测]     aaMeaAct | /Channel/MachineAxis/aaMeaAct
+[17:38:45] [INFO] [探测]     aaMm1 | /Channel/MachineAxis/aaMm1
+[17:38:45] [INFO] [探测]     aaMm2 | /Channel/MachineAxis/aaMm2
+[17:38:45] [INFO] [探测]     aaMm3 | /Channel/MachineAxis/aaMm3
+[17:38:45] [INFO] [探测]     aaMm4 | /Channel/MachineAxis/aaMm4
+[17:38:45] [INFO] [探测]     aaMm | /Channel/MachineAxis/aaMm
+[17:38:45] [INFO] [探测]     aaOff | /Channel/MachineAxis/aaOff
+[17:38:45] [INFO] [探测]     aaOffLimit | /Channel/MachineAxis/aaOffLimit
+[17:38:45] [INFO] [探测]     aaOffVal | /Channel/MachineAxis/aaOffVal
+[17:38:45] [INFO] [探测]     aaOnFixPoint | /Channel/MachineAxis/aaOnFixPoint
+[17:38:45] [INFO] [探测]     …（其余 250 个省略，用 UaExpert 展开看全）
+[17:38:45] [INFO] [探测]   /PLC：浏览不到（节点不存在或权限不足）
+[17:38:45] [INFO] [探测]   /Plc：46 个子节点
+[17:38:45] [INFO] [探测]     C | /Plc/C
+[17:38:45] [INFO] [探测]     T | /Plc/T
+[17:38:45] [INFO] [探测]     connect_state | /Plc/connect_state
+[17:38:45] [INFO] [探测]     I | /Plc/I
+[17:38:45] [INFO] [探测]     IB | /Plc/IB
+[17:38:45] [INFO] [探测]     IW | /Plc/IW
+[17:38:45] [INFO] [探测]     ID | /Plc/ID
+[17:38:45] [INFO] [探测]     M | /Plc/M
+[17:38:45] [INFO] [探测]     MB | /Plc/MB
+[17:38:45] [INFO] [探测]     MW | /Plc/MW
+[17:38:45] [INFO] [探测]     MD | /Plc/MD
+[17:38:45] [INFO] [探测]     Q | /Plc/Q
+[17:38:45] [INFO] [探测]     QB | /Plc/QB
+[17:38:45] [INFO] [探测]     QW | /Plc/QW
+[17:38:45] [INFO] [探测]     QD | /Plc/QD
+[17:38:45] [INFO] [探测]     DB9000 | /Plc/DB9000
+[17:38:45] [INFO] [探测]     DB9003 | /Plc/DB9003
+[17:38:45] [INFO] [探测]     DB9004 | /Plc/DB9004
+[17:38:45] [INFO] [探测]     DB9005 | /Plc/DB9005
+[17:38:45] [INFO] [探测]     DB9007 | /Plc/DB9007
+[17:38:45] [INFO] [探测]     DB9008 | /Plc/DB9008
+[17:38:45] [INFO] [探测]     DB9011 | /Plc/DB9011
+[17:38:45] [INFO] [探测]     DB9012 | /Plc/DB9012
+[17:38:45] [INFO] [探测]     DB9013 | /Plc/DB9013
+[17:38:45] [INFO] [探测]     DB9017 | /Plc/DB9017
+[17:38:45] [INFO] [探测]     DB9018 | /Plc/DB9018
+[17:38:45] [INFO] [探测]     DB9021 | /Plc/DB9021
+[17:38:45] [INFO] [探测]     DB9022 | /Plc/DB9022
+[17:38:45] [INFO] [探测]     DB9023 | /Plc/DB9023
+[17:38:45] [INFO] [探测]     DB9024 | /Plc/DB9024
+[17:38:45] [INFO] [探测]     DB9027 | /Plc/DB9027
+[17:38:45] [INFO] [探测]     DB9030 | /Plc/DB9030
+[17:38:45] [INFO] [探测]     DB9031 | /Plc/DB9031
+[17:38:45] [INFO] [探测]     DB9035 | /Plc/DB9035
+[17:38:45] [INFO] [探测]     DB9037 | /Plc/DB9037
+[17:38:45] [INFO] [探测]     DB9050 | /Plc/DB9050
+[17:38:45] [INFO] [探测]     DB9051 | /Plc/DB9051
+[17:38:45] [INFO] [探测]     DB9052 | /Plc/DB9052
+[17:38:45] [INFO] [探测]     DB9063 | /Plc/DB9063
+[17:38:45] [INFO] [探测]     DB9900 | /Plc/DB9900
+[17:38:45] [INFO] [探测]     DB9901 | /Plc/DB9901
+[17:38:45] [INFO] [探测]     DB9902 | /Plc/DB9902
+[17:38:45] [INFO] [探测]     DB9905 | /Plc/DB9905
+[17:38:45] [INFO] [探测]     Inputs | IArea
+[17:38:45] [INFO] [探测]     Outputs | QArea
+[17:38:45] [INFO] [探测]     Memory | MArea
+[17:38:45] [INFO] [探测]   /Channel/PLC：浏览不到（节点不存在或权限不足）
+[17:38:45] [INFO] [探测]   ⚠ PLC 触发位/到位位通常挂在 /PLC 下（如 DB99.DBX0.0）。若此处浏览不到，说明它在别的命名空间，用 UaExpert 展开后 Copy NodeId。
+[17:38:45] [INFO] [探测] === 5. 结论 / 下一步（把本报告发回开发侧即可定死节点路径）===
+[17:38:45] [INFO] [探测]   ① OPC UA 网络：已联通 ✔（本次会话建立成功，服务器地址空间可读）。
+[17:38:45] [INFO] [探测]   ② 目标角 R 参数：节点存在 ✔，当前用户可写 ✔。
+[17:38:45] [INFO] [探测]   ③ 转台实际角度：有 18 个候选，需对照 HMI 挑一条。
+[17:38:45] [INFO] [探测]   ④ PLC 触发位 / 到位位：程序绝不臆造 NodeId，需机床厂给 DB 地址，UaExpert 核实后填 RotaryTriggerNode / RotaryDoneNode。
+[17:38:45] [INFO] [探测]   ⑤ 机床侧还要：预置 NC 子程序（读 R90 → G0 C=R90 / POS[C]=R90）+ PLC 握手 + 安全联锁（门/夹紧/急停）。
+[17:38:45] [INFO] [探测]   ⑥ 在 ②~⑤ 齐备前：DeviceMode 保持 Sim、RotaryMode 保持 ManualEntry（人工抄角照样能采多帧，不耽误视觉验证）。
+[17:38:45] [INFO] [探测]      齐备后改 DeviceMode=Real、RotaryMode=OpcUaRPlc，先用 5° 小角度空跑验证握手，再上工件。
+[17:38:45] [INFO] [探测] 报告已保存：D:\net10.0-windows\net10.0-windows\OPCUA探测-20261106-173845.txt
+[17:38:49] [INFO] [数控] 已断开连接
