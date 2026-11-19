@@ -187,8 +187,9 @@ public sealed partial class MainForm
             Btn("打开原始资料",(_,_)=>UiArchive(()=>OpenLocalFolder(Selected()))),
             Btn("恢复采集与加工状态",async(_,_)=>await UiAction(async()=>{await _loadWorkspace!(Path.Combine(Selected(),RingCaptureArchive.AutosaveName));_selectProductionPanel?.Invoke();})),
             Btn("作为补加工来源",async(_,_)=>await UiAction(async()=>{if(_workspaceBusy || _laserExposureTask is {IsCompleted:false})throw new InvalidOperationException("请等待当前操作结束。");string selected=Selected();await _runWorkspaceAction!(async()=>{await _prepareProductionRework!(Path.Combine(selected,ProductionJobArchive.MachiningRecordName));SelectPage(_reworkPage);});})),
-            Btn("打开分类运行日志",(_,_)=>UiArchive(()=>OpenLocalFolder(Path.Combine(AppContext.BaseDirectory,"logs"))))]);
-        var help=new Label {Dock=DockStyle.Bottom,Height=55,Text="本件目录保存六图、定位诊断、逐孔trial/前后图、run及补加工关联；完整本件资料包继续自动生成。\r\n运行日志另按日期与加工、视觉、激光、设备、异常分类保存。恢复记录仅供查看；同件追加从补加工入口建立新轮次。"};
+            Btn("打开分类运行日志",(_,_)=>UiArchive(()=>OpenLocalFolder(Path.Combine(AppContext.BaseDirectory,"logs")))),
+            Btn("记录说明",(_,_)=>tab.Controls["ArchiveHelp"]!.Visible^=true)]);
+        var help=new Label {Name="ArchiveHelp",Visible=false,Dock=DockStyle.Bottom,Height=55,Text="本件目录保存六图、定位诊断、逐孔trial/前后图、run及补加工关联；完整本件资料包继续自动生成。\r\n运行日志另按日期与加工、视觉、激光、设备、异常分类保存。恢复记录仅供查看；同件追加从补加工入口建立新轮次。"};
         void UiArchive(Action action){try{action();}catch(Exception ex){_log.Warn("资料查看："+ex.Message);}}
         type.SelectedIndexChanged+=(_,_)=>UiArchive(RefreshRecords);tab.Enter+=(_,_)=>UiArchive(RefreshRecords);
         tab.Controls.Add(table);tab.Controls.Add(actions);tab.Controls.Add(help);return tab;
