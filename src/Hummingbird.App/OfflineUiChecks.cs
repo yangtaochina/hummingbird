@@ -351,8 +351,15 @@ public sealed partial class MainForm
         Check(propagated,"单孔工序可将失败传播给整件调度，不吞掉错误继续下一孔");
         SelectPage(_machiningPage);
         var imageReviewTabs=Children(_machiningPage).OfType<TabControl>().Single(t=>t.TabPages.Cast<TabPage>().Any(p=>p.Text=="已采照片／框选"));
+        var captureFeedback=Children(_machiningPage).OfType<Label>().Single(l=>l.Name=="CaptureFeedback");
+        var (feedbackColor,feedbackText)=(captureFeedback.ForeColor,captureFeedback.Text);
+        imageReviewTabs.SelectedIndex=0;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成：离线检查";
         imageReviewTabs.SelectedTab=imageReviewTabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="已采照片／框选");
         PerformLayout();
+        var backToProduction=Children(_machiningPage).OfType<Button>().Single(b=>b.Text=="返回一键加工");
+        Check(backToProduction.Visible && backToProduction.Parent!.Height>=backToProduction.Height && backToProduction.Height>0,
+            $"加工失败提示仍显示时进入诊断视图，返回和工件资料按钮所在行不被压成零高（行高={backToProduction.Parent!.Height}）");
+        captureFeedback.ForeColor=feedbackColor;captureFeedback.Text=feedbackText;
         Check(_liveEnabled.Checked && _livePicture.Image is not null && _lastPreviewAt is not null,"连接相机后自动产生实时画面");
         var previewTime=_lastPreviewAt;
         for(int i=0;i<30 && _lastPreviewAt<=previewTime;i++)await Task.Delay(100);

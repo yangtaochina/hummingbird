@@ -1038,7 +1038,7 @@ public sealed partial class MainForm
             top.RowStyles[1].SizeType=project.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[1].Height=0;
             top.RowStyles[3].SizeType=captureFeedback.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[3].Height=0;
         }
-        project.VisibleChanged+=(_,_)=>FitMaintenanceRows();captureFeedback.VisibleChanged+=(_,_)=>FitMaintenanceRows();
+        project.VisibleChanged+=(_,_)=>FitMaintenanceRows();captureFeedback.VisibleChanged+=(_,_)=>FitMaintenanceRows();viewActions.VisibleChanged+=(_,_)=>FitMaintenanceRows();
         top.Controls.Add(viewActions,0,0);top.Controls.Add(project,0,1);top.Controls.Add(jobLabel,0,2);top.Controls.Add(captureFeedback,0,3);
         var layout = new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=2 };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
