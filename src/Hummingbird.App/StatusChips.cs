@@ -26,7 +26,13 @@ internal sealed class StatusChips : Control
     }
     public void Reset() { for (int i = 0; i < _colors.Length; i++) Set(i, Idle); }
 
-    private int Columns(int width) => Math.Clamp((width + Gap) / (_chipWidth + Gap), 1, _labels.Length);
+    // 放不下一行时各行数量取齐（18孔为9+9），不留单独一个色块换行。
+    private int Columns(int width)
+    {
+        int fit = Math.Clamp((width + Gap) / (_chipWidth + Gap), 1, _labels.Length);
+        int rows = (_labels.Length + fit - 1) / fit;
+        return (_labels.Length + rows - 1) / rows;
+    }
     private int HeightFor(int width) { int rows = (_labels.Length + Columns(width) - 1) / Columns(width); return rows * ChipHeight + (rows - 1) * Gap; }
     public override Size GetPreferredSize(Size proposedSize)
     {
