@@ -69,7 +69,7 @@ public sealed class CameraCaptureCoordinator(ICameraService camera)
                         best = frame; quality = review; selected = exposure; return true;
                     }
                     foreach (double exposure in candidates) await Try(exposure);
-                    // 最佳档落在已试范围的边缘、且没有确认识别出特征时，说明合适的曝光可能在范围之外：
+                    // 特征检查未通过、且最佳档落在已试范围的边缘时，说明合适的曝光可能在范围之外：
                     // 朝该方向每次加倍或减半再试，最多两档，新一档不更好就停。
                     for (int extension = 0; extension < ExposureSelectionPolicy.MaximumExtensions; extension++)
                     {

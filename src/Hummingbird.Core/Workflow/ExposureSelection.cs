@@ -17,11 +17,14 @@ public static class ExposureSelectionPolicy
 
     public const int MaximumExtensions = 2;
 
-    /// <summary>已试各档中最佳档在最亮或最暗一端且未确认识别出特征时，返回该方向的下一档；否则返回null。</summary>
+    /// <summary>
+    /// 做过特征检查但没有识别出来、且最佳档在已试各档最亮或最暗一端时，返回该方向的下一档；否则返回null。
+    /// 圆环方位不做单张特征检查，固定保留五档，供四方位几何选优（RingScanSolver.SelectExposure）使用。
+    /// </summary>
     public static double? Extend(double selected, ExposureQuality best, IEnumerable<double> tried, double minimumUs, double maximumUs)
     {
         var all = tried.ToArray();
-        if (best.FeatureDetected == true || all.Length < 2) return null;
+        if (best.FeatureDetected != false || all.Length < 2) return null;
         double next = selected >= all.Max() ? selected * 2 : selected <= all.Min() ? selected / 2 : double.NaN;
         if (double.IsNaN(next)) return null;
         next = Math.Clamp(next, Math.Max(20, minimumUs), Math.Min(1000000, maximumUs));

@@ -54,8 +54,12 @@ internal static class ExposureSelectionChecks
         Check(tried.SequenceEqual([1000, 250, 500, 2000, 4000, 125, 62.5]) && capped.ExposureUs == 62.5, "向暗的方向最多再延伸两档");
         tried.Clear();
         await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
-        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure == 8000 ? 0 : exposure, 0, 0, 100)); });
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure == 8000 ? 0 : exposure, 0, 0, 100, false)); });
         Check(tried.SequenceEqual([1000, 250, 500, 2000, 4000, 8000]) && wide.Exposure == 4000, "延伸一档没有变好就停，仍用原来最好的一档");
+        tried.Clear();
+        await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure, 0, 0, 100)); });
+        Check(tried.Count == 5 && wide.Exposure == 4000, "圆环方位不做特征检查，保持五档，不影响四方位几何选优");
         tried.Clear();
         await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
         { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure, 0, 0, 100, exposure == 4000)); });
