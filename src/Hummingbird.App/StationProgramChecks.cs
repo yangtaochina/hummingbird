@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Hummingbird.Core;
 
 namespace Hummingbird.App;
@@ -43,7 +43,7 @@ public sealed partial class MainForm
         var previous=_tabs.SelectedTab;
         ShowNcUpload("HM_RETURN.MPF");Check(_ncUploadInitialFile==Path.Combine(StationProgramFiles.Folder,"HM_RETURN.MPF") && !_cnc.IsConnected,"回位上传入口仅切页并预选原MPF，不连接或上传");
         ShowNcUpload("HM_MASTER.MPF");Check(_ncUploadInitialFile==Path.Combine(StationProgramFiles.Folder,"HM_MASTER.MPF") && !_cnc.IsConnected,"主控上传入口仅切页并预选原MPF，不连接或上传");
-        _tabs.SelectedTab=previous;
+        SelectPage(previous!);
         File.WriteAllText(Path.Combine(folder,"bundled-program-checks.json"),JsonSerializer.Serialize(checks,new JsonSerializerOptions{WriteIndented=true}));
     }
 }

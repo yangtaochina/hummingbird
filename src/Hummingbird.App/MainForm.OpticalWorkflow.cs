@@ -8,7 +8,7 @@ public sealed partial class MainForm
     private bool _opticalUiAction;
     private TabPage BuildOpticalWorkflowPage(TabPage compensation, TabPage settings, Func<Func<Task>,Task> run)
     {
-        var page=new TabPage("5 光学与落点");
+        var page=new TabPage("光学与落点");
         var tabs=new TabControl {Dock=DockStyle.Fill,Multiline=true};
         var calculate=new TabPage("调整后重新计算");var flow=WorkflowFlow();
         var output=new TextBox {Name="OpticalCalculationStatus",Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,Width=980,Height=145,
@@ -61,7 +61,7 @@ public sealed partial class MainForm
             return Task.CompletedTask;
         }))));
         flow.Controls.Add(GroupBoxOf("3 重新计算激光落点",Lbl("在维护与辅助的单点试打页保存当前光学条件的新trial.json及前后图。计算成功后查看落点标注，按现场流程复核位置，再导入结果并确认光学条件。"),
-            Btn("前往单点采样",(_,_)=>{_tabs.SelectedTab=_toolsPage;((TabControl)_toolsPage.Controls[0]).SelectedIndex=0;}),
+            Btn("前往单点采样",(_,_)=>{var tools=(TabControl)_toolsPage.Controls[0];SelectPage(tools.TabPages.Cast<TabPage>().Single(t=>t.Text=="单点试打"));}),
             Btn("选择trial并计算落点",async(_,_)=>
             {
                 using var dialog=new OpenFileDialog {Filter="试打记录|trial.json"};if(dialog.ShowDialog(this)!=DialogResult.OK)return;

@@ -20,7 +20,7 @@ public sealed partial class MainForm
                 bitmap.Save(Path.Combine(folder,$"layout_{size.Width}_{i+1}.png"));
             }
         }
-        _tabs.SelectedTab=_environmentPage;PerformLayout();
+        SelectPage(_environmentPage);PerformLayout();
         IEnumerable<Control> Descendants(Control root)=>root.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(Descendants(c)));
         var sizes=Descendants(_environmentPage).OfType<TextBox>().Where(c=>c.Name is "EnvironmentReport" or "ConfigurationGuide")
             .Select(c=>new{c.Name,c.Width,c.Height}).ToArray();
@@ -30,12 +30,12 @@ public sealed partial class MainForm
     private async Task CheckWorkflowAdditions(string folder, Action<bool,string> check, string? source, string? calibration)
     {
         check(Text.StartsWith("飞秒创芯") && !Text.Contains("蜂鸟"),"标题使用飞秒创芯");
-        _tabs.SelectedTab=_environmentPage;PerformLayout();
+        SelectPage(_environmentPage);PerformLayout();
         IEnumerable<Control> Descendants(Control root)=>root.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(Descendants(c)));
         check(Descendants(_environmentPage).OfType<TextBox>().Single(c=>c.Name=="EnvironmentReport").Height>=100 &&
             Descendants(_environmentPage).OfType<TextBox>().Single(c=>c.Name=="ConfigurationGuide").Height>=120,
             "环境检查及配置说明的多行文本保持完整高度，不因自适应布局被压成单行");
-        _tabs.SelectedTab=_machiningPage;_captureDetails.SelectedIndex=0;PerformLayout();
+        SelectPage(_machiningPage);_captureDetails.SelectedIndex=0;PerformLayout();
         check(_livePicture.Visible && _livePicture.Width>=350,"定位加工页保留大实时画面");
         check(_reworkActions.Controls.Cast<Control>().Any(c=>c.Name=="PrepareProductionRework"),"补加工准备入口在独立功能页");
         string logRoot=Path.Combine(folder,"categorized-logs");var logger=new MemoryLogger(logRoot);

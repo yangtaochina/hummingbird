@@ -10,7 +10,7 @@ public sealed partial class MainForm
     private Func<RingScanSession?>? _readReusableCaptureBaseline;
     private TabPage BuildRingScanTab()
     {
-        var tab = new TabPage("3 定位与加工");
+        var tab = new TabPage("加工");
         _machiningPage=tab;
         var session = new RingScanSession { DirectionOptions = new() { BoundaryMode = DatumBoundaryMode.CircularFaceEdge } };
         _ringSettingsSnapshot = () => JsonSerializer.Deserialize<RingScanSettings>(JsonSerializer.Serialize(session.Settings))!;
@@ -184,7 +184,7 @@ public sealed partial class MainForm
             _liveStatus.ForeColor=Color.DarkOrange;_liveStatus.Text="正在采图／检查，实时预览暂停；请保持机床位置不动。";
             captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=_stationReturnUiAction?"正在处理工位恢复操作，请勿手动操作轴……":"正在处理，请保持位置不动……";
             try { _workspaceTask = action(); await _workspaceTask; }
-            catch (Exception ex) { StopMonitor(); output.Text = ex.Message;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成："+ex.Message;if(_stationReturnUiAction)_selectStationReturnPanel?.Invoke();else if(_productionUiAction)_selectProductionPanel?.Invoke();else if(_opticalUiAction)_tabs.SelectedTab=_opticsPage;else showDetails(); _log.Error("[定位采集] " + ex.Message); if(_fieldEvidence is not null){AddEvidenceIssue("Acquisition",ex);RefreshEvidencePackage();} }
+            catch (Exception ex) { StopMonitor(); output.Text = ex.Message;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成："+ex.Message;if(_stationReturnUiAction)_selectStationReturnPanel?.Invoke();else if(_productionUiAction)_selectProductionPanel?.Invoke();else if(_opticalUiAction)SelectPage(_opticsPage);else showDetails(); _log.Error("[定位采集] " + ex.Message); if(_fieldEvidence is not null){AddEvidenceIssue("Acquisition",ex);RefreshEvidencePackage();} }
             finally
             {
                 _workspaceTask = null; _workspaceBusy = false;
@@ -991,11 +991,11 @@ public sealed partial class MainForm
         right.Multiline=true;
         right.TabPages.AddRange([productionTab,photoTab,previewTab,detailsTab,routeTab]);
         _captureDetails=right;
-        _selectProductionPanel=()=>{_tabs.SelectedTab=tab;right.SelectedTab=productionTab;};
-        _returnPage=BuildStationReturnTab(()=>route,Run); _returnPage.Text="2 工位恢复";
-        _selectStationReturnPanel=()=>_tabs.SelectedTab=_returnPage;
+        _selectProductionPanel=()=>{SelectPage(tab);right.SelectedTab=productionTab;};
+        _returnPage=BuildStationReturnTab(()=>route,Run); _returnPage.Text="工位恢复";
+        _selectStationReturnPanel=()=>SelectPage(_returnPage);
         _opticsPage=BuildOpticalWorkflowPage(laserTab,settingsTab,Run);
-        _toolsPage=new TabPage("维护与辅助");
+        _toolsPage=new TabPage("维护");
         var tools=new TabControl {Dock=DockStyle.Fill,Multiline=true};
         tools.TabPages.AddRange([BuildSpotTrialTab(),BuildNcFilesTab(),BuildMaintenanceTab(),BuildProductionDemoTab(Run),BuildFieldEvidenceTab(ReadSession,()=>stepChoice.SelectedIndex,Run)]);
         _toolsPage.Controls.Add(tools);

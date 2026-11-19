@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Hummingbird.Core;
 
 namespace Hummingbird.App;
@@ -26,7 +26,7 @@ public sealed partial class MainForm
     private void ShowNcUpload(string name)
     {
         _ncUploadInitialFile=Path.Combine(StationProgramFiles.Folder,name);
-        _tabs.SelectedTab=_toolsPage;
+        SelectPage(_toolsPage);
         var tools=(TabControl)_toolsPage.Controls[0];
         tools.SelectedTab=tools.TabPages.Cast<TabPage>().Single(t=>t.Text=="NC文件");
     }

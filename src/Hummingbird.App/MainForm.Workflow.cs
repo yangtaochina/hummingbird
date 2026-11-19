@@ -46,40 +46,81 @@ public sealed partial class MainForm
         flow.SizeChanged+=(_,_)=>Fit();flow.ControlAdded+=(_,_)=>Fit();return flow;
     }
 
+    private void SelectPage(TabPage page)
+    {
+        if(page.Parent is TabControl owner && owner!=_tabs && owner.Parent is TabPage outer){_tabs.SelectedTab=outer;owner.SelectedTab=page;}
+        else _tabs.SelectedTab=page;
+    }
+
+    private TabPage BuildCaptureDiagnosticsEntry()
+    {
+        var tab=new TabPage("采图与定位诊断");var flow=WorkflowFlow();
+        flow.Controls.Add(Lbl("一键加工会自动完成六处采图、圆心拟合和18孔定位。以下入口用于建立采图基准、排查失败照片或人工复核。"));
+        foreach(string name in new[]{"已采照片／框选","圆心／18孔预览","检查与归档","复用采图路线","手动采图"})
+            flow.Controls.Add(Btn(name,(_,_)=>{SelectPage(_machiningPage);_captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text==name);}));
+        tab.Controls.Add(flow);return tab;
+    }
+
     private void BuildWorkflowUi()
     {
         var machining=BuildRingScanTab();
         _environmentPage=BuildEnvironmentPage();
-        _reworkPage=new TabPage("4 同件补加工");
+        _reworkPage=new TabPage("补加工");
         var rework=WorkflowFlow();
         rework.Controls.Add(GroupBoxOf("已加工工件追加加工", Lbl("选择最新完成轮次，建立关联的空采集记录；程序重新定位并加工全部18孔。"),
             Lbl("本轮时长是追加量。采图失败且未出光时使用“未出光重试”；原失败轮不计入追加次数。")));
         rework.Controls.Add(_reworkActions); rework.Controls.Add(_reworkSummary);
         rework.Controls.Add(Btn("查看定位画面并继续加工",(_,_)=>_selectProductionPanel?.Invoke()));
-        rework.Controls.Add(Lbl("准备后：面板从头启动原HM_MASTER → 第3页一键补加工。软件自动检查，缺项按提示处理。\r\n部分已加工或出光状态不明的轮次不能自动重试。原始轮次、失败依据和登记历史均保留。"));
+        rework.Controls.Add(Lbl("准备后：面板从头启动原HM_MASTER → “加工”页一键补加工。软件自动检查，缺项按提示处理。\r\n部分已加工或出光状态不明的轮次不能自动重试。原始轮次、失败依据和登记历史均保留。"));
         _reworkPage.Controls.Add(rework);
-        _tabs.Multiline=true;
-        _tabs.TabPages.AddRange([_environmentPage,_returnPage,machining,_reworkPage,_opticsPage,BuildArchivePage(),_toolsPage]);
+        _toolsPage.Text="维护";
+        var tools=(TabControl)_toolsPage.Controls[0];
+        tools.TabPages.Insert(0,_environmentPage);tools.TabPages.Insert(1,_opticsPage);tools.TabPages.Insert(2,BuildCaptureDiagnosticsEntry());
+        tools.SelectedIndex=0;
+        _tabs.SizeMode=TabSizeMode.Fixed;_tabs.ItemSize=new Size(132,34);
+        _tabs.TabPages.AddRange([machining,_reworkPage,_returnPage,BuildArchivePage(),_toolsPage]);
         var emergency=Btn("停止加工／关光",async(_,_)=>{RequestProductionStop();if(_laser is Hummingbird.Devices.LaserRtu.ModbusRtuLaserService rtu)await UiAction(()=>rtu.LaserOffAsync());});
-        emergency.Name="GlobalProductionStop";
-        var header=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,MinimumSize=new Size(0,48),Padding=new Padding(8),WrapContents=true};
-        header.Controls.AddRange([Lbl("飞秒创芯 · 自动定位加工"),_liveEnabled,
-            emergency,
-            _cameraStatus,Lbl("  "),_lblPos]);
-        var logHost=new Panel {Dock=DockStyle.Bottom,Height=58};logHost.Controls.Add(_rtbLog);
+        emergency.Name="GlobalProductionStop";emergency.AutoSize=false;emergency.Size=new Size(190,40);emergency.Anchor=AnchorStyles.Right;
+        emergency.FlatStyle=FlatStyle.Flat;emergency.BackColor=Color.FromArgb(200,40,40);emergency.ForeColor=Color.White;
+        emergency.Font=new Font(Font.FontFamily,11,FontStyle.Bold);
+        var title=Lbl("飞秒创芯");title.Font=new Font(Font.FontFamily,12,FontStyle.Bold);title.Margin=new Padding(3,4,14,3);
+        var lights=new[]{("相机",(Func<bool>)(()=>_camera?.IsOpen==true)),("数控",()=>_cnc.IsConnected),("激光",()=>_laser.IsOpen)}
+            .Select(item=>(Label:new Label{Name="DeviceLight_"+item.Item1,AutoSize=true,Margin=new Padding(3,7,10,3)},item.Item1,item.Item2)).ToArray();
+        void RefreshLights()
+        {
+            foreach(var (label,name,connected) in lights)
+            {
+                bool on=connected();label.Text="● "+name+(on?"已连接":"未连接");label.ForeColor=on?Color.SeaGreen:Color.Gray;
+            }
+            // 默认的“未连接”已由状态灯表达；这两处只在有具体读数或故障原因时显示。
+            _cameraStatus.Visible=_cameraStatus.Text!="相机未连接";_lblPos.Visible=_lblPos.Text!="数控未连接";
+        }
+        var lightTimer=new System.Windows.Forms.Timer{Interval=700};lightTimer.Tick+=(_,_)=>RefreshLights();lightTimer.Start();Disposed+=(_,_)=>lightTimer.Dispose();RefreshLights();
+        _liveEnabled.Margin=new Padding(3,6,10,3);_cameraStatus.Margin=_lblPos.Margin=new Padding(3,7,10,3);
+        var statusFlow=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,WrapContents=true};
+        statusFlow.Controls.Add(title);statusFlow.Controls.AddRange(lights.Select(l=>(Control)l.Label).ToArray());
+        statusFlow.Controls.AddRange([_liveEnabled,_cameraStatus,_lblPos]);
+        var header=new TableLayoutPanel {Dock=DockStyle.Top,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,ColumnCount=2,RowCount=1,Padding=new Padding(8,6,8,6),BackColor=Color.White};
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.Controls.Add(statusFlow,0,0);header.Controls.Add(emergency,1,0);
+        var logToggle=new Button {Name="LogToggle",Text="展开日志",Dock=DockStyle.Right,Width=96};
+        var logBar=new Panel {Dock=DockStyle.Top,Height=28};logBar.Controls.Add(_latestLog);logBar.Controls.Add(logToggle);
+        var logHost=new Panel {Dock=DockStyle.Bottom,Height=28};logHost.Controls.Add(_rtbLog);logHost.Controls.Add(logBar);
+        _rtbLog.Visible=false;
+        logToggle.Click+=(_,_)=>{bool open=!_rtbLog.Visible;_rtbLog.Visible=open;logHost.Height=open?200:28;logToggle.Text=open?"收起日志":"展开日志";};
         Controls.Add(_tabs);Controls.Add(header);Controls.Add(logHost);
         _captureDetails.SelectedIndex=0;
     }
 
     private TabPage BuildEnvironmentPage()
     {
-        var tab=new TabPage("1 环境与参数"); var flow=WorkflowFlow();
+        var tab=new TabPage("设备与参数"); var flow=WorkflowFlow();
         var report=new TextBox {Name="EnvironmentReport",Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,Width=990,Height=125};
         void Inspect()
         {
             report.Text=$"运行模式：{_cfg.DeviceMode}；相机：{(_camera?.IsOpen==true?"已连接":"未连接")}；数控：{(_cnc.IsConnected?"已连接":"未连接")}；激光：{(_laser.IsOpen?"串口已打开":"未连接")}\r\n"
                 +$"资料目录：{_state.CaptureRoot}\r\n六步基准：{_state.LastRouteSessionPath}\r\n激光落点：{_state.LaserCalibrationPath}\r\n主控配置：{_state.LastProductionProfilePath}\r\n"
-                +"第3步一键加工会自动连接并检查，缺项显示处理方法；接口无法读取的参考、报警和装夹在启动时集中确认。";
+                +"“加工”页的一键加工会自动连接并检查，缺项显示处理方法；接口无法读取的参考、报警和装夹在启动时集中确认。";
         }
         flow.Controls.Add(GroupBoxOf("开工顺序", Lbl("厂家软件开机并消除告警、释放串口 → 连接设备 → 核对参数及读回 → 必要时恢复工位 → 新件或补加工。"),
             Btn("检查当前环境（不连接）",(_,_)=>Inspect()),Btn("连接相机和数控",async(_,_)=>{await UiAction(ConnectAcquisitionDevices);Inspect();}),
@@ -98,16 +139,16 @@ public sealed partial class MainForm
             +"机床程序/工位恢复配置.json：上位机自动读取的恢复顺序、目标及范围；HM_RETURN.MPF由面板启动。已有对应MPF无需再次上传或导出；MZ2保持。\r\n"
             +"采集autosave / 六步基准：恢复照片和采图路线；新件仍重新定位。激光落点JSON须与原trial及前后图一起保留。\r\n"
             +"operator-state.json：当前Windows用户的操作偏好和路径；不会恢复本次装夹、参考或光学确认。\r\n"
-            +"镜头、相机高度或工作距离调整后，进入第5页重新计算XY和落点。普通回位或工件取放无需默认重标。"};
+            +"镜头、相机高度或工作距离调整后，进入“维护 → 光学与落点”重新计算XY和落点。普通回位或工件取放无需默认重标。"};
         flow.Controls.Add(GroupBoxOf("配置文件说明",configGuide));
-        flow.Controls.Add(Btn("下一步：工位恢复",(_,_)=>_tabs.SelectedTab=_returnPage));
+        flow.Controls.Add(Btn("下一步：工位恢复",(_,_)=>SelectPage(_returnPage)));
         flow.Controls.Add(Btn("工作位置已恢复：前往定位加工",(_,_)=>_selectProductionPanel?.Invoke()));
         tab.Controls.Add(flow);tab.Enter+=(_,_)=>Inspect();Inspect();return tab;
     }
 
     private TabPage BuildArchivePage()
     {
-        var tab=new TabPage("加工资料与日志");
+        var tab=new TabPage("加工记录");
         var type=new ComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Width=160};
         type.Items.AddRange(["全部","新件加工","同件补加工","工位恢复","光学标定","现场取证","单点与演练"]);type.SelectedIndex=0;
         var table=new DataGridView {Name="ArchiveRecords",Dock=DockStyle.Fill,ReadOnly=true,AllowUserToAddRows=false,AllowUserToDeleteRows=false,RowHeadersVisible=false,SelectionMode=DataGridViewSelectionMode.FullRowSelect,MultiSelect=false,AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill};
@@ -142,7 +183,7 @@ public sealed partial class MainForm
         actions.Controls.AddRange([type,Btn("刷新列表",(_,_)=>UiArchive(RefreshRecords)),
             Btn("打开原始资料",(_,_)=>UiArchive(()=>OpenLocalFolder(Selected()))),
             Btn("恢复采集与加工状态",async(_,_)=>await UiAction(async()=>{await _loadWorkspace!(Path.Combine(Selected(),RingCaptureArchive.AutosaveName));_selectProductionPanel?.Invoke();})),
-            Btn("作为补加工来源",async(_,_)=>await UiAction(async()=>{if(_workspaceBusy || _laserExposureTask is {IsCompleted:false})throw new InvalidOperationException("请等待当前操作结束。");string selected=Selected();await _runWorkspaceAction!(async()=>{await _prepareProductionRework!(Path.Combine(selected,ProductionJobArchive.MachiningRecordName));_tabs.SelectedTab=_reworkPage;});})),
+            Btn("作为补加工来源",async(_,_)=>await UiAction(async()=>{if(_workspaceBusy || _laserExposureTask is {IsCompleted:false})throw new InvalidOperationException("请等待当前操作结束。");string selected=Selected();await _runWorkspaceAction!(async()=>{await _prepareProductionRework!(Path.Combine(selected,ProductionJobArchive.MachiningRecordName));SelectPage(_reworkPage);});})),
             Btn("打开分类运行日志",(_,_)=>UiArchive(()=>OpenLocalFolder(Path.Combine(AppContext.BaseDirectory,"logs"))))]);
         var help=new Label {Dock=DockStyle.Bottom,Height=55,Text="本件目录保存六图、定位诊断、逐孔trial/前后图、run及补加工关联；完整本件资料包继续自动生成。\r\n运行日志另按日期与加工、视觉、激光、设备、异常分类保存。恢复记录仅供查看；同件追加从补加工入口建立新轮次。"};
         void UiArchive(Action action){try{action();}catch(Exception ex){_log.Warn("资料查看："+ex.Message);}}

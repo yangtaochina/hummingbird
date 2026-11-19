@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Hummingbird.Core;
 
 namespace Hummingbird.App;
@@ -10,7 +10,7 @@ public sealed partial class MainForm
         var checks=new List<object>();
         void Check(bool ok,string name){checks.Add(new{Passed=ok,Name=name});if(!ok)throw new InvalidOperationException(name);}
         IEnumerable<Control> Children(Control root)=>root.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(Children(c)));
-        var previous=_tabs.SelectedTab;_tabs.SelectedTab=_machiningPage;_captureDetails.SelectedIndex=0;
+        var previous=_tabs.SelectedTab;SelectPage(_machiningPage);_captureDetails.SelectedIndex=0;
         Check(_captureDetails.SelectedTab!.Text=="一键加工" && Children(_machiningPage).OfType<Button>().Single(b=>b.Name=="OneClickProductionStart").Visible,
             "定位与加工默认显示一键加工主按钮");
         Check(!Children(_machiningPage).OfType<Button>().Any(b=>b.Text=="工位恢复" || b.Name=="StationReturnShortcut"),"加工页不再出现工位恢复快捷按钮");
@@ -49,7 +49,7 @@ public sealed partial class MainForm
         {
             _guidedOperationStop=stop;RequestProductionStop();Check(stop.IsCancellationRequested,"公共停止覆盖自动连接和启动检查阶段");_guidedOperationStop=null;
         }
-        _tabs.SelectedTab=previous;
+        SelectPage(previous!);
         File.WriteAllText(Path.Combine(folder,"guided-production-ui-checks.json"),JsonSerializer.Serialize(checks,new JsonSerializerOptions{WriteIndented=true}));
     }
 }

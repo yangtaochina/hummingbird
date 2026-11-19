@@ -65,7 +65,7 @@ public sealed partial class MainForm
                 :$"当前每孔：{_laserDurationSeconds.Value:0.###}秒 · 功率原始{_laserPowerRaw.Value} · 18孔纯出光约{_laserDurationSeconds.Value*18/60:0.##}分钟。";
             if(_activeReworkPlan?.Info is { } expected && (expected.AdditionalExposureMs!=(int)(_laserDurationSeconds.Value*1000)||expected.PowerRaw!=(ushort)_laserPowerRaw.Value))
                 settings.Text+="\r\n参数与计划不同，请重新准备补加工记录。";
-            _reworkSummary.Text=_activeReworkPlan?.Info is {} info ? $"来源轮次：{info.ParentRunId}\r\n补加工第{info.Round}轮 · 追加{info.AdditionalExposureMs/1000.0:0.###}秒/孔 · 累计请求{info.CumulativeRequestedMs/1000.0:0.###}秒/孔 · 功率原始{info.PowerRaw}\r\n"+settings.Text : "尚未准备补加工。先在第1步设置本轮追加参数，再选择前轮记录。";
+            _reworkSummary.Text=_activeReworkPlan?.Info is {} info ? $"来源轮次：{info.ParentRunId}\r\n补加工第{info.Round}轮 · 追加{info.AdditionalExposureMs/1000.0:0.###}秒/孔 · 累计请求{info.CumulativeRequestedMs/1000.0:0.###}秒/孔 · 功率原始{info.PowerRaw}\r\n"+settings.Text : "尚未准备补加工。先在“维护 → 设备与参数”设置本轮追加参数，再选择前轮记录。";
         }
         RefreshSettings();_laserDurationSeconds.ValueChanged+=(_,_)=>RefreshSettings();_laserPowerRaw.ValueChanged+=(_,_)=>RefreshSettings();
         var state=new TextBox {Name="ProductionStatus",Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,Dock=DockStyle.Fill,
@@ -206,7 +206,7 @@ public sealed partial class MainForm
         var hint=Lbl("每个全新待加工件先新建工件并确认装夹。完成或异常后不自动重打；已加工件不能当新件全18孔重跑。");hint.MaximumSize=new Size(850,0);
         controls.FlowDirection=FlowDirection.TopDown;
         var mainActions=new FlowLayoutPanel{AutoSize=true,WrapContents=true};mainActions.Controls.AddRange([real,_productionStopButton,open]);
-        controls.Controls.AddRange([settings,mainActions,Btn("处理缺项：设备与参数",(_,_)=>_tabs.SelectedTab=_environmentPage),toggleSetup]);
+        controls.Controls.AddRange([settings,mainActions,Btn("处理缺项：设备与参数",(_,_)=>SelectPage(_environmentPage)),toggleSetup]);
         _reworkActions.Controls.Add(rework);
         var maintenance=new FlowLayoutPanel {AutoSize=true,WrapContents=true,Visible=false};
         maintenance.Controls.AddRange([profileSummary,load,export]);
@@ -215,7 +215,7 @@ public sealed partial class MainForm
             Btn("没有主控：前往上传",(_,_)=>ShowNcUpload("HM_MASTER.MPF")),
             Btn("打开配套程序文件夹",async(_,_)=>await UiAction(()=>{OpenLocalFolder(StationProgramFiles.Folder);return Task.CompletedTask;}))]);
         instructions.Visible=false;
-        setup.Controls.AddRange([profileReady,help,instructions,maintenance,inspect,dry,Btn("同件补加工 / 未出光重试",(_,_)=>_tabs.SelectedTab=_reworkPage)]);
+        setup.Controls.AddRange([profileReady,help,instructions,maintenance,inspect,dry,Btn("同件补加工 / 未出光重试",(_,_)=>SelectPage(_reworkPage))]);
         controls.SizeChanged+=(_,_)=>{int width=Math.Max(250,controls.ClientSize.Width-12);hint.MaximumSize=settings.MaximumSize=new Size(width,0);};
         var layout=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=5};
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
