@@ -1,0 +1,14 @@
+{
+  "Version": 1,
+  "Envelope": {
+    "MinX": -160.4,
+    "MaxX": -134.0,
+    "MinY": -209.6,
+    "MaxY": -181.7,
+    "Z": -201.87324,
+    "C": 254.8245
+  },
+  "SessionToken": 171501,
+  "R220To229Reserved": true,
+  "StepMm": 0.1
+}

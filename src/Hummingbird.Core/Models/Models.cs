@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Hummingbird.Core;
@@ -26,6 +26,15 @@ public sealed class MemoryLogger : IAppLogger
     private readonly object _gate = new();
     public event Action<string, string>? LineAdded;
 
+    private readonly string _logRoot;
+    public string? LastWriteError {get;private set;}
+    public MemoryLogger(string? logRoot=null) => _logRoot=logRoot ?? Path.Combine(AppContext.BaseDirectory,"logs");
+    public static string Category(string message) =>
+        message.Contains("光学标定") || message.Contains("激光补偿") ? "光学标定" :
+        message.Contains("补加工") || message.Contains("整件") || message.Contains("[Production") ? "加工" :
+        message.Contains("定位") || message.Contains("采图") || message.Contains("圆环") || message.Contains("曝光") ? "视觉" :
+        message.Contains("激光") || message.Contains("Laser") || message.Contains("RTU") || message.Contains("Modbus") || message.Contains("试打") ? "激光" :
+        message.Contains("OPC") || message.Contains("数控") || message.Contains("相机") || message.Contains("工位恢复") ? "设备" : "系统";
     // 惰性初始化的日志文件路径（首次写日志时确定，exe 目录\logs\）
     private string? _logFile;
 
@@ -34,7 +43,15 @@ public sealed class MemoryLogger : IAppLogger
         string line = $"[{DateTime.Now:HH:mm:ss.fff}] [{lvl,-5}] {msg}";
         lock (_gate)
         {
-            try { WriteFile(line); } catch { /* 磁盘问题不影响运行 */ }
+            try
+            {
+                WriteFile(line);
+                string day=Path.Combine(_logRoot,DateTime.Now.ToString("yyyy-MM-dd"));Directory.CreateDirectory(day);
+                File.AppendAllText(Path.Combine(day,Category(msg)+".log"),line+Environment.NewLine);
+                if(lvl is "WARN" or "ERROR")File.AppendAllText(Path.Combine(day,"异常.log"),line+Environment.NewLine);
+                LastWriteError=null;
+            }
+            catch(Exception ex) { LastWriteError=ex.Message; }
             LineAdded?.Invoke(lvl, msg);
         }
     }
@@ -42,12 +59,12 @@ public sealed class MemoryLogger : IAppLogger
     /// <summary>追加写入日志文件（调用方已持锁）。文件按天滚动，方便按日期回溯现场问题。</summary>
     private void WriteFile(string line)
     {
-        if (_logFile is null)
+        if (_logFile is null || !Path.GetFileName(_logFile).Contains(DateTime.Now.ToString("yyyy-MM-dd")))
         {
-            string dir = Path.Combine(AppContext.BaseDirectory, "logs");
+            string dir = _logRoot;
             Directory.CreateDirectory(dir);
             _logFile = Path.Combine(dir, $"hummingbird_{DateTime.Now:yyyy-MM-dd}.log");
-            File.AppendAllText(_logFile, $"===== 蜂鸟上位机启动 {DateTime.Now:yyyy-MM-dd HH:mm:ss} ====={Environment.NewLine}");
+            File.AppendAllText(_logFile, $"===== 飞秒创芯启动 {DateTime.Now:yyyy-MM-dd HH:mm:ss} ====={Environment.NewLine}");
         }
         File.AppendAllText(_logFile, line + Environment.NewLine);
     }

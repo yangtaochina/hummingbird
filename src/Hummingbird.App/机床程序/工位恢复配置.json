@@ -1,0 +1,21 @@
+{
+  "Version": 1,
+  "WorkEnvelope": {
+    "MinX": -160.4,
+    "MaxX": -134.0,
+    "MinY": -209.6,
+    "MaxY": -181.7,
+    "Z": -201.87324,
+    "C": 254.8245
+  },
+  "TargetX": -135.02745,
+  "TargetY": -188.57564,
+  "ClearanceZ": -192.17803,
+  "EntryMinZ": -201.87324,
+  "EntryMaxZ": -192.17803,
+  "R220To229Reserved": true,
+  "ReturnPathApproved": true,
+  "SecondaryAxisCondition": "MZ2不自动移动；保持现场已核对的状态。MZ2的实际机械用途尚未核实，不将MZ1目标套用到MZ2。",
+  "LinearFeedMmPerMin": 30,
+  "RotaryFeedDegPerMin": 60
+}

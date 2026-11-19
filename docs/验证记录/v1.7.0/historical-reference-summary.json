@@ -1,0 +1,122 @@
+[
+  {
+    "Dataset": "11月16日加工准备",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261116_150447995\\参考1点_153459744.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 917.5946044921875,
+    "CenterPy": 594.2478637695312,
+    "AngularSupportRatio": 0.75,
+    "CenterSpreadMm": 0.00222906894881296,
+    "ImageSha256": "142A782A2518FEDB92F7D6F696B470B6FB561810677230E99C7AF19D48C49091",
+    "Evidence": "nov16-references.json"
+  },
+  {
+    "Dataset": "11月16日加工准备",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261116_150447995\\参考11点_153732947.bmp",
+    "Role": "Reference11",
+    "Status": "Detected",
+    "CenterPx": 1020.5040283203125,
+    "CenterPy": 500.6517639160156,
+    "AngularSupportRatio": 0.7583333333333333,
+    "CenterSpreadMm": 0.008295696673103233,
+    "ImageSha256": "CB86FB7CF138ACF649C0668608F29E08FA315AAF064527FAB0EA6C213476E44B",
+    "Evidence": "nov16-references.json"
+  },
+  {
+    "Dataset": "第一次完成加工",
+    "Image": "D:\\zhiyouproject\\hummingbird\\src\\Hummingbird.SmokeTest\\obj\\history-161-20261119\\compatibility\\historical-first\\定位\\原图\\0_参考1点_183856183.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 914.9153137207031,
+    "CenterPy": 593.968994140625,
+    "AngularSupportRatio": 0.7583333333333333,
+    "CenterSpreadMm": 0.003690423037057067,
+    "ImageSha256": "80A3A471685840E25528A79DF545120EF70B3DE59123D3CE63924D6A13062A5E",
+    "Evidence": "first-completed-references.json"
+  },
+  {
+    "Dataset": "第一次完成加工",
+    "Image": "D:\\zhiyouproject\\hummingbird\\src\\Hummingbird.SmokeTest\\obj\\history-161-20261119\\compatibility\\historical-first\\定位\\原图\\5_参考11点_184126583.bmp",
+    "Role": "Reference11",
+    "Status": "Detected",
+    "CenterPx": 1020.6244506835938,
+    "CenterPy": 500.3984069824219,
+    "AngularSupportRatio": 0.75,
+    "CenterSpreadMm": 0.003862505816279691,
+    "ImageSha256": "F5BCEBA01E5043E6663A9F0F1F5E30DD2EA5D6C13D5E367B70156EE49F7A1C0A",
+    "Evidence": "first-completed-references.json"
+  },
+  {
+    "Dataset": "11月17日10时50分首图",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261117_104157495\\参考1点_105028543.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 877.5897216796875,
+    "CenterPy": 673.4076538085938,
+    "AngularSupportRatio": 0.85,
+    "CenterSpreadMm": 0.0023284908712998113,
+    "ImageSha256": "96FFDDCF4B3C2EB0A5C8C1DCE49E1958C1068B27B02F78F6722DF95071129E6D",
+    "Evidence": "tracking/site-review.json"
+  },
+  {
+    "Dataset": "11月17日11时27分至11时29分问题六图",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261117_112539654\\整件_3acc0f792fde4b639a14921455ef5de0\\本件资料\\定位\\原图\\0_参考1点_112704047.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 879.0263061523438,
+    "CenterPy": 673.9778442382812,
+    "AngularSupportRatio": 0.8416666666666667,
+    "CenterSpreadMm": 0.0024456436891775795,
+    "ImageSha256": "6452782FA5EA2820F8F1EB48A868F4483F919F500CE3A4C3BB07ECF2E1850D52",
+    "Evidence": "nov17-failed-six-references.json"
+  },
+  {
+    "Dataset": "11月17日11时27分至11时29分问题六图",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261117_112539654\\整件_3acc0f792fde4b639a14921455ef5de0\\本件资料\\定位\\原图\\5_参考11点_112934084.bmp",
+    "Role": "Reference11",
+    "Status": "Detected",
+    "CenterPx": 842.1597290039062,
+    "CenterPy": 390.09600830078125,
+    "AngularSupportRatio": 0.75,
+    "CenterSpreadMm": 0.0012749673502691595,
+    "ImageSha256": "B5F622A8C6580F9BA5E71048E1E80C38B577C4CC24E1E62AB4FD6D561FDC8821",
+    "Evidence": "nov17-failed-six-references.json"
+  },
+  {
+    "Dataset": "第二次完成加工",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261117_123839174\\整件_6c6b896ad7b745a1a068317702e4ff72\\本件资料\\定位\\原图\\0_参考1点_124037884.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 873.1168212890625,
+    "CenterPy": 700.9762573242188,
+    "AngularSupportRatio": 0.7583333333333333,
+    "CenterSpreadMm": 0.002647401086421899,
+    "ImageSha256": "0010A69B93A27047B8347CFADD75A062118FC227A0C02B1D57E3847757FE158A",
+    "Evidence": "second-completed-references.json"
+  },
+  {
+    "Dataset": "第二次完成加工",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\工件_20261117_123839174\\整件_6c6b896ad7b745a1a068317702e4ff72\\本件资料\\定位\\原图\\5_参考11点_124309529.bmp",
+    "Role": "Reference11",
+    "Status": "Detected",
+    "CenterPx": 828.1401977539062,
+    "CenterPy": 401.7080078125,
+    "AngularSupportRatio": 0.775,
+    "CenterSpreadMm": 0.0021834348109943725,
+    "ImageSha256": "0DFF9591A8A3017DBDD98A3F072228412FF1348134039B82A426E3D6636DC0E1",
+    "Evidence": "second-completed-references.json"
+  },
+  {
+    "Dataset": "11月17日14时53分补加工首图",
+    "Image": "D:\\zhiyouproject\\hummingbird\\资料收集\\补加工_6c6b896a_20261117_145158524\\参考1点_145339927.bmp",
+    "Role": "Reference1",
+    "Status": "Detected",
+    "CenterPx": 972.292236328125,
+    "CenterPy": 574.5115966796875,
+    "AngularSupportRatio": 0.7583333333333333,
+    "CenterSpreadMm": 0.0022012567738174007,
+    "ImageSha256": "396747B42BC07C8300A0042E3EFE0ED1C7ED8D084AFCC20F91892A29AE19E38D",
+    "Evidence": "tracking/rework-site-review.json"
+  }
+]

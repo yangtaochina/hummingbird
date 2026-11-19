@@ -1,0 +1,11 @@
+{
+  "Passed": 27,
+  "MaxKnownTargetErrorMm": 2.0978703868730837E-07,
+  "TargetStability": {
+    "RecoveryUsed": true,
+    "MaxTargetShiftMm": 8.087561978006386E-06,
+    "RecoveredLimitMm": 0.025,
+    "EvaluatedVariants": 6084,
+    "InvalidVariants": 0
+  }
+}

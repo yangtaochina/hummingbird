@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Hummingbird.Devices.LaserRtu\Hummingbird.Devices.LaserRtu.csproj" />
     <ProjectReference Include="..\Hummingbird.Core\Hummingbird.Core.csproj" />
     <ProjectReference Include="..\Hummingbird.Vision\Hummingbird.Vision.csproj" />
     <ProjectReference Include="..\Hummingbird.Devices.Sim\Hummingbird.Devices.Sim.csproj" />

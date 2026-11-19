@@ -1,0 +1,30 @@
+[
+  {
+    "Archive": "D:\\zhiyouproject\\hummingbird\\src\\Hummingbird.SmokeTest\\obj\\history-161-20261119\\compatibility\\historical-first",
+    "MaxTargetDriftMm": 0,
+    "CenterX": -147.1421524003566,
+    "CenterY": -196.49604602937163,
+    "RadiusMm": 14.475972223101486,
+    "TargetStability": {
+      "RecoveryUsed": false,
+      "MaxTargetShiftMm": 0.02722240423379521,
+      "RecoveredLimitMm": 0.025,
+      "EvaluatedVariants": 648,
+      "InvalidVariants": 0
+    }
+  },
+  {
+    "Archive": "\u8D44\u6599\u6536\u96C6/\u5DE5\u4EF6_20261117_123839174/\u6574\u4EF6_6c6b896ad7b745a1a068317702e4ff72/\u672C\u4EF6\u8D44\u6599",
+    "MaxTargetDriftMm": 0,
+    "CenterX": -147.18204850941308,
+    "CenterY": -196.38780638604626,
+    "RadiusMm": 14.428332966708226,
+    "TargetStability": {
+      "RecoveryUsed": false,
+      "MaxTargetShiftMm": 0.004266522597150614,
+      "RecoveredLimitMm": 0.025,
+      "EvaluatedVariants": 756,
+      "InvalidVariants": 0
+    }
+  }
+]

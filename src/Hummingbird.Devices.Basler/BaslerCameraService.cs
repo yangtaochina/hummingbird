@@ -19,7 +19,7 @@ namespace Hummingbird.Devices.Basler;
 ///
 /// 首次联机建议：先用 pylon Viewer 确认相机可见、能出 Mono8 图，再跑本软件。
 /// </summary>
-public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
+public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics, ICameraExposureRange
 {
     private readonly string _serial;        // 相机序列号；空 = 取第一台发现的相机
     private readonly IAppLogger _log;       // 运行日志（可为 null，只走界面时不影响功能）
@@ -35,6 +35,13 @@ public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
     public string DeviceName => "Basler " + (string.IsNullOrEmpty(_serial) ? "(第一台)" : _serial);
 
     public bool IsOpen => _cam?.IsOpen == true;
+
+    public (double MinimumUs, double MaximumUs) GetExposureRange()
+    {
+        if (_cam is not { IsOpen: true }) throw new InvalidOperationException("相机未打开。");
+        var parameter = _cam.Parameters[PLCamera.ExposureTime];
+        return (parameter.GetMinimum(), parameter.GetMaximum());
+    }
 
     // ------------------------------------------------------------------
     // 打开/关闭
@@ -105,7 +112,6 @@ public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
         if (_cam is not { IsOpen: true })
             throw new InvalidOperationException("[相机] 未打开（请先点\"连接设备\"）");
 
-        var t0 = DateTime.UtcNow;
         using IGrabResult grab = _cam.StreamGrabber.GrabOne(timeoutMs);
 
         if (!grab.GrabSucceeded)
@@ -118,7 +124,6 @@ public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
         var buf = new byte[pixels.Length];
         Array.Copy(pixels, buf, pixels.Length);
 
-        _log.Info($"[相机] 采图成功 {grab.Width}x{grab.Height}，耗时 {(DateTime.UtcNow - t0).TotalMilliseconds:F0}ms");
         return Task.FromResult(new CameraFrame(buf, grab.Width, grab.Height, DateTime.Now));
     }
 
@@ -126,25 +131,25 @@ public sealed class BaslerCameraService : ICameraService, ICameraDiagnostics
     // 曝光/增益（视觉调光用）
     // ------------------------------------------------------------------
 
-    /// <summary>设定曝光时间（微秒）。先切 Timed 曝光模式再写时间值；相机不支持时记警告不中断。</summary>
+    /// <summary>设定曝光时间（微秒）。模式或时间设置失败时拒绝正式采图。</summary>
     public Task SetExposureUsAsync(double exposureUs)
     {
-        if (_cam is not { IsOpen: true }) return Task.CompletedTask;
+        if (_cam is not { IsOpen: true }) throw new InvalidOperationException("相机未打开，未设置曝光。");
         bool okMode = _cam.Parameters[PLCamera.ExposureMode].TrySetValue(PLCamera.ExposureMode.Timed);
         bool okTime = _cam.Parameters[PLCamera.ExposureTime].TrySetValue(Math.Max(20, exposureUs));
         if (okMode && okTime) _log.Info($"[相机] 曝光 = {Math.Max(20, exposureUs):F0} us");
-        else _log.Warn($"[相机] 设置曝光失败（模式:{okMode} 时间:{okTime}），可能超出相机范围");
+        else throw new InvalidOperationException($"[相机] 设置曝光失败（模式:{okMode} 时间:{okTime}），请检查参数范围。");
         return Task.CompletedTask;
     }
 
     /// <summary>设定增益。范围钳到 0 起，避免负值异常。</summary>
     public Task SetGainAsync(double gain)
     {
-        if (_cam is not { IsOpen: true }) return Task.CompletedTask;
+        if (_cam is not { IsOpen: true }) throw new InvalidOperationException("相机未打开，未设置增益。");
         if (_cam.Parameters[PLCamera.Gain].TrySetValue(Math.Max(0, gain)))
             _log.Info($"[相机] 增益 = {Math.Max(0, gain):F1}");
         else
-            _log.Warn("[相机] 设置增益失败");
+            throw new InvalidOperationException("[相机] 设置增益失败，请检查参数范围。");
         return Task.CompletedTask;
     }
 

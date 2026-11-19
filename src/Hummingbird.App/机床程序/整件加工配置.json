@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Envelope": {
+    "MinX": -160.4,
+    "MaxX": -134.0,
+    "MinY": -209.6,
+    "MaxY": -181.7,
+    "Z": -201.87324,
+    "C": 254.8245
+  },
+  "SessionToken": 161339,
+  "R220To229Reserved": true,
+  "AllowMachining": true,
+  "ApprovedPurpose": "Full18HoleMachiningCommissioning",
+  "AuthorizationSource": "用户已确认R220至229专用及既定范围/路径允许，2026-11-16明确要求直接整件加工18孔并补齐交付逻辑。",
+  "CustomerProcess": {
+    "RequestedExposureMs": 60000,
+    "PowerRaw": 4420,
+    "ManufacturerDisplay": "AOM2 12%(4420)",
+    "Continuous": true,
+    "AutomaticallyApplyToDevice": false
+  },
+  "Note": "沿用成功无出光试走的范围、固定Z/C及会话；先载入客户参数并应用、读回匹配，面板从头启动已修正主控一次，然后软件检查就绪、整件真实加工。本文件不自动启动运动或出光。"
+}

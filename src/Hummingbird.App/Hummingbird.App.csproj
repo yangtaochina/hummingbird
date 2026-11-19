@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -7,7 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Hummingbird.App</RootNamespace>
-    <Description>表盘激光打孔上位机（WinForms 主程序）</Description>
+    <Version>1.7.0</Version>
+    <InformationalVersion>1.7.0-guided-production-20261119</InformationalVersion>
+    <Product>飞秒创芯</Product>
+    <Description>飞秒创芯表盘激光打孔上位机（WinForms 主程序）</Description>
     <!-- 与 Basler.Pylon.dll（x64 + P/Invoke 原生库）保持一致，避免 32/64 位加载失败 -->
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>AnyCPU;x64</Platforms>
@@ -25,6 +28,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Hummingbird.SmokeTest\XyEvidenceReview.cs" Link="Analysis\XyEvidenceReview.cs" />
+    <Compile Include="..\Hummingbird.SmokeTest\LaserSpotReview.cs" Link="Analysis\LaserSpotReview.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Hummingbird.Core\Hummingbird.Core.csproj" />
     <ProjectReference Include="..\Hummingbird.Vision\Hummingbird.Vision.csproj" />
     <ProjectReference Include="..\Hummingbird.Devices.Sim\Hummingbird.Devices.Sim.csproj" />
@@ -38,8 +46,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="机床程序\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\视觉兼容性优化_20261119.md" Link="视觉兼容性优化_20261119.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\飞秒创芯_操作说明.md" Link="飞秒创芯_操作说明.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\templates\dial_18holes.json" Link="templates\dial_18holes.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="config.example.json" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath Condition="!Exists('$(MSBuildProjectDirectory)\config.json')">config.json</TargetPath>
+    </None>
   </ItemGroup>
 
 </Project>

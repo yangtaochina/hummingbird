@@ -21,7 +21,7 @@ namespace Hummingbird.Devices.OpcUa;
 /// ns=0=OPC UA 标准、ns=1=服务器实例（SinumerikServer）、ns=2=SinumerikVarProvider。
 /// 轴名可配（config.json 的 CncAxisX/Y/ZName），以 UaExpert 实际展开结果为准。
 /// </summary>
-public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumerikVarProbe
+public sealed partial class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumerikVarProbe
 {
     /// <summary>
     /// 连接成功后是否自动跑一遍通用连接诊断（命名空间表 + XYZ 位置候选扫描）。默认 true。
@@ -376,7 +376,11 @@ public sealed class OpcUaCncService : ICncService, ISinumerikVarAccess, ISinumer
     private async Task<double> ReadDoubleAsync(NodeId id, CancellationToken ct)
     {
         var dv = await _session!.ReadValueAsync(id, ct);
-        return Convert.ToDouble(dv.Value, System.Globalization.CultureInfo.InvariantCulture);
+        if (!StatusCode.IsGood(dv.StatusCode) || dv.Value is null)
+            throw new InvalidDataException($"位置节点 {id} 未返回有效数值，状态 {dv.StatusCode}。");
+        double value = Convert.ToDouble(dv.Value, System.Globalization.CultureInfo.InvariantCulture);
+        if (!double.IsFinite(value)) throw new InvalidDataException($"位置节点 {id} 返回了非有限值。");
+        return value;
     }
 
     // ==================================================================

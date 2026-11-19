@@ -30,3 +30,18 @@ Image__*.bmp
 
 # 已作废的 17 孔表（口径被 DWG 权威版 18 孔取代）
 dial_digitize/表盘17孔坐标_待客户确认.xlsx
+
+# 本地现场证据与旧设计资料（保留原路径供标定来源及历史回归使用）
+/现场图片*/
+/资料收集/
+/dial_digitize/
+/dwg_out/
+/.workbuddy/
+/HM_RETURN.MPF
+/工位恢复配置_20261117.json
+
+# 现场连接配置及运行状态；源码只交付无凭据示例
+/src/Hummingbird.App/config.json
+**/operator-state.json
+**/logs/
+**/captures/

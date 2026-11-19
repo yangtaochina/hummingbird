@@ -1,0 +1,15 @@
+{
+  "说明": "待现场核定后填写。此模板不能直接用于运动。可以先传取证资料，由开发侧整理配置；本次没有猜测现场边界。",
+  "Version": 1,
+  "Envelope": {
+    "MinX": null,
+    "MaxX": null,
+    "MinY": null,
+    "MaxY": null,
+    "Z": null,
+    "C": null
+  },
+  "SessionToken": 12345,
+  "R220To229Reserved": false,
+  "字段说明": "Envelope为MCS毫米边界及固定Z、C度；R220To229Reserved须设备人员确认可专用后置true。模板未填完不能载入。生成的HM_MASTER.MPF和本配置必须匹配；每次面板启动初始化序号，正常运行无需逐点继续。"
+}

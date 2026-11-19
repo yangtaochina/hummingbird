@@ -1,4 +1,4 @@
-namespace Hummingbird.App;
+﻿namespace Hummingbird.App;
 
 /// <summary>
 /// 程序入口。除了标准 WinForms 启动，还挂了三层全局异常兜底：
@@ -11,8 +11,13 @@ internal static class Program
     private static readonly Core.IAppLogger Log = new Core.MemoryLogger();
 
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if(args.FirstOrDefault()=="--ui-check")
+        {
+            Environment.ExitCode=OfflineUiChecks.Run(args.Skip(1).ToArray());
+            return;
+        }
         // --- 全局异常兜底（三层） ---
         // 1) UI 线程异常（按钮点击等事件处理器里没 try/catch 的）
         System.Windows.Forms.Application.ThreadException += (_, e) =>
@@ -50,7 +55,7 @@ internal static class Program
         {
             MessageBox.Show(
                 $"{title}：{ex.Message}\r\n\r\n详细信息已写入日志文件（程序目录\\logs\\）。\r\n\r\n{ex.StackTrace}",
-                "蜂鸟上位机", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "飞秒创芯", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch { /* 无界面上下文时弹窗也会失败，忽略 */ }
     }
