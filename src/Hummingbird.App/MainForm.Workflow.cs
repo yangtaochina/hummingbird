@@ -67,11 +67,14 @@ public sealed partial class MainForm
         _environmentPage=BuildEnvironmentPage();
         _reworkPage=new TabPage("补加工");
         var rework=WorkflowFlow();
-        rework.Controls.Add(GroupBoxOf("已加工工件追加加工", Lbl("选择最新完成轮次，建立关联的空采集记录；程序重新定位并加工全部18孔。"),
-            Lbl("本轮时长是追加量。采图失败且未出光时使用“未出光重试”；原失败轮不计入追加次数。")));
+        rework.Controls.Add(new Label {Name="ReworkGuide",AutoSize=true,Font=new Font(Font.FontFamily,10.5F),Margin=new Padding(13,10,3,4),
+            Text="① 点击下面的按钮，选择要追加加工的那一件\r\n② 工件装回原位，机床面板选择 HM_MASTER，从头启动一次\r\n③ 到“加工”页点击“一键补加工”"});
         rework.Controls.Add(_reworkActions); rework.Controls.Add(_reworkSummary);
-        rework.Controls.Add(Btn("查看定位画面并继续加工",(_,_)=>_selectProductionPanel?.Invoke()));
-        rework.Controls.Add(Lbl("准备后：面板从头启动原HM_MASTER → “加工”页一键补加工。软件自动检查，缺项按提示处理。\r\n部分已加工或出光状态不明的轮次不能自动重试。原始轮次、失败依据和登记历史均保留。"));
+        rework.Controls.Add(Btn("去“加工”页继续",(_,_)=>_selectProductionPanel?.Invoke()));
+        var reworkHelp=Lbl("程序会重新定位并加工全部18孔；填写的每孔时长是追加量。\r\n采图失败且未出光时使用“未出光重试”，原失败轮不计入追加次数。\r\n部分已加工或出光状态不明的轮次不能自动重试。原始轮次、失败依据和登记历史均保留。");
+        reworkHelp.Name="ReworkHelp";reworkHelp.Visible=false;reworkHelp.Margin=new Padding(13,3,3,3);
+        rework.Controls.Add(Btn("补加工规则说明",(_,_)=>reworkHelp.Visible=!reworkHelp.Visible));
+        rework.Controls.Add(reworkHelp);
         _reworkPage.Controls.Add(rework);
         _toolsPage.Text="维护";
         var tools=(TabControl)_toolsPage.Controls[0];
