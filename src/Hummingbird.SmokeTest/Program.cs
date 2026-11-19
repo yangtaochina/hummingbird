@@ -3,6 +3,9 @@ using Hummingbird.Devices.OpcUa;
 using Hummingbird.Devices.Sim;
 using Hummingbird.Vision;
 
+if(args.FirstOrDefault()=="--field-regression")
+    return FieldRegression.Run(args.Skip(1).ToArray());
+
 if(args.FirstOrDefault()=="--station-readiness")
     return await StationReadinessChecks.Run();
 
