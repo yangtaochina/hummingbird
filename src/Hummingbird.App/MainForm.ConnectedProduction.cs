@@ -42,9 +42,10 @@ public sealed partial class MainForm
             try{await run(action);}finally{_productionUiAction=false;}
         }
         var setup=new FlowLayoutPanel {AutoSize=true,Dock=DockStyle.Fill,WrapContents=true};
-        var toggleSetup=Btn("维护与详细检查",(_,_)=>{});
-        void SetSetup(bool visible){setup.Visible=visible;toggleSetup.Text=visible?"收起维护与检查":"维护与详细检查";}
-        toggleSetup.Click+=(_,_)=>SetSetup(!setup.Visible);
+        var toggleSetup=Btn("检查、试走与主控程序",(_,_)=>{});
+        bool setupOpen=false;Action<bool> showHoleTable=_=>{};
+        void SetSetup(bool visible){setupOpen=visible;setup.Visible=visible;showHoleTable(visible);toggleSetup.Text=visible?"收起检查与主控程序":"检查、试走与主控程序";}
+        toggleSetup.Click+=(_,_)=>SetSetup(!setupOpen);
         ProductionStationProfile? profile=null;
         ProductionRunRecord? current=null;
         Button? reworkButton=null;
@@ -76,6 +77,9 @@ public sealed partial class MainForm
         table.Columns.Add("Id","孔号");table.Columns.Add("Status","工序状态");table.Columns.Add("Time","完成时间");
         table.Columns[0].FillWeight=45;table.Columns[1].FillWeight=150;table.Columns[2].FillWeight=85;
         foreach(int id in Enumerable.Range(1,18))table.Rows.Add(id,"未开始","");
+        showHoleTable=visible=>table.Visible=visible;table.Visible=false;
+        var stepChips=new StatusChips(["参考1点","圆环12点","圆环3点","圆环6点","圆环9点","参考11点"],76){Name="ProductionStepChips"};
+        var holeChips=new StatusChips(Enumerable.Range(1,18).Select(i=>i.ToString()),34){Name="ProductionHoleChips"};
         void RefreshProgress()
         {
             if(current is null)return;
@@ -87,8 +91,15 @@ public sealed partial class MainForm
             progress.ForeColor=current.Error is not null?Color.DarkRed:current.ArchiveError is not null?Color.DarkOrange:current.Completed?Color.DarkGreen:Color.DarkBlue;
             state.Text=ProductionJobArchive.PhaseText(current)+(detail.Length==0?"":"\r\n"+detail)
                 +(current.Error is null?"":"\r\n"+current.Error)+"\r\n资料："+currentFolder;
+            bool running=_productionStop is not null && !current.Completed && current.Error is null;
+            for(int step=0;step<stepChips.Count;step++)
+                stepChips.Set(step,step<current.CapturedSteps?StatusChips.Done:step>current.CapturedSteps?StatusChips.Idle:
+                    current.Error is not null?StatusChips.Fault:running?StatusChips.Active:StatusChips.Idle);
             foreach(int hole in Enumerable.Range(1,18))
             {
+                var phase=current.Holes.GetValueOrDefault(hole);
+                holeChips.Set(hole-1,phase==ProductionHolePhase.Completed?StatusChips.Done:phase==ProductionHolePhase.Uncertain?StatusChips.Fault:
+                    current.CurrentHoleId==hole?StatusChips.Active:StatusChips.Idle);
                 var row=table.Rows[hole-1];row.Cells[1].Value=ProductionJobArchive.HoleText(current,hole);
                 row.Cells[2].Value=current.HoleTimings.GetValueOrDefault(hole)?.FinishedAt?.ToString("HH:mm:ss")??"";
                 row.DefaultCellStyle.ForeColor=current.Holes.GetValueOrDefault(hole)==ProductionHolePhase.Uncertain?Color.DarkRed:
@@ -110,7 +121,7 @@ public sealed partial class MainForm
             current=null;detail="";currentFolder=job??"";progress.ForeColor=Color.Black;
             RefreshReworkButton();
             SetSetup(false);
-            progress.Text="尚未开始 · 采图0/6 · 完成0/18";
+            progress.Text="尚未开始 · 采图0/6 · 完成0/18";stepChips.Reset();holeChips.Reset();
             foreach(DataGridViewRow row in table.Rows){row.Cells[1].Value="未开始";row.Cells[2].Value="";row.DefaultCellStyle.ForeColor=Color.Black;}
             state.Text=_activeReworkPlan?.Info is { } pending?$"已建立同件18孔补加工记录。前轮{pending.ParentRunId}；本轮追加{pending.AdditionalExposureMs/1000.0:0.###}秒/孔、原始功率{pending.PowerRaw}。回装后自动重新定位，不用旧绝对坐标。":
                 "放好全新待加工件，面板从头启动HM_MASTER进入等待，再点击一键加工。";
@@ -182,7 +193,7 @@ public sealed partial class MainForm
         var dry=Btn("整件无出光试走",async(_,_)=>await Ui(()=>Execute(true)));
         var real=Btn("一键加工",async(_,_)=>await Ui(()=>Execute(false)));
         real.Name="OneClickProductionStart";real.BackColor=Color.FromArgb(28,115,165);real.ForeColor=Color.White;
-        real.Font=new Font(Font.FontFamily,12,FontStyle.Bold);real.Padding=new Padding(14,9,14,9);
+        real.Font=new Font(Font.FontFamily,12,FontStyle.Bold);real.Padding=new Padding(30,12,30,12);
         _showProductionRework=plan=>{_activeReworkPlan=plan;real.Text=plan is null?"一键加工":"一键补加工";RefreshSettings();};
         inspect.Enabled=dry.Enabled=real.Enabled=_cfg.DeviceMode=="Real";
         _productionStopButton=Btn("停止整件加工",(_,_)=>{RequestProductionStop();detail="已请求停止，正在清理及核对关光；机床实际停止以面板为准。";RefreshProgress();});
@@ -205,8 +216,12 @@ public sealed partial class MainForm
         var controls=new FlowLayoutPanel {AutoSize=true,Dock=DockStyle.Fill,WrapContents=true};
         var hint=Lbl("每个全新待加工件先新建工件并确认装夹。完成或异常后不自动重打；已加工件不能当新件全18孔重跑。");hint.MaximumSize=new Size(850,0);
         controls.FlowDirection=FlowDirection.TopDown;
-        var mainActions=new FlowLayoutPanel{AutoSize=true,WrapContents=true};mainActions.Controls.AddRange([real,_productionStopButton,open]);
-        controls.Controls.AddRange([settings,mainActions,Btn("处理缺项：设备与参数",(_,_)=>SelectPage(_environmentPage)),toggleSetup]);
+        var guide=new Label {Name="ProductionGuide",AutoSize=true,Font=new Font(Font.FontFamily,10.5F),Margin=new Padding(3,6,3,8),
+            Text="① 放好工件并装夹\r\n② 机床面板选择 HM_MASTER，从头启动一次\r\n③ 点击“一键加工”"};
+        var mainActions=new FlowLayoutPanel{AutoSize=true,WrapContents=true};mainActions.Controls.AddRange([real,_productionStopButton]);
+        _productionStopButton.Padding=new Padding(10,12,10,12);
+        controls.Controls.AddRange([guide,settings,mainActions]);
+        var more=new FlowLayoutPanel{AutoSize=true,Dock=DockStyle.Fill,WrapContents=true};more.Controls.AddRange([open,toggleSetup]);
         _reworkActions.Controls.Add(rework);
         var maintenance=new FlowLayoutPanel {AutoSize=true,WrapContents=true,Visible=false};
         maintenance.Controls.AddRange([profileSummary,load,export]);
@@ -215,13 +230,17 @@ public sealed partial class MainForm
             Btn("没有主控：前往上传",(_,_)=>ShowNcUpload("HM_MASTER.MPF")),
             Btn("打开配套程序文件夹",async(_,_)=>await UiAction(()=>{OpenLocalFolder(StationProgramFiles.Folder);return Task.CompletedTask;}))]);
         instructions.Visible=false;
-        setup.Controls.AddRange([profileReady,help,instructions,maintenance,inspect,dry,Btn("同件补加工 / 未出光重试",(_,_)=>SelectPage(_reworkPage))]);
+        setup.Controls.AddRange([Btn("处理缺项：设备与参数",(_,_)=>SelectPage(_environmentPage)),profileReady,help,instructions,maintenance,inspect,dry,Btn("同件补加工 / 未出光重试",(_,_)=>SelectPage(_reworkPage))]);
         controls.SizeChanged+=(_,_)=>{int width=Math.Max(250,controls.ClientSize.Width-12);hint.MaximumSize=settings.MaximumSize=new Size(width,0);};
-        var layout=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=5};
+        var layout=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=10,Padding=new Padding(8,4,4,4)};
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));layout.RowStyles.Add(new RowStyle(SizeType.Absolute,70));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));layout.RowStyles.Add(new RowStyle(SizeType.Percent,100));
-        layout.Controls.Add(controls,0,0);layout.Controls.Add(setup,0,1);layout.Controls.Add(state,0,2);layout.Controls.Add(progress,0,3);layout.Controls.Add(table,0,4);tab.Controls.Add(layout);
+        Control[] rows=[controls,state,progress,Lbl("六处采图"),stepChips,Lbl("18孔加工"),holeChips,more,setup,table];
+        for(int row=0;row<rows.Length;row++)
+        {
+            layout.RowStyles.Add(rows[row]==state?new RowStyle(SizeType.Absolute,64):rows[row]==table?new RowStyle(SizeType.Percent,100):new RowStyle(SizeType.AutoSize));
+            layout.Controls.Add(rows[row],0,row);
+        }
+        tab.Controls.Add(layout);
         try{LoadProfile(StationProgramFiles.SelectProfile(_state.LastProductionProfilePath,StationProgramFiles.ProductionProfile)).GetAwaiter().GetResult();}
         catch(Exception ex){profile=null;state.Text="主控参数未就绪："+ex.Message;profileSummary.Text=profileReady.Text=state.Text;}
         return tab;

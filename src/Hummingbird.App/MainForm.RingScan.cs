@@ -29,7 +29,7 @@ public sealed partial class MainForm
         Action showPhoto = () => { };
         Action showPreview = () => { };
         var photo = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black };
-        var liveHost = new GroupBox { Dock=DockStyle.Fill,Text="实时画面 · 自动定位与加工",Padding=new Padding(6) };
+        var liveHost = new GroupBox { Dock=DockStyle.Fill,Text="实时画面",Padding=new Padding(6) };
         var enlarge=Btn("放大实时画面",(_,_)=>ShowLiveMagnifier());enlarge.Dock=DockStyle.Top;
         liveHost.Controls.Add(_livePicture);liveHost.Controls.Add(_liveStatus);liveHost.Controls.Add(enlarge);
         var photoTab = new TabPage("已采照片／框选"); photoTab.Controls.Add(photo);
@@ -1012,9 +1012,10 @@ public sealed partial class MainForm
         manualLayout.Controls.Add(Lbl("整件加工会自动完成六处采图、拟合圆心和18孔定位。手动入口用于建基准或排查失败照片。"),0,2);
         manual.Controls.Add(manualLayout);right.TabPages.Add(manual);
         project.Visible=false;
-        var projectToggle=Btn("工件与资料（维护）",(_,_)=>project.Visible=!project.Visible);
-        var viewToggle=Btn("照片与定位诊断（维护）",(_,_)=>
-        {if(right.SelectedTab==productionTab)right.SelectedTab=photoTab;else right.SelectedTab=productionTab;});
+        // 日常只显示一键加工；工件资料、六步表和诊断页签从“维护 → 采图与定位诊断”进入后才出现。
+        var viewToggle=Btn("返回一键加工",(_,_)=>right.SelectedTab=productionTab);
+        var projectToggle=Btn("工件与资料",(_,_)=>project.Visible=!project.Visible);
+        var viewActions=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoSize=true,WrapContents=true};viewActions.Controls.AddRange([viewToggle,projectToggle]);
         void UpdateProductionView()
         {
             bool production=right.SelectedIndex<=0 || right.SelectedTab==productionTab;
@@ -1022,16 +1023,18 @@ public sealed partial class MainForm
             right.SizeMode=production?TabSizeMode.Fixed:TabSizeMode.Normal;
             right.ItemSize=production?new Size(1,1):new Size(0,22);
             right.Multiline=!production;right.TabStop=!production;
-            viewToggle.Text=production?"照片与定位诊断（维护）":"返回一键加工";
+            viewActions.Visible=table.Visible=!production;
+            if(production)project.Visible=false;
+            left.RowStyles[1].Height=production?0:175;
             captureFeedback.Visible=!production || captureFeedback.ForeColor==Color.DarkRed;
         }
         right.SelectedIndexChanged+=(_,_)=>UpdateProductionView();captureFeedback.TextChanged+=(_,_)=>UpdateProductionView();
-        var viewActions=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoSize=true,WrapContents=true};viewActions.Controls.AddRange([projectToggle,viewToggle]);
         var top = new TableLayoutPanel { Dock=DockStyle.Fill, AutoSize=true, ColumnCount=1, RowCount=4 };
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
         for(int row=0;row<4;row++)top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         void FitMaintenanceRows()
         {
+            top.RowStyles[0].SizeType=viewActions.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[0].Height=0;
             top.RowStyles[1].SizeType=project.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[1].Height=0;
             top.RowStyles[3].SizeType=captureFeedback.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[3].Height=0;
         }
