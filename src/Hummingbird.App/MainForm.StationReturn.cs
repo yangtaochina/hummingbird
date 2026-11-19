@@ -120,12 +120,15 @@ public sealed partial class MainForm
             "机床已有对应HM_RETURN：结束其他NC → 面板选择该程序（或此前上传后的实际名称），从头Cycle Start一次，进入等待 → 勾选本次参考/区域/MZ2确认 → 点击“开始恢复表盘工位”。\r\n"
             +"机床没有该程序：使用随程序附带的HM_RETURN.MPF上传，核对上传后的名称并在面板选择，再按上述顺序运行。已有对应程序无需重新上传或导出。\r\n"
             +"工位恢复JSON已随程序提供并自动读取；它是上位机参数，不是需要在机床启动的文件。"};
+        instructions.Visible=false;
+        var guide=new Label {Name="StationReturnGuide",AutoSize=true,Font=new Font(Font.FontFamily,10.5F),Margin=new Padding(3,6,3,8),
+            Text="① 机床面板选择 HM_RETURN，从头启动一次\r\n② 确认回位区域已清空，勾选下面的确认项\r\n③ 点击“开始恢复表盘工位”"};
         var help=new FlowLayoutPanel {AutoSize=true,WrapContents=true};
         help.Controls.AddRange([Btn("没有回位程序：前往上传",(_,_)=>ShowNcUpload("HM_RETURN.MPF")),
             Btn("打开配套程序文件夹",async(_,_)=>await UiAction(()=>{OpenLocalFolder(StationProgramFiles.Folder);return Task.CompletedTask;})),
-            Btn("配置说明 / 维护",(_,_)=>{files.Visible=!files.Visible;summary.Visible=files.Visible;})]);
+            Btn("详细说明 / 维护",(_,_)=>{files.Visible=!files.Visible;summary.Visible=instructions.Visible=files.Visible;})]);
         actions.Controls.AddRange([start, _stationReturnStopButton]);
-        layout.Controls.AddRange([instructions,help,confirmed, actions,files,summary,
+        layout.Controls.AddRange([guide,confirmed, actions,help,instructions,files,summary,
             new Label { AutoSize = true, MaximumSize = new Size(580, 0), Text = "回位程序只移动MZ1、C、XY，不移动MZ2。回位不等于回参考点；断电后需先由机床人员确认参考有效。入口范围外由机床人员先安全送入，不能从任意位置直接回位。" }]);
         layout.ClientSizeChanged += (_, _) =>
         {
