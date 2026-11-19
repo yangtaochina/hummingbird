@@ -1,4 +1,4 @@
-using Hummingbird.Core;
+﻿using Hummingbird.Core;
 
 internal static class ExposureSelectionChecks
 {
@@ -38,6 +38,30 @@ internal static class ExposureSelectionChecks
             "分析失败恢复搜索前曝光");
         Check(await Fails(() => coordinator.SelectExposureAsync(1000, 0, (_, _) => throw new IOException("analysis failed"), restoreExposureUs: 1500)) && camera.Exposure == 1500,
             "分步记忆作为搜索中心时，失败仍恢复界面原曝光");
+        var tried = new List<double>();
+        var bright = await coordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure, 0, 0, 100)); });
+        Check(tried.SequenceEqual([1000, 500, 2000, 4000]) && bright.ExposureUs == 4000, "最佳档在相机上限时不再向外延伸");
+        using var wide = new Camera { Minimum = 20, Maximum = 1000000 }; var wideCoordinator = new CameraCaptureCoordinator(wide);
+        await wideCoordinator.OpenAsync(1000, 0); tried.Clear();
+        var extended = await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure, 0, 0, 100, exposure >= 8000)); });
+        Check(tried.SequenceEqual([1000, 250, 500, 2000, 4000, 8000]) && extended.ExposureUs == 8000 && wide.Exposure == 8000,
+            "五档都没识别出参考孔且最亮一档最好时继续加倍，识别通过后停止");
+        tried.Clear();
+        var capped = await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(-exposure, 0, 0, 100, false)); });
+        Check(tried.SequenceEqual([1000, 250, 500, 2000, 4000, 125, 62.5]) && capped.ExposureUs == 62.5, "向暗的方向最多再延伸两档");
+        tried.Clear();
+        await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure == 8000 ? 0 : exposure, 0, 0, 100)); });
+        Check(tried.SequenceEqual([1000, 250, 500, 2000, 4000, 8000]) && wide.Exposure == 4000, "延伸一档没有变好就停，仍用原来最好的一档");
+        tried.Clear();
+        await wideCoordinator.SelectExposureAsync(1000, 0, (_, exposure) =>
+        { tried.Add(exposure); return Task.FromResult(new ExposureQuality(exposure, 0, 0, 100, exposure == 4000)); });
+        Check(tried.Count == 5 && wide.Exposure == 4000, "边缘一档已识别出参考孔时不延伸");
+        Check(ExposureSelectionPolicy.Describe(dark).Contains("偏暗") && ExposureSelectionPolicy.Describe(saturated).Contains("过曝") &&
+            ExposureSelectionPolicy.Describe(clear).Contains("正常"), "明暗说明区分偏暗、过曝和正常");
         var cancellation = new CancellationTokenSource(); int reviewed = 0;
         Check(await Fails(() => coordinator.SelectExposureAsync(1000, 0, (_, _) =>
         {
@@ -58,7 +82,8 @@ internal static class ExposureSelectionChecks
         public string DeviceName => "Exposure test";
         public bool IsOpen { get; private set; }
         public double Exposure; public int Grabs; public bool FailGrab, FailExposure;
-        public (double MinimumUs, double MaximumUs) GetExposureRange() => (500, 4000);
+        public double Minimum = 500, Maximum = 4000;
+        public (double MinimumUs, double MaximumUs) GetExposureRange() => (Minimum, Maximum);
         public Task OpenAsync(CancellationToken ct = default) { IsOpen = true; return Task.CompletedTask; }
         public Task CloseAsync() { IsOpen = false; return Task.CompletedTask; }
         public Task SetExposureUsAsync(double value) { if (FailExposure) throw new IOException("exposure failed"); Exposure = value; return Task.CompletedTask; }

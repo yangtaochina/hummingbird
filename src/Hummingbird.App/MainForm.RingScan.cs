@@ -405,7 +405,7 @@ public sealed partial class MainForm
             Stable(before, await ReadMachine(), c1.Value, (await ReadFixedCAsync()).Value);
             if (session.Frames.FirstOrDefault() is { } reference && (Math.Abs(before.PosZ - reference.Z) > .010 ||
                 Math.Abs(Math.IEEERemainder(c1.Value - reference.C, 360)) > .005)) throw new InvalidOperationException("当前Z/C与这组记录不同，请核对装夹与光学条件后新建工件。");
-            CameraFrame image;
+            CameraFrame image; string exposureNote = "";
             if (autoExposure.Checked)
             {
                 double gain = (double)_numGain.Value;
@@ -460,6 +460,10 @@ public sealed partial class MainForm
                     _state.CameraExposureUs = selected.ExposureUs;
                     _state.StepExposureUs[step.Name] = selected.ExposureUs; SaveOperatorState();
                     _cameraStatus.Text = $"{step.Name} 自动曝光：{selected.ExposureUs:F0}µs（{selected.Trials.Count}档）";
+                    var chosen = selected.Trials.First(t => t.ExposureUs == selected.ExposureUs).Quality;
+                    exposureNote = $"已自动试拍{selected.Trials.Count}档曝光（{selected.Trials.Min(t => t.ExposureUs):F0}～{selected.Trials.Max(t => t.ExposureUs):F0}µs），" +
+                        (chosen.FeatureDetected == false ? "都没有识别出参考孔；" : "") + $"选用{selected.ExposureUs:F0}µs，{ExposureSelectionPolicy.Describe(chosen)}。";
+                    _log.Info($"[定位采集] {step.Name} {exposureNote}");
                     File.WriteAllText(Path.Combine(trialFolder, "选优结果.json"), JsonSerializer.Serialize(new {
                         SelectedExposureUs = selected.ExposureUs, Gain = gain, selected.Trials,
                         Purpose = step.Role==RingFrameRole.RingArc?"ProvisionalImageQuality_FourViewGeometryReselectsWhenComplete":"ReferenceBoundarySelection_FinalPositioningChecksStillRequired"
@@ -533,7 +537,7 @@ public sealed partial class MainForm
             captureFeedback.Text=$"{step.Name}照片已保存；当前已保存{session.Frames.Count}/6张。检查结果见右侧。";
             _log.Info($"[定位采集] {step.Name}已保存：{path}");
             if (step.Role != RingFrameRole.RingArc && (!inspections.TryGetValue(path, out var q) || q.Status != DatumHoleInspectionStatus.Detected))
-            { StopMonitor(); SelectStep(index, true);captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=$"{step.Name}照片已保存，但参考边界未通过／需要框选；不是未采集。"; output.AppendText("\r\n此参考图需要框选／检查，自动采图已暂停。"); }
+            { StopMonitor(); SelectStep(index, true);captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=$"{step.Name}照片已保存，但参考边界未通过／需要框选；不是未采集。{exposureNote}"; output.AppendText("\r\n此参考图需要框选／检查，自动采图已暂停。"); }
             RefreshEvidencePackage();
             var archived=Frame(index)??throw new InvalidDataException($"步骤{index+1}（{step.Name}）未在当前记录中找到；照片目录：{jobFolder}");
             if(GuidedCapture.Index(archived)!=index)throw new InvalidDataException("采图归档用途与指定步骤不一致，已停止。");

@@ -1,4 +1,4 @@
-namespace Hummingbird.Core;
+﻿namespace Hummingbird.Core;
 
 /// <summary>串行化预览、参数设置和正式采图；每次正式采图明确下发当前参数。</summary>
 public sealed class CameraCaptureCoordinator(ICameraService camera)
@@ -36,13 +36,14 @@ public sealed class CameraCaptureCoordinator(ICameraService camera)
         Validate(basis, gain);
         double restoreExposure = restoreExposureUs ?? basis; Validate(restoreExposure, gain);
         var candidates = ExposureSelectionPolicy.Candidates(basis);
+        double minimum = 20, maximum = 1000000;
         await gate.WaitAsync(ct);
         try
         {
                 if (camera is ICameraExposureRange range)
                 {
                     var limits = await Task.Run(range.GetExposureRange);
-                    double minimum = Math.Max(20, limits.MinimumUs), maximum = Math.Min(1000000, limits.MaximumUs);
+                    minimum = Math.Max(20, limits.MinimumUs); maximum = Math.Min(1000000, limits.MaximumUs);
                     if (!double.IsFinite(minimum) || !double.IsFinite(maximum) || minimum > maximum)
                         throw new InvalidDataException("相机曝光范围无效。");
                     candidates = candidates.Select(v => Math.Clamp(v, minimum, maximum)).Distinct().ToArray();
@@ -51,7 +52,7 @@ public sealed class CameraCaptureCoordinator(ICameraService camera)
                 var trials = new List<ExposureTrial>();
                 try
                 {
-                    foreach (double exposure in candidates)
+                    async Task<bool> Try(double exposure)
                     {
                         ct.ThrowIfCancellationRequested();
                         var frame = await Task.Run(async () =>
@@ -64,8 +65,16 @@ public sealed class CameraCaptureCoordinator(ICameraService camera)
                         ct.ThrowIfCancellationRequested();
                         if (!double.IsFinite(review.Score)) throw new InvalidDataException("曝光评分无效。");
                         trials.Add(new(exposure, review));
-                        if (quality is null || ExposureSelectionPolicy.Better(review, quality))
-                        { best = frame; quality = review; selected = exposure; }
+                        if (quality is not null && !ExposureSelectionPolicy.Better(review, quality)) return false;
+                        best = frame; quality = review; selected = exposure; return true;
+                    }
+                    foreach (double exposure in candidates) await Try(exposure);
+                    // 最佳档落在已试范围的边缘、且没有确认识别出特征时，说明合适的曝光可能在范围之外：
+                    // 朝该方向每次加倍或减半再试，最多两档，新一档不更好就停。
+                    for (int extension = 0; extension < ExposureSelectionPolicy.MaximumExtensions; extension++)
+                    {
+                        if (ExposureSelectionPolicy.Extend(selected, quality!, trials.Select(t => t.ExposureUs), minimum, maximum) is not { } next ||
+                            !await Try(next)) break;
                     }
                     await Task.Run(() => Apply(selected, gain));
                     return new ExposureSelection(best!, selected, trials.AsReadOnly());
