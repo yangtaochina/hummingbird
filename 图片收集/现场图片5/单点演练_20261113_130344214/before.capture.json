@@ -1,0 +1,21 @@
+{
+  "Kind": "StationarySpotImage",
+  "DryRun": true,
+  "Image": {
+    "FileName": "before.bmp",
+    "Sha256": "2732B1CC467154205D94597DB4332BDA0254D2923023CE3BEFEA1F9B51412FD2",
+    "Width": 1920,
+    "Height": 1200,
+    "CameraTime": "2026-11-13T13:03:44.5648122+08:00",
+    "Position": {
+      "X": -138.559,
+      "Y": -191.0041,
+      "Z": -201.316,
+      "C": 254.8241,
+      "CSource": "ManualPanelEntry",
+      "CNode": null,
+      "ReadAt": "2026-11-13T13:03:44.2522388+08:00",
+      "XyzSource": "OpcUaReadback"
+    }
+  }
+}

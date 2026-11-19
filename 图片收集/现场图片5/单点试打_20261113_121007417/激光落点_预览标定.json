@@ -1,0 +1,31 @@
+{
+  "Kind": "LaserSpotPreviewCalibration",
+  "Version": 1,
+  "SourceTrialPath": "trial.json",
+  "SourceTrialSha256": "1AECE19AE0FFCBF279271E068099BD927828E77E8060002DACE2D08CD1A4556F",
+  "BeforeImagePath": "before.bmp",
+  "BeforeImageSha256": "147B345235F0817B29C68B21583EC47FBCE3998FCF4A719CA60835355B247914",
+  "AfterImagePath": "after.bmp",
+  "AfterImageSha256": "BC5FD6E1EF1A294CF804D8ECFF76E329C2E0EA25E2CE1A77408320825DD80E03",
+  "OpticalSettings": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 584.955766,
+    "Jxy": -51.49699,
+    "Jyx": 51.553807,
+    "Jyy": 585.078517,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-12镜头/相机高度调整后的X/Y各+0.100mm局部标定，仅恢复相机像素响应参数。2026-11-13表盘已移动后放回，昨日工件圆心/方向不得作为当前加工定位。适用条件：镜头、相机安装及成像工作距离未变；机床参考状态与当前工件位姿需另行确认。此文件不包含定位照片或加工坐标。"
+  },
+  "PixelX": 1133.7238115572045,
+  "PixelY": 827.6531769961769,
+  "ReferenceZ": -201.316,
+  "ReferenceC": 254.8241,
+  "Method": "2026-11-13 12:10 trial before/after radial outer-edge fitting; see 激光落点候选_未应用.json",
+  "Notes": "6%为操作者备注；请求2000ms不是实测光学时长。落点仅为候选，尚未独立复核。原图/原始试打记录随文件夹一起保留。"
+}

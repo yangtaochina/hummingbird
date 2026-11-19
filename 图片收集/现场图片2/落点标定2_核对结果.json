@@ -1,0 +1,88 @@
+{
+  "status": "coarse_offset_supported_repeatability_not_established",
+  "secondPanelBeforeAfter": {
+    "X": -139.7173,
+    "Y": -194.8853,
+    "Z": -201.5615,
+    "C": 252.1249
+  },
+  "stageChangeFromTrial1Mm": {
+    "X": 0.5,
+    "Y": 0,
+    "Z": 0,
+    "C": 0
+  },
+  "userReportedDifference": "第二次出光时间更长，孔更大",
+  "darkContourComparison": [
+    {
+      "threshold": 18,
+      "firstCenterPx": [
+        1016.3641,
+        844.2743
+      ],
+      "secondCenterPx": [
+        1014.5143,
+        851.9984
+      ],
+      "equivalentCenterDifferenceUm": 13.49,
+      "firstDarkEllipsePx": [
+        73.69,
+        82.91
+      ],
+      "secondDarkEllipsePx": [
+        99.06,
+        115.16
+      ]
+    },
+    {
+      "threshold": 20,
+      "firstCenterPx": [
+        1014.8226,
+        852.7608
+      ],
+      "secondCenterPx": [
+        1017.0168,
+        858.9343
+      ],
+      "equivalentCenterDifferenceUm": 11.13,
+      "firstDarkEllipsePx": [
+        87.63,
+        103.96
+      ],
+      "secondDarkEllipsePx": [
+        110.98,
+        142.64
+      ]
+    },
+    {
+      "threshold": 25,
+      "firstCenterPx": [
+        1015.3879,
+        860.0522
+      ],
+      "secondCenterPx": [
+        1009.7034,
+        882.9615
+      ],
+      "equivalentCenterDifferenceUm": 40.08,
+      "firstDarkEllipsePx": [
+        108.9,
+        118.39
+      ],
+      "secondDarkEllipsePx": [
+        173.18,
+        200.6
+      ]
+    }
+  ],
+  "trial2BackgroundShiftApproxPx": [
+    0.4105,
+    0.1909
+  ],
+  "provisionalCommandCompensationMm": [
+    0.13,
+    0.43
+  ],
+  "limitations": "暗区椭圆尺寸不是经过计量验证的真实孔径。孔中心差值包含出光时间、孔形、反光、图像阈值等影响，不据此判定光轴漂移，也不作为微米级重复性验收。",
+  "next": "确认现场开关光控制方式，使用一致且可重复的出光参数后复核落点。当前粗补偿未写入生产代码。"
+}

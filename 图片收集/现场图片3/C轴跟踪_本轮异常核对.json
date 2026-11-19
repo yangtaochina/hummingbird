@@ -1,0 +1,70 @@
+{
+  "status": "rotation_center_calibration_deferred_due_to_return_image_mismatch",
+  "images": [
+    "C跟踪_起点.bmp",
+    "C跟踪_正5度.bmp",
+    "C跟踪_正15度.bmp",
+    "C跟踪_正45度.bmp",
+    "C跟踪_正90度.bmp",
+    "C跟踪_返回.bmp"
+  ],
+  "cValuesUserConfirmed": [
+    252.1249,
+    257.1249,
+    267.1249,
+    297.1249,
+    342.1249,
+    252.1249
+  ],
+  "userConfirmedNoManualAdjustment": true,
+  "returnMcsUserConfirmed": {
+    "X": -134.3173,
+    "Y": -190.1853,
+    "Z": -201.5615,
+    "C": 252.1249,
+    "stop": "N170 M0"
+  },
+  "otherFramesActualXyz": null,
+  "noteOnCoordinates": "本轮无采图JSON；除用户确认的返回实际XYZ外，其余各点XYZ仅有程序目标值，未将其伪装成逐帧实测值。",
+  "imageObservations": "起点完整孔可见；5/15/45/90及返回未清楚辨识同一完整孔。用户在N170保持轴不动重新查看当前采图，仍仅见圆环亮带，没有起点孔。",
+  "relativeTextureMatchesFromPlus5": [
+    {
+      "to": "正15度",
+      "rotationDeg": -9.996,
+      "inliers": 1069,
+      "matches": 1078
+    },
+    {
+      "to": "正45度",
+      "rotationDeg": -39.9719,
+      "inliers": 197,
+      "matches": 218
+    },
+    {
+      "to": "正90度",
+      "rotationDeg": -85.0381,
+      "inliers": 86,
+      "matches": 113
+    },
+    {
+      "to": "返回",
+      "rotationDeg": 4.9938,
+      "inliers": 1345,
+      "matches": 1352
+    }
+  ],
+  "initialToLaterTextureMatching": "起点与后续图像匹配较弱，仅8至18个内点；可能存在约5至6度的额外方向差，此项只作为排查线索，不作为角度误差或工件滑移的结论。",
+  "conclusion": "后续图像相对转角与C指令差基本相符，但起点和返回的完整图像状态不一致，不能据此发布正式旋转中心。",
+  "next": "原90度跟踪程序先不重跑。先由现场人员检查表盘/夹具/C轴输出盘及相机的固定状态；确认牢固后，使用HM_C_RETURN5.MPF做只转C的5度往返，以当前圆环纹理作新基准，保留每帧实际XYZC及起点/返回全轴面板记录。",
+  "returnPanelPhoto": "微信图片_20261112120722_144_17.jpg",
+  "returnMcsFromPanelPhoto": {
+    "X": -134.3173,
+    "Y": -190.1853,
+    "Z": -201.5615,
+    "B": 0.0005,
+    "C": 252.1249,
+    "Z2": -238.4865,
+    "program": "HM_CHECK_113222123",
+    "stop": "N170 M0"
+  }
+}

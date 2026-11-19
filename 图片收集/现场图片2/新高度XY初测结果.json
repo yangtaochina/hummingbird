@@ -1,0 +1,164 @@
+{
+  "method": "Translation registration in three image ROIs. Median shifts, half closure compensation, +/-0.100 mm local trial. Not an absolute accuracy certificate.",
+  "calibrationZ": -201.5679,
+  "calibrationC": 252.1249,
+  "matrixPxPerMm": [
+    [
+      585.8259999999999,
+      -49.82704999999999
+    ],
+    [
+      49.134299999999996,
+      586.77805
+    ]
+  ],
+  "axisMeasurements": {
+    "X": {
+      "forwardShiftPx": [
+        58.40676,
+        5.09525
+      ],
+      "returnShiftPx": [
+        -0.35168,
+        0.36364
+      ],
+      "responsePxPerMm": [
+        585.8259999999999,
+        49.134299999999996
+      ],
+      "forwardRegistrations": [
+        {
+          "shift_px": [
+            58.3861,
+            5.10039
+          ],
+          "ncc": 0.993874,
+          "intensity_scale": 0.9169
+        },
+        {
+          "shift_px": [
+            58.40676,
+            5.09525
+          ],
+          "ncc": 0.994621,
+          "intensity_scale": 0.9343
+        },
+        {
+          "shift_px": [
+            58.40933,
+            5.03374
+          ],
+          "ncc": 0.996234,
+          "intensity_scale": 0.9846
+        }
+      ],
+      "returnRegistrations": [
+        {
+          "shift_px": [
+            -0.35168,
+            0.36364
+          ],
+          "ncc": 0.999644,
+          "intensity_scale": 1.0027
+        },
+        {
+          "shift_px": [
+            -0.35161,
+            0.36394
+          ],
+          "ncc": 0.999634,
+          "intensity_scale": 1.0031
+        },
+        {
+          "shift_px": [
+            -0.35205,
+            0.36249
+          ],
+          "ncc": 0.999607,
+          "intensity_scale": 1.0034
+        }
+      ],
+      "returnDisplacementMm": [
+        -0.0005437321018014603,
+        0.0006652530649528275
+      ]
+    },
+    "Y": {
+      "forwardShiftPx": [
+        -5.10542,
+        58.70677
+      ],
+      "returnShiftPx": [
+        -0.24543,
+        0.05793
+      ],
+      "responsePxPerMm": [
+        -49.82704999999999,
+        586.77805
+      ],
+      "forwardRegistrations": [
+        {
+          "shift_px": [
+            -5.11101,
+            58.70677
+          ],
+          "ncc": 0.988452,
+          "intensity_scale": 1.0009
+        },
+        {
+          "shift_px": [
+            -5.09898,
+            58.72221
+          ],
+          "ncc": 0.989052,
+          "intensity_scale": 1.0154
+        },
+        {
+          "shift_px": [
+            -5.10542,
+            58.64228
+          ],
+          "ncc": 0.988953,
+          "intensity_scale": 1.1153
+        }
+      ],
+      "returnRegistrations": [
+        {
+          "shift_px": [
+            -0.24455,
+            0.05751
+          ],
+          "ncc": 0.99968,
+          "intensity_scale": 1.0048
+        },
+        {
+          "shift_px": [
+            -0.24543,
+            0.05793
+          ],
+          "ncc": 0.999693,
+          "intensity_scale": 1.005
+        },
+        {
+          "shift_px": [
+            -0.24654,
+            0.06084
+          ],
+          "ncc": 0.999677,
+          "intensity_scale": 1.0049
+        }
+      ],
+      "returnDisplacementMm": [
+        -0.00040764658757851,
+        0.00013286016702236694
+      ]
+    }
+  },
+  "sources": [
+    "ring_20261111_164132204.bmp",
+    "标定_X正0.1.bmp",
+    "标定_X返回.bmp",
+    "标定_Y正0.1.bmp",
+    "标定_Y返回.bmp"
+  ]
+}

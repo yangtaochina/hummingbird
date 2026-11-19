@@ -1,0 +1,76 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": -147.5454,
+    "HintY": -196.6474,
+    "Jxx": 582.841,
+    "Jxy": -48.884,
+    "Jyx": 49.023,
+    "Jyy": 583.025,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm\u8BD5\u6D4B\u54CD\u5E94\uFF1B2026-11-11\u56DB\u5E27\u4F7F\u7528\u4EAE\u5E26\u4E2D\u95F4\u7EBF\u8BD5\u7B97\u3002\u5F53\u524D\u9AD8\u5EA6\u3001\u5706\u73AF\u4E0E\u52A0\u5DE5\u57FA\u51C6\u5173\u7CFB\u53CA\u5B9E\u9645\u7CBE\u5EA6\u5F85\u9A8C\u8BC1\u3002"
+  },
+  "Frames": [
+    {
+      "Name": "12\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\12\u70B9.bmp",
+      "X": -140.0454,
+      "Y": -184.4474,
+      "Z": -202.4679,
+      "C": 252.1249
+    },
+    {
+      "Name": "3\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\3\u70B9.bmp",
+      "X": -135.2454,
+      "Y": -204.2474,
+      "Z": -202.4679,
+      "C": 252.1249
+    },
+    {
+      "Name": "6\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\6\u70B9.bmp",
+      "X": -153.8453,
+      "Y": -209.5474,
+      "Z": -202.4679,
+      "C": 252.1249
+    },
+    {
+      "Name": "9\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\ring_20261111_164132204.bmp",
+      "X": -160.34535,
+      "Y": -189.54743,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "\u6807\u5B9A_X\u6B630.1",
+      "ImagePath": "\u6807\u5B9A_X\u6B630.1.bmp",
+      "X": -160.24535,
+      "Y": -189.54743,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "\u6807\u5B9A_X\u8FD4\u56DE",
+      "ImagePath": "\u6807\u5B9A_X\u8FD4\u56DE.bmp",
+      "X": -160.34535,
+      "Y": -189.54743,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "\u6807\u5B9A_Y\u6B630.1",
+      "ImagePath": "\u6807\u5B9A_Y\u6B630.1.bmp",
+      "X": -160.34535,
+      "Y": -189.44743,
+      "Z": -201.5679,
+      "C": 252.1249
+    }
+  ]
+}

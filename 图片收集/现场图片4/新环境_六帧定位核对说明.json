@@ -1,0 +1,30 @@
+{
+  "Purpose": "New optics six-frame localization review, preview only",
+  "SourceSession": "新环境_六帧定位记录_已核对.json",
+  "RawImagesHashVerified": true,
+  "CenterMcs": [
+    -147.15777528161223,
+    -196.34550777366107
+  ],
+  "RadiusMm": 14.474806248409921,
+  "RingRmsUm": 27.135939130769145,
+  "CenterParameterSensitivityUm": 6.558510984991013,
+  "TwelveAngleDeg": 56.65154116175512,
+  "ReferenceGapDeg": 60.41225924148608,
+  "TargetCount": 18,
+  "Reference1ThresholdSensitivityUm": 13.04818698610257,
+  "Reference11ThresholdSensitivityUm": 24.3898652784631,
+  "OldDirectionDifferenceDeg": -0.2830411495819476,
+  "EquivalentTangentialDistanceAt14_45mmUm": 71.38299969416225,
+  "ReferenceCaptureGapSeconds": 1637.350986,
+  "CurrentReference1ReturnCheckRequired": true,
+  "ConfirmedMachiningAccuracy": false,
+  "LaserOffsetApplied": false,
+  "Notes": [
+    "本轮最终圆心/方向由新四张圆环、新11点、复用的新环境1点重新计算，旧位置仅作采图引导。",
+    "总自动备份的1点图片路径仍指向现场目录。已另存相对路径可移植六帧记录，未改原始文件。",
+    "新旧方向差约0.28度，原因尚不能由现有图像分离；不据此诊断机床C轴误差。",
+    "复用1点图与新11点图相隔约27分钟，需要当前回位图确认这段时间内装夹/光学状态是否保持。",
+    "加工精度不能由RMS或参数敏感性单独验收。激光光路调整后的落点仍未验证，不安排表盘出光。"
+  ]
+}

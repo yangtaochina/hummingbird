@@ -1,0 +1,332 @@
+{
+  "Method": "Three spatial texture ROIs, NCC initialization \u002B translation-only ECC. Each axis uses forward displacement minus half the measured return offset, divided by actual 0.100mm move. This local experimental estimate is not a metrology certificate.",
+  "ReferenceZ": -201.32052,
+  "ReferenceC": 254.8249,
+  "ImageWidth": 1920,
+  "ImageHeight": 1200,
+  "PixelResponseMatrix": [
+    [
+      584.9557664990757,
+      -51.49699039756081
+    ],
+    [
+      51.55380666256244,
+      585.0785166023832
+    ]
+  ],
+  "RawMatrixWithoutReturnAdjustment": [
+    [
+      584.3848419189785,
+      -51.56473159788867
+    ],
+    [
+      51.8362426757842,
+      584.5856475828749
+    ]
+  ],
+  "Regions": [
+    {
+      "X": 600,
+      "Y": 290,
+      "Width": 260,
+      "Height": 210,
+      "XForward": {
+        "Dx": 58.433006286621094,
+        "Dy": 5.075718879699707,
+        "Ecc": 0.9968721961613265,
+        "CoarseNcc": 0.9960235953330994
+      },
+      "XReturn": {
+        "Dx": -0.1251407265663147,
+        "Dy": 0.03729168698191643,
+        "Ecc": 0.9999507281199834,
+        "CoarseNcc": 0.9995821714401245
+      },
+      "YForward": {
+        "Dx": -5.3104777336120605,
+        "Dy": 58.45856475830078,
+        "Ecc": 0.9967042514624792,
+        "CoarseNcc": 0.9952335357666016
+      },
+      "YReturn": {
+        "Dx": -0.014190305024385452,
+        "Dy": -0.09857380390167236,
+        "Ecc": 0.9999726967483414,
+        "CoarseNcc": 0.9996518492698669
+      },
+      "TotalClosure": {
+        "Dx": -0.10430312156677246,
+        "Dy": -0.04093401879072189,
+        "Ecc": 0.9999564132019794,
+        "CoarseNcc": 0.9995791912078857
+      }
+    },
+    {
+      "X": 500,
+      "Y": 690,
+      "Width": 320,
+      "Height": 230,
+      "XForward": {
+        "Dx": 58.43848419189453,
+        "Dy": 5.197996616363525,
+        "Ecc": 0.9949672078457074,
+        "CoarseNcc": 0.9920040965080261
+      },
+      "XReturn": {
+        "Dx": -0.11334909498691559,
+        "Dy": 0.039629433304071426,
+        "Ecc": 0.9999394048113959,
+        "CoarseNcc": 0.9995377063751221
+      },
+      "YForward": {
+        "Dx": -5.156473159790039,
+        "Dy": 58.44366455078125,
+        "Ecc": 0.9948641963318845,
+        "CoarseNcc": 0.993232250213623
+      },
+      "YReturn": {
+        "Dx": -0.013548240065574646,
+        "Dy": -0.06874789297580719,
+        "Ecc": 0.9999419002503974,
+        "CoarseNcc": 0.9996229410171509
+      },
+      "TotalClosure": {
+        "Dx": -0.10074400901794434,
+        "Dy": -0.03629203885793686,
+        "Ecc": 0.9999157767928905,
+        "CoarseNcc": 0.9995138645172119
+      }
+    },
+    {
+      "X": 900,
+      "Y": 400,
+      "Width": 250,
+      "Height": 300,
+      "XForward": {
+        "Dx": 58.53661346435547,
+        "Dy": 5.183624267578125,
+        "Ecc": 0.9985288746241773,
+        "CoarseNcc": 0.9960383772850037
+      },
+      "XReturn": {
+        "Dx": -0.09767308831214905,
+        "Dy": 0.056487202644348145,
+        "Ecc": 0.9997818872606955,
+        "CoarseNcc": 0.9993606209754944
+      },
+      "YForward": {
+        "Dx": -5.1325297355651855,
+        "Dy": 58.71284103393555,
+        "Ecc": 0.9976929151816959,
+        "CoarseNcc": 0.9954375624656677
+      },
+      "YReturn": {
+        "Dx": -0.016317542642354965,
+        "Dy": -0.0718124508857727,
+        "Ecc": 0.9998984960428748,
+        "CoarseNcc": 0.9994667768478394
+      },
+      "TotalClosure": {
+        "Dx": -0.10670772194862366,
+        "Dy": -0.04366477578878403,
+        "Ecc": 0.9997805754124336,
+        "CoarseNcc": 0.9993415474891663
+      }
+    }
+  ],
+  "XReturnMedianPixels": [
+    -0.11334909498691559,
+    0.039629433304071426
+  ],
+  "YReturnMedianPixels": [
+    -0.014190305024385452,
+    -0.0718124508857727
+  ],
+  "TotalClosureMedianPixels": [
+    -0.10430312156677246,
+    -0.04093401879072189
+  ],
+  "Sources": [
+    {
+      "Name": "\u65B0\u73AF\u5883_\u6807\u5B9A\u8D77\u70B9",
+      "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u73AF\u5883_\u6807\u5B9A\u8D77\u70B9.bmp",
+      "X": -134.4488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T17:47:30.0076587+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "627A5D82BFBEE2D2622806930EF21BB56ACCCC11FDA5DE9F93C2A9E5071D7FBF",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    },
+    {
+      "Name": "\u65B0\u6807\u5B9A_X\u6B630.1",
+      "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_X\u6B630.1.bmp",
+      "X": -134.3488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T17:58:28.7614529+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "2B81C23EDF0CBB4C1AC4EE5BEA7A8245E46F4B9C695D99FD99DA22718B223A63",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    },
+    {
+      "Name": "\u65B0\u6807\u5B9A_X\u8FD4\u56DE",
+      "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_X\u8FD4\u56DE.bmp",
+      "X": -134.4488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T17:59:01.576723+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "4227FC5B3BE805F08A2FE55C99F3B3326CEDEC284D78051BD0DBF7BFD6EECEA0",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    },
+    {
+      "Name": "\u65B0\u6807\u5B9A_Y\u6B630.1",
+      "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_Y\u6B630.1.bmp",
+      "X": -134.4488,
+      "Y": -189.789,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T17:59:46.1132125+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "3FC4514E0388CED4FE197CDB5A2CDB5E6AAB2B2D6941602407B0A05433D38A86",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    },
+    {
+      "Name": "\u65B0\u6807\u5B9A_Y\u8FD4\u56DE",
+      "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_Y\u8FD4\u56DE.bmp",
+      "X": -134.4488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T18:00:16.1874999+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "3CE662F3478946B6604B7CCE69CA8578A556CDECB9E0710D216D7E51D439B719",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    }
+  ],
+  "Limitations": [
+    "XYZ\u6765\u81EAOPC UA\uFF0CC\u4E3A\u624B\u586B\u4E14\u7528\u6237\u5DF2\u6838\u5BF9\u9762\u677F\uFF1B\u5149\u5B66\u548C\u66DD\u5149\u8BBE\u7F6E\u9700\u4FDD\u6301\u91C7\u56FE\u65F6\u72B6\u6001\u3002",
+    "0.100mm\u5C40\u90E8\u6807\u5B9A\u4EC5\u4F9B\u4E0B\u4E00\u9636\u6BB5\u5B9A\u4F4D\u8BD5\u9A8C\uFF0C\u4E0D\u4EE3\u8868\u5168\u884C\u7A0B\u3001\u7EDD\u5BF9\u6216\u52A0\u5DE5\u7CBE\u5EA6\u3002",
+    "\u8FD4\u56DE\u504F\u79FB\u7684\u4E00\u534A\u662F\u4EE3\u8868\u6027\u57FA\u51C6\u9009\u62E9\uFF0C\u5E76\u672A\u8BC1\u660E\u5B9E\u9645\u8BEF\u5DEE\u6216\u6F02\u79FB\u7684\u65F6\u95F4\u89C4\u5F8B\u3002",
+    "\u672C\u6807\u5B9A\u4E0D\u5EFA\u7ACB\u6FC0\u5149\u843D\u70B9\u8865\u507F\uFF0C\u4E5F\u4E0D\u63A8\u5B9A\u5F53\u524D\u8868\u76D8\u5706\u5FC3\u3002"
+  ]
+}

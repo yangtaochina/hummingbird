@@ -1,0 +1,60 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": -147.5454,
+    "HintY": -196.6474,
+    "Jxx": 585.826,
+    "Jxy": -49.827,
+    "Jyx": 49.134,
+    "Jyy": 586.778,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002"
+  },
+  "Frames": [
+    {
+      "Name": "12\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\\u6807\u5B9A12\u70B9_new.bmp",
+      "X": -140.0454,
+      "Y": -184.4474,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "3\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\\u6807\u5B9A3\u70B9_newe.bmp",
+      "X": -135.2454,
+      "Y": -204.2474,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "6\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\\u6807\u5B9A6\u70B9_new.bmp",
+      "X": -153.8453,
+      "Y": -209.5474,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "9\u70B9",
+      "ImagePath": "net10.0-windows\\net10.0-windows\\\u6807\u5B9A_Y\u8FD4\u56DE.bmp",
+      "X": -160.34535,
+      "Y": -189.54743,
+      "Z": -201.5679,
+      "C": 252.1249
+    },
+    {
+      "Name": "11\u70B9",
+      "ImagePath": "\u65B9\u5411_11\u70B9.bmp",
+      "X": -147.7454,
+      "Y": -182.1474,
+      "Z": -201.5679,
+      "C": 252.1249
+    }
+  ]
+}

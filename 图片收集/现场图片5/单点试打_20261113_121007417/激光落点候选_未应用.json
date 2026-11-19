@@ -1,0 +1,139 @@
+{
+  "SourceTrial": "单点试打_20261113_121007417",
+  "OperatorNotes": "本次功率6% 时常2000ms",
+  "Completed": true,
+  "ShutdownReadbackConfirmed": true,
+  "RequestedExposureMs": 2000,
+  "CommandWindowMs": 3198.1366,
+  "MeasuredOpticalExposureMs": null,
+  "LaserStateBefore": {
+    "Fault": null,
+    "Power": 3950,
+    "Emission": 0,
+    "PowerMode": 0,
+    "ControlMode": 0,
+    "PulseWidthFs": null,
+    "FrequencyKhz": 100,
+    "BurstCount": 1,
+    "Protocol": 1,
+    "IsLegacy": true,
+    "IsPlausible": true,
+    "CanExpose": true,
+    "Description": "Excel旧协议：功率原始值=3950（不换算百分比），重频=100kHz，Burst=1，功率模式=0(0=内部)，控制模式=0(0=内控)，出光=0；本协议未读取故障及脉宽，保留设备设置"
+  },
+  "RequestedCameraExposureUs": 5000,
+  "RequestedCameraGain": 0,
+  "ImageIntegrity": {
+    "BeforeImage": {
+      "Sha256Matches": true,
+      "SidecarMatches": true
+    },
+    "AfterImage": {
+      "Sha256Matches": true,
+      "SidecarMatches": true
+    }
+  },
+  "XyzStartEndEqual": true,
+  "CSource": "ManualPanelEntry",
+  "NewFeature": "本轮after.bmp在右下方出现before.bmp中不存在的明显黑色近圆形痕迹。",
+  "LaserPixelCandidate": {
+    "X": 1133.7238115572045,
+    "Y": 827.6531769961769,
+    "Origin": "原图左上角(0,0)，像素列向右、行向下",
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ImageCenterXY": [
+      959.5,
+      599.5
+    ],
+    "OffsetFromImageCenterPx": [
+      174.2238115572045,
+      228.15317699617685
+    ],
+    "ApproxAppearanceRadiusPx": 63.82260550980544,
+    "Fitting": "Radial outward-edge gradient, two source images and two seeds, robust circle fit; diagnostic estimate only",
+    "Fits": [
+      {
+        "Method": "after",
+        "SeedXY": [
+          1130,
+          825
+        ],
+        "CenterX": 1133.6783384655855,
+        "CenterY": 827.656167099974,
+        "RadiusPx": 63.975101128292685,
+        "RadialRmsPx": 3.396251392621757,
+        "RetainedRays": 163,
+        "TotalRays": 180
+      },
+      {
+        "Method": "after",
+        "SeedXY": [
+          1135,
+          825
+        ],
+        "CenterX": 1133.6710760234084,
+        "CenterY": 827.6942683467936,
+        "RadiusPx": 64.01994088242262,
+        "RadialRmsPx": 3.30634741496343,
+        "RetainedRays": 167,
+        "TotalRays": 180
+      },
+      {
+        "Method": "after-before",
+        "SeedXY": [
+          1130,
+          825
+        ],
+        "CenterX": 1133.6364133681723,
+        "CenterY": 827.603090268236,
+        "RadiusPx": 63.63493068759245,
+        "RadialRmsPx": 3.412029052428076,
+        "RetainedRays": 166,
+        "TotalRays": 180
+      },
+      {
+        "Method": "after-before",
+        "SeedXY": [
+          1135,
+          825
+        ],
+        "CenterX": 1133.9094183716525,
+        "CenterY": 827.6591822697039,
+        "RadiusPx": 63.66044934091401,
+        "RadialRmsPx": 3.3503878986508315,
+        "RetainedRays": 170,
+        "TotalRays": 180
+      }
+    ]
+  },
+  "ProvisionalCameraToLaserCommandOffsetMm": {
+    "X": 0.32961391187577804,
+    "Y": 0.36090938030257225,
+    "Formula": "For current RingScanSettings.ToMachine convention: MCS command at laser = camera-centered target MCS + inverse(J)*(laserPixel-imageCenter).",
+    "Applied": false,
+    "Status": "仅算术候选，尚未进行独立无出光位置复核或验收，不能直接下发加工。"
+  },
+  "OpticalSettingsSnapshot": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 584.955766,
+    "Jxy": -51.49699,
+    "Jyx": 51.553807,
+    "Jyy": 585.078517,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-12镜头/相机高度调整后的X/Y各+0.100mm局部标定，仅恢复相机像素响应参数。2026-11-13表盘已移动后放回，昨日工件圆心/方向不得作为当前加工定位。适用条件：镜头、相机安装及成像工作距离未变；机床参考状态与当前工件位姿需另行确认。此文件不包含定位照片或加工坐标。"
+  },
+  "Limitations": [
+    "近圆形痕迹不证明已经打穿，也不能据照片确定深度或珐琅裂纹。",
+    "拟合残差不是中心定位精度；灰度阈值及反光边缘会影响中心与尺寸。",
+    "2000ms请求和3198.1366ms命令窗口均不是实测光学出光时长。",
+    "功率3950为旧协议原始值，6%来自操作者备注，不进行线性换算。",
+    "本文件未改写正式标定、相机、激光参数或NC坐标。"
+  ]
+}

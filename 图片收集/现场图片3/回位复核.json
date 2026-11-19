@@ -1,0 +1,92 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 582.841,
+    "Jxy": -48.884,
+    "Jyx": 49.023,
+    "Jyy": 583.025,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+  },
+  "Frames": [
+    {
+      "Name": "C\u8DDF\u8E2A_\u8D77\u70B9",
+      "ImagePath": "C\u8DDF\u8E2A_\u8D77\u70B9.bmp",
+      "X": -134.3173,
+      "Y": -190.18527,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "C\u8DDF\u8E2A_\u6B635\u5EA6",
+      "ImagePath": "C\u8DDF\u8E2A_\u6B635\u5EA6.bmp",
+      "X": -133.8203,
+      "Y": -191.3362,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "C\u8DDF\u8E2A_\u6B6315\u5EA6",
+      "ImagePath": "C\u8DDF\u8E2A_\u6B6315\u5EA6.bmp",
+      "X": -133.1359,
+      "Y": -193.7459,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "C\u8DDF\u8E2A_\u6B6345\u5EA6",
+      "ImagePath": "C\u8DDF\u8E2A_\u6B6345\u5EA6.bmp",
+      "X": -133.6734,
+      "Y": -201.1652,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "C\u8DDF\u8E2A_\u6B6390\u5EA6",
+      "ImagePath": "C\u8DDF\u8E2A_\u6B6390\u5EA6.bmp",
+      "X": -140.9821,
+      "Y": -209.3844,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "C\u8DDF\u8E2A_\u8FD4\u56DE",
+      "ImagePath": "ring_20261112_120352493.bmp",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "\u56DE\u4F4D\u590D\u6838_\u8D77\u70B9",
+      "ImagePath": "\u56DE\u4F4D\u590D\u6838_\u8D77\u70B9.bmp",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "Name": "\u56DE\u4F4D\u590D\u6838_\u6B635\u5EA6",
+      "ImagePath": "\u56DE\u4F4D\u590D\u6838_\u6B635\u5EA6.bmp",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 257.1249
+    },
+    {
+      "Name": "\u56DE\u4F4D\u590D\u6838_\u8FD4\u56DE",
+      "ImagePath": "\u56DE\u4F4D\u590D\u6838_\u8FD4\u56DE.bmp",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 252.1249
+    }
+  ]
+}

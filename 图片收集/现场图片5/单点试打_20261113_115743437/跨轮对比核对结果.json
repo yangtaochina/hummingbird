@@ -1,0 +1,67 @@
+{
+  "Purpose": "按操作者补充：使用厂家软件出光后，跨轮寻找已在11:57前图中存在的新增痕迹候选。",
+  "ComparedFiles": [
+    {
+      "File": "单点演练_20261113_104940394/after.bmp",
+      "NormalizeGain": 3.949370683027221,
+      "NormalizeOffset": 1.807979099703708,
+      "GlobalCorrelationWith1142After": 0.9948821342919556,
+      "CandidateRoiNormalizedMeanDifference": -0.6404084880580531,
+      "CandidateRoiNormalizedRmsDifference": 3.414703644158327
+    },
+    {
+      "File": "单点试打_20261113_114224707/after.bmp",
+      "NormalizeGain": 0.9999999999999987,
+      "NormalizeOffset": 5.684341886080802e-14,
+      "GlobalCorrelationWith1142After": 1.0,
+      "CandidateRoiNormalizedMeanDifference": -4.3645488226058e-14,
+      "CandidateRoiNormalizedRmsDifference": 4.6520401980085254e-14
+    },
+    {
+      "File": "单点试打_20261113_115743437/before.bmp",
+      "NormalizeGain": 2.5048502870930935,
+      "NormalizeOffset": 1.0433032404567584,
+      "GlobalCorrelationWith1142After": 0.9961747264463899,
+      "CandidateRoiNormalizedMeanDifference": 11.661579869355405,
+      "CandidateRoiNormalizedRmsDifference": 13.855627414627559
+    },
+    {
+      "File": "单点试打_20261113_115743437/after.bmp",
+      "NormalizeGain": 2.4803744324582016,
+      "NormalizeOffset": 1.1801234758043648,
+      "GlobalCorrelationWith1142After": 0.9961239514730753,
+      "CandidateRoiNormalizedMeanDifference": 12.070694128926739,
+      "CandidateRoiNormalizedRmsDifference": 14.285186396720686
+    }
+  ],
+  "BrightnessModel1142To1157": {
+    "Gain": 0.39673028072259,
+    "Offset": -0.31485616432046193
+  },
+  "StableTextureRegistration": {
+    "Method": "Six stable 48x48 ROIs, bilinear shift grid +/-1px at 0.05px; exclude changed region",
+    "SampleNewAtOldPlusDxPx": 0.20000000000000018,
+    "SampleNewAtOldPlusDyPx": 0.25,
+    "MeanSquaredResidual": 1.5727718190754034,
+    "Limitations": "仅诊断小平移，非精度认证；未用拟合位移改写原图。"
+  },
+  "ChangedRegion": {
+    "ThresholdOriginal1157GrayDifference": 4,
+    "ConnectedPixels": 5695,
+    "BoundsXYXYInclusive": [
+      1074,
+      766,
+      1184,
+      873
+    ],
+    "PositiveResidualWeightedCentroidXY": [
+      1138.3063554787732,
+      827.07330609184
+    ],
+    "CoordinateOrigin": "原图左上角(0,0)",
+    "IsDrilledHoleCenter": false
+  },
+  "Conclusion": "跨轮亮度归一后，在约(1140,825)附近发现连贯局部增亮，11:57前图和后图均存在，前两轮同一区域未呈现这一变化。与厂家软件先出光再采图的时间顺序相容，但仅凭图像不能排除照明/指示光影响，尚非精密孔心。",
+  "Next": "请操作者确认标示区域是否为厂家软件打出的实际痕迹，并说明11:57本软件试打是否也实际出光；暂不追加试打或应用落点补偿。",
+  "RawImagesModified": false
+}

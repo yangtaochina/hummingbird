@@ -1,0 +1,55 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 582.841,
+    "Jxy": -48.884,
+    "Jyx": 49.023,
+    "Jyy": 583.025,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+  },
+  "Frames": [
+    {
+      "Name": "\u65B0\u6807\u5B9A_X\u6B630.1",
+      "ImagePath": "\u65B0\u6807\u5B9A_X\u6B630.1.bmp",
+      "X": -134.3488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T17:58:28.7614529+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "2B81C23EDF0CBB4C1AC4EE5BEA7A8245E46F4B9C695D99FD99DA22718B223A63",
+        "SettingsAtRegistration": {
+          "HintX": 0,
+          "HintY": 0,
+          "Jxx": 582.841,
+          "Jxy": -48.884,
+          "Jyx": 49.023,
+          "Jyy": 583.025,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    }
+  ]
+}

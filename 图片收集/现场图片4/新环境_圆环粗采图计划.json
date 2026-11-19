@@ -1,0 +1,92 @@
+{
+  "Purpose": "Coarse photo acquisition only, not machining or final alignment",
+  "OperatorConfirmedSameClampingAndCurrent1Hole": true,
+  "CoarseOffsetMm": [
+    0.3085380971679399,
+    0.18134557404539464
+  ],
+  "CoarseCenterHintMcs": [
+    -147.1186632168176,
+    -196.41091476800585
+  ],
+  "NewPixelMatrix": [
+    [
+      584.9557664990757,
+      -51.49699039756081
+    ],
+    [
+      51.55380666256244,
+      585.0785166023832
+    ]
+  ],
+  "OldLocalizationSource": "现场图片3/dial_alignment_preview.json",
+  "NewReferenceSource": "新标定_Y返回.bmp",
+  "StartMcs": {
+    "X": -134.4488,
+    "Y": -189.889,
+    "Z": -201.32052,
+    "C": 254.8249
+  },
+  "Stops": [
+    {
+      "Line": "N40 M0",
+      "Label": "RING_12",
+      "Name": "新定位_圆环12点",
+      "Role": "RingArc",
+      "X": -139.2348,
+      "Y": -184.3011,
+      "Z": -201.32052,
+      "C": 254.8249
+    },
+    {
+      "Line": "N60 M0",
+      "Label": "RING_3",
+      "Name": "新定位_圆环3点",
+      "Role": "RingArc",
+      "X": -135.0089,
+      "Y": -204.2948,
+      "Z": -201.32052,
+      "C": 254.8249
+    },
+    {
+      "Line": "N80 M0",
+      "Label": "RING_6",
+      "Name": "新定位_圆环6点",
+      "Role": "RingArc",
+      "X": -155.0025,
+      "Y": -208.5207,
+      "Z": -201.32052,
+      "C": 254.8249
+    },
+    {
+      "Line": "N100 M0",
+      "Label": "RING_9",
+      "Name": "新定位_圆环9点",
+      "Role": "RingArc",
+      "X": -159.2285,
+      "Y": -188.527,
+      "Z": -201.32052,
+      "C": 254.8249
+    },
+    {
+      "Line": "N120 M0",
+      "Label": "REFERENCE_11",
+      "Name": "新定位_参考11点",
+      "Role": "Reference11",
+      "X": -146.3935,
+      "Y": -181.9734,
+      "Z": -201.32052,
+      "C": 254.8249
+    },
+    {
+      "Line": "N140 M0",
+      "Label": "RETURN_1_CHECK",
+      "Name": "返回1点核对，无需新照片",
+      "Role": "CheckOnly",
+      "X": -134.4488,
+      "Y": -189.889,
+      "Z": -201.32052,
+      "C": 254.8249
+    }
+  ]
+}

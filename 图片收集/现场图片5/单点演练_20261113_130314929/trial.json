@@ -1,0 +1,102 @@
+{
+  "Version": 1,
+  "DeviceMode": "Real",
+  "DryRun": true,
+  "Completed": true,
+  "Phase": "DryRunCompleted",
+  "Started": "2026-11-13T13:03:14.9307474+08:00",
+  "Finished": "2026-11-13T13:03:15.505361+08:00",
+  "RequestedExposureMs": null,
+  "CommandWindowMs": null,
+  "OpticalExposureMs": null,
+  "EmissionRequested": false,
+  "ShutdownConfirmed": null,
+  "LaserStateBefore": null,
+  "StartPosition": {
+    "X": -138.8886,
+    "Y": -191.365,
+    "Z": -201.316,
+    "C": 254.8241,
+    "CSource": "ManualPanelEntry",
+    "CNode": null,
+    "ReadAt": "2026-11-13T13:03:14.9786159+08:00",
+    "XyzSource": "OpcUaReadback"
+  },
+  "EndPosition": {
+    "X": -138.8886,
+    "Y": -191.365,
+    "Z": -201.316,
+    "C": 254.8241,
+    "CSource": "ManualPanelEntry",
+    "CNode": null,
+    "ReadAt": "2026-11-13T13:03:15.5050979+08:00",
+    "XyzSource": "OpcUaReadback"
+  },
+  "BeforeImage": {
+    "FileName": "before.bmp",
+    "Sha256": "CE0CC03EA7B7F8C39FC38016BCC3022CDF62F8A1A5C88ABAB830E79384710A66",
+    "Width": 1920,
+    "Height": 1200,
+    "CameraTime": "2026-11-13T13:03:15.2959514+08:00",
+    "Position": {
+      "X": -138.8886,
+      "Y": -191.365,
+      "Z": -201.316,
+      "C": 254.8241,
+      "CSource": "ManualPanelEntry",
+      "CNode": null,
+      "ReadAt": "2026-11-13T13:03:14.9786159+08:00",
+      "XyzSource": "OpcUaReadback"
+    }
+  },
+  "AfterImage": {
+    "FileName": "after.bmp",
+    "Sha256": "8FA66C2AAE8A238A6E06CFA882ED5960241D225F88FE4EFEDFC11A06D21C3E83",
+    "Width": 1920,
+    "Height": 1200,
+    "CameraTime": "2026-11-13T13:03:15.4596814+08:00",
+    "Position": {
+      "X": -138.8886,
+      "Y": -191.365,
+      "Z": -201.316,
+      "C": 254.8241,
+      "CSource": "ManualPanelEntry",
+      "CNode": null,
+      "ReadAt": "2026-11-13T13:03:15.4371785+08:00",
+      "XyzSource": "OpcUaReadback"
+    }
+  },
+  "OperatorNotes": "",
+  "SoftwareOpticalSettings": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 582.841,
+    "Jxy": -48.884,
+    "Jyx": 49.023,
+    "Jyy": 583.025,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+  },
+  "RequestedCameraExposureUs": 2000,
+  "RequestedCameraGain": 0,
+  "Error": null,
+  "LogLines": [
+    "[2026-11-13T13:03:14.9365516\u002B08:00] [INFO] [\u5355\u70B9\u91C7\u56FE] \u65E0\u51FA\u5149\u6F14\u7EC3\uFF1B\u4FDD\u5B58\u76EE\u5F55 D:\\\u6FC0\u5149\u6D4B\u8BD5\\\u5355\u70B9\u6F14\u7EC3_20261113_130314929\uFF1B\u4E0D\u79FB\u52A8\u4EFB\u4F55\u8F74\u3002",
+    "[2026-11-13T13:03:15.2959319\u002B08:00] [INFO] [\u76F8\u673A] \u91C7\u56FE\u6210\u529F 1920x1200\uFF0C\u8017\u65F6 34ms",
+    "[2026-11-13T13:03:15.4109674\u002B08:00] [INFO] [\u5355\u70B9\u91C7\u56FE] \u65E0\u51FA\u5149\u6F14\u7EC3\uFF1A\u4EC5\u91C7\u96C6\u524D\u540E\u7167\u7247\uFF0C\u4E0D\u53D1\u9001\u6FC0\u5149\u8BFB\u5199\u6216\u8F74\u8FD0\u52A8\u6307\u4EE4\u3002",
+    "[2026-11-13T13:03:15.4596747\u002B08:00] [INFO] [\u76F8\u673A] \u91C7\u56FE\u6210\u529F 1920x1200\uFF0C\u8017\u65F6 22ms"
+  ],
+  "Limitations": [
+    "\u8BF7\u6C42\u65F6\u957F\u53CA\u901A\u4FE1\u7A97\u53E3\u4E0D\u7B49\u4E8E\u771F\u5B9E\u5149\u5B66\u51FA\u5149\u65F6\u957F\uFF1B\u672A\u9A8C\u8BC1\u52A0\u5DE5\u7CBE\u5EA6\u3002",
+    "EmissionRequested\u8BB0\u5F55\u8F6F\u4EF6\u7684\u51FA\u5149\u8BF7\u6C42\u610F\u56FE\uFF0C\u4E0D\u4FDD\u8BC1\u8BBE\u5907\u5DF2\u5B9E\u9645\u51FA\u5149\u3002",
+    "\u672C\u6D41\u7A0B\u4E0D\u53D1\u9001\u8F74\u8FD0\u52A8\u6216\u53C2\u6570\u4FEE\u6539\u6307\u4EE4\uFF1B\u5FEB\u7167\u6838\u5BF9\u4E0D\u4EE3\u66FF\u673A\u5E8A\u786C\u4EF6\u4E92\u9501\u6216\u53C2\u8003\u72B6\u6001\u786E\u8BA4\u3002",
+    "C\u65E0\u5B9E\u9645\u53CD\u9988\u8282\u70B9\u65F6\u662F\u624B\u586B\u503C\uFF0C\u4E0D\u8868\u793A\u8F6F\u4EF6\u76D1\u6D4B\u4E86C\u8F74\u5168\u7A0B\u4E0D\u52A8\u3002",
+    "\u76F8\u673A\u8BBE\u7F6E\u8BB0\u5F55\u4E3A\u8F6F\u4EF6\u8BF7\u6C42\u503C\uFF0C\u672A\u81EA\u52A8\u8BC1\u660E\u5149\u5B66\u72B6\u6001\u3001\u5B9E\u9645\u66DD\u5149\u6216\u6807\u5B9A\u6709\u6548\u3002",
+    "\u6F14\u7EC3\u4E0D\u53D1\u9001\u6FC0\u5149\u6307\u4EE4\uFF0C\u4E0D\u80FD\u636E\u6B64\u5224\u65AD\u5916\u90E8\u8F6F\u4EF6\u662F\u5426\u5DF2\u5173\u5149\u3002"
+  ]
+}

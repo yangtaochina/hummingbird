@@ -1,0 +1,32 @@
+{
+  "Purpose": "Power-cycle MCS comparison, awaiting distinct before/after values",
+  "BeforeFile": "关机前的位置.jpg",
+  "AfterFile": "开机后的位置.jpg",
+  "BeforeSha256": "6eb3a6d3eaba554662ae8285c5b51e73404ab3b7cf474b882cbb4f2bc87d0b6e",
+  "AfterSha256": "6eb3a6d3eaba554662ae8285c5b51e73404ab3b7cf474b882cbb4f2bc87d0b6e",
+  "IdenticalFileContent": true,
+  "DisplayedMcsInBothImages": {
+    "X": -131.059,
+    "Y": -191.004,
+    "Z": -201.316,
+    "B": 0.0,
+    "C": 254.824,
+    "Z2": -238.482
+  },
+  "DisplayDecimalPlaces": 3,
+  "ScreenText": [
+    "MCS",
+    "REF.POINT",
+    "中断",
+    "停止：方式组未就绪",
+    "700020 X轴次级流量报警"
+  ],
+  "ChangeBeforeAfter": null,
+  "AutomaticCoordinateCompensationApplied": false,
+  "Notes": [
+    "两份图片字节完全相同，不能据此计算关开机差值。",
+    "REF.POINT为画面模式信息，仅凭此不能认定参考点丢失。",
+    "不得将当前照片与昨天较早采图坐标的差直接当作关机造成的差。",
+    "等待实际前后MCS值及启动/参考状态，再决定是否保留原定位。"
+  ]
+}

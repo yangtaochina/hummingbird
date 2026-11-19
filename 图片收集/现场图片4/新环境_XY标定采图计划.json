@@ -1,0 +1,67 @@
+{
+  "Purpose": "New optics XY response calibration photo plan, not a fitted calibration",
+  "BaselineImage": "新环境_标定起点.bmp",
+  "BaselineImageSha256": "627A5D82BFBEE2D2622806930EF21BB56ACCCC11FDA5DE9F93C2A9E5071D7FBF",
+  "StartMcs": {
+    "X": -134.4488,
+    "Y": -189.889,
+    "Z": -201.32052,
+    "C": 254.8249
+  },
+  "StepMm": 0.1,
+  "FeedMmPerMinute": 6,
+  "OldPixelMatrixMustNotBeUsed": true,
+  "Stops": [
+    {
+      "Line": "N20 M0",
+      "Image": "新环境_标定起点.bmp",
+      "AlreadyCaptured": true,
+      "ExpectedMcs": {
+        "X": -134.4488,
+        "Y": -189.889,
+        "Z": -201.32052,
+        "C": 254.8249
+      }
+    },
+    {
+      "Line": "N40 M0",
+      "Image": "新标定_X正0.1.bmp",
+      "ExpectedMcs": {
+        "X": -134.3488,
+        "Y": -189.889,
+        "Z": -201.32052,
+        "C": 254.8249
+      }
+    },
+    {
+      "Line": "N60 M0",
+      "Image": "新标定_X返回.bmp",
+      "ExpectedMcs": {
+        "X": -134.4488,
+        "Y": -189.889,
+        "Z": -201.32052,
+        "C": 254.8249
+      }
+    },
+    {
+      "Line": "N80 M0",
+      "Image": "新标定_Y正0.1.bmp",
+      "ExpectedMcs": {
+        "X": -134.4488,
+        "Y": -189.789,
+        "Z": -201.32052,
+        "C": 254.8249
+      }
+    },
+    {
+      "Line": "N100 M0",
+      "Image": "新标定_Y返回.bmp",
+      "ExpectedMcs": {
+        "X": -134.4488,
+        "Y": -189.889,
+        "Z": -201.32052,
+        "C": 254.8249
+      }
+    }
+  ]
+}

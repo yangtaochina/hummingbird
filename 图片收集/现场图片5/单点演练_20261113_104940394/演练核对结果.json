@@ -1,0 +1,76 @@
+{
+  "Purpose": "Read-only review of first onsite stationary spot dry run",
+  "SourceTrial": "trial.json",
+  "ExpectedArchiveFilesPresent": true,
+  "DryRun": true,
+  "Completed": true,
+  "Phase": "DryRunCompleted",
+  "EmissionRequested": false,
+  "RequestedExposureMs": null,
+  "RecordedStartMcs": {
+    "X": -138.55901,
+    "Y": -191.00413,
+    "Z": -201.316,
+    "C": 254.8241,
+    "CSource": "ManualPanelEntry",
+    "CNode": null,
+    "ReadAt": "2026-11-13T10:49:40.4365539+08:00",
+    "XyzSource": "OpcUaReadback"
+  },
+  "RecordedEndMcs": {
+    "X": -138.55901,
+    "Y": -191.00413,
+    "Z": -201.316,
+    "C": 254.8241,
+    "CSource": "ManualPanelEntry",
+    "CNode": null,
+    "ReadAt": "2026-11-13T10:49:41.0481792+08:00",
+    "XyzSource": "OpcUaReadback"
+  },
+  "SameRecordedXYZ": true,
+  "CSource": "ManualPanelEntry",
+  "OpticalSettingsRestoredToLatest": true,
+  "RequestedCameraExposureUs": 2000,
+  "RequestedCameraGain": 0,
+  "Images": [
+    {
+      "File": "before.bmp",
+      "HashMatchesManifestAndSidecar": true,
+      "Width": 1920,
+      "Height": 1200,
+      "MeanGray": 10.113495225694445,
+      "GrayStd": 6.689261411105541,
+      "MinimumGray": 3.0,
+      "MaximumGray": 68.0,
+      "P99Gray": 32.0,
+      "SaturatedPixelFraction": 0.0
+    },
+    {
+      "File": "after.bmp",
+      "HashMatchesManifestAndSidecar": true,
+      "Width": 1920,
+      "Height": 1200,
+      "MeanGray": 10.087144097222222,
+      "GrayStd": 6.676381372623062,
+      "MinimumGray": 2.0,
+      "MaximumGray": 69.0,
+      "P99Gray": 32.0,
+      "SaturatedPixelFraction": 0.0
+    }
+  ],
+  "MeanAbsolutePixelDifference": 0.5499275173611111,
+  "PixelDifferenceRms": 0.8226120216690518,
+  "WholeImageCorrelation": 0.9924336167868126,
+  "FeatureRegistration": {
+    "SiftRatioMatches": 5,
+    "ReliableSubpixelTransform": false,
+    "DisplacementPixels": null
+  },
+  "Notes": [
+    "本次采图和归档链路完成，流程未发送出光指令；不代表确认外部激光器状态或实际激光功能。",
+    "XYZ来自OPC UA；C为手填值，相同C记录不能证明硬件C轴全程未动。",
+    "前后图整体相似，但图像偏暗，特征不足以给出可靠亚像素位移；不发布微米精度结论。",
+    "正确的新光学参数已归档。下一步只比较4000us、8000us曝光，增益0、轴和光学安装保持不变，时长继续留空，仅做无出光演练。",
+    "此演练未读取激光参数；最新激光状态须在真实试打前重新只读核对，不能假定仍是此前功率0/50kHz。"
+  ]
+}

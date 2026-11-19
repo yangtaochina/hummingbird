@@ -1,0 +1,55 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": -147.118663,
+    "HintY": -196.410915,
+    "Jxx": 584.955766,
+    "Jxy": -51.49699,
+    "Jyx": 51.553807,
+    "Jyy": 585.078517,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-12 \u955C\u5934/\u76F8\u673A\u9AD8\u5EA6\u8C03\u6574\u540E\uFF0C\u65B0\u73AF\u5883Z=-201.32052mm\u3001C=254.8249\u00B0\uFF1BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\uFF0C\u4E09\u5904\u7EB9\u7406NCC\u002BECC\u5E73\u79FB\u914D\u51C6\uFF0C\u9010\u533A\u57DF\u6263\u9664\u534A\u8FD4\u56DE\u504F\u79FB\u540E\u53D6\u4E2D\u503C\u3002\u4EC5\u5C40\u90E8\u5B9A\u4F4D\u8BD5\u9A8C\u6807\u5B9A\uFF1B\u5F53\u524D\u5706\u5FC3/\u65B9\u5411\u548C\u6FC0\u5149\u843D\u70B9\u5C1A\u5F85\u72EC\u7ACB\u6838\u5BF9\u3002 \u64CD\u4F5C\u8005\u786E\u8BA4\u8868\u76D8\u672A\u91CD\u65B0\u88C5\u5939\u4E14\u5F53\u524D\u4ECD\u4E3A1\u70B9\u5B54\uFF1B\u7C97\u4E2D\u5FC3\u4EC5\u7531\u5386\u53F2\u5B9A\u4F4D\u52A0\u540C\u5B54\u53C2\u8003\u70B9\u53D8\u5316\u4F30\u8BA1\uFF0C\u7528\u4F5C\u5706\u73AF\u641C\u7D22\u521D\u503C\uFF0C\u6700\u7EC8\u5706\u5FC3/\u65B9\u5411\u5FC5\u987B\u7531\u672C\u6B21\u65B0\u56FE\u91CD\u65B0\u62DF\u5408\u3002\u590D\u7528Y\u8FD4\u56DE\u56FE\u4E3A1\u70B9\u7528\u9014\uFF0C\u539F\u59CB\u5355\u5E27\u8BB0\u5F55\u672A\u6539\u3002"
+  },
+  "Frames": [
+    {
+      "Name": "\u65B0\u5B9A\u4F4D_\u5706\u73AF3\u70B9",
+      "ImagePath": "\u65B0\u5B9A\u4F4D_\u5706\u73AF3\u70B9.bmp",
+      "X": -135.0089,
+      "Y": -204.2948,
+      "Z": -201.32052,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T18:23:23.6418318+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "3A16E6C4BA8DBEA5B1C33435793E87D5BE0E398F66AAD0DFC473AD679F971C79",
+        "SettingsAtRegistration": {
+          "HintX": -147.118663,
+          "HintY": -196.410915,
+          "Jxx": 584.955766,
+          "Jxy": -51.49699,
+          "Jyx": 51.553807,
+          "Jyy": 585.078517,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-12 \u955C\u5934/\u76F8\u673A\u9AD8\u5EA6\u8C03\u6574\u540E\uFF0C\u65B0\u73AF\u5883Z=-201.32052mm\u3001C=254.8249\u00B0\uFF1BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\uFF0C\u4E09\u5904\u7EB9\u7406NCC\u002BECC\u5E73\u79FB\u914D\u51C6\uFF0C\u9010\u533A\u57DF\u6263\u9664\u534A\u8FD4\u56DE\u504F\u79FB\u540E\u53D6\u4E2D\u503C\u3002\u4EC5\u5C40\u90E8\u5B9A\u4F4D\u8BD5\u9A8C\u6807\u5B9A\uFF1B\u5F53\u524D\u5706\u5FC3/\u65B9\u5411\u548C\u6FC0\u5149\u843D\u70B9\u5C1A\u5F85\u72EC\u7ACB\u6838\u5BF9\u3002 \u64CD\u4F5C\u8005\u786E\u8BA4\u8868\u76D8\u672A\u91CD\u65B0\u88C5\u5939\u4E14\u5F53\u524D\u4ECD\u4E3A1\u70B9\u5B54\uFF1B\u7C97\u4E2D\u5FC3\u4EC5\u7531\u5386\u53F2\u5B9A\u4F4D\u52A0\u540C\u5B54\u53C2\u8003\u70B9\u53D8\u5316\u4F30\u8BA1\uFF0C\u7528\u4F5C\u5706\u73AF\u641C\u7D22\u521D\u503C\uFF0C\u6700\u7EC8\u5706\u5FC3/\u65B9\u5411\u5FC5\u987B\u7531\u672C\u6B21\u65B0\u56FE\u91CD\u65B0\u62DF\u5408\u3002\u590D\u7528Y\u8FD4\u56DE\u56FE\u4E3A1\u70B9\u7528\u9014\uFF0C\u539F\u59CB\u5355\u5E27\u8BB0\u5F55\u672A\u6539\u3002"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "RingArc"
+    }
+  ]
+}

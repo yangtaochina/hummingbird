@@ -1,0 +1,43 @@
+{
+  "SourceTrialStarted": "2026-11-13T11:57:43.4379619+08:00",
+  "Completed": true,
+  "ShutdownReadbackConfirmed": true,
+  "RequestedExposureMs": 2000,
+  "CommandWindowMs": 3058.8567,
+  "MeasuredOpticalExposureMs": null,
+  "PowerRaw": 3600,
+  "NativePowerPercentReportedByOperator": 3,
+  "PowerRawToPercentConversionApplied": false,
+  "FrequencyKhz": 100,
+  "BurstCount": 1,
+  "RequestedCameraExposureUs": 5000,
+  "RequestedCameraGain": 0,
+  "XyzStartEndEqual": true,
+  "CSource": "ManualPanelEntry",
+  "Integrity": {
+    "BeforeImage": {
+      "Sha256Matches": true,
+      "SidecarMatches": true
+    },
+    "AfterImage": {
+      "Sha256Matches": true,
+      "SidecarMatches": true
+    }
+  },
+  "ImageComparison": {
+    "BeforeMeanGray": 16.25909982638889,
+    "AfterMeanGray": 16.366815104166665,
+    "Correlation": 0.9956559327355201,
+    "DifferenceRmsGray": 1.005610131269127,
+    "MaxAbsoluteDifferenceGray": 8.0,
+    "AbsDifference99PercentileGray": 3.0
+  },
+  "Conclusion": "流程完成、关光读回0；这对原图尚未可靠识别到新增试打痕迹，不能据此计算激光落点或判断加工深度。",
+  "Pending": "操作者已说明：修复硬件后用厂家软件试打。新增痕迹可能早于11:57前图，需结合跨轮对比核对结果.json及跨轮对比_局部亮度归一.png。",
+  "Limitations": [
+    "软件请求2000ms及命令窗口3058.8567ms均非实测光学出光时长。",
+    "本轮原图比上一轮明显暗，JSON只记录相机请求值，不能证明实际曝光/照明与上一轮一致。",
+    "未修改激光、相机、机床或正式落点标定参数。"
+  ],
+  "CrossRoundFollowup": "跨轮比较发现最新前后图均有约(1138,827)附近新增坑状/环状变化；原结论仅限于11:57这一对前后图未见进一步明显变化，不能用它否定厂家软件先试打留下的痕迹。尚待确认本软件试打按钮是否实际触发出光。"
+}

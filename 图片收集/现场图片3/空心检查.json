@@ -1,0 +1,274 @@
+{
+  "Kind": "DatumHoleInspection",
+  "GeneratedAt": "2026-11-12T16:42:12.6321218+08:00",
+  "PreviewOnly": true,
+  "Settings": {
+    "HintX": -147.5454,
+    "HintY": -196.6474,
+    "Jxx": 585.826,
+    "Jxy": -49.827,
+    "Jyx": 49.134,
+    "Jyy": 586.778,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+  },
+  "Inspections": [
+    {
+      "Frame": {
+        "Name": "XY\u590D\u6838_1\u70B9\u9996\u6B21",
+        "ImagePath": "D:\\XY\u590D\u6838_1\u70B9\u9996\u6B21.bmp",
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:41:06.1978693+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "4B215E04306F33AB3A8C9BF0D6829E2859FDDD22DECC567A2ACA86FB10C7BBB5",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference11"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "XY\u590D\u6838_1\u70B9\u9996\u6B21",
+          "ImagePath": "D:\\XY\u590D\u6838_1\u70B9\u9996\u6B21.bmp",
+          "Px": 953.4241333007812,
+          "Py": 601.6212158203125,
+          "MachineX": -134.42070718951305,
+          "MachineY": -190.04745177319325,
+          "EllipseWidthPx": 226.39987182617188,
+          "EllipseHeightPx": 274.25439453125,
+          "EllipseAngleDeg": 144.07701110839844,
+          "CenterSpreadMm": 0.017772779715716207,
+          "CoreMedian": 19,
+          "AnnulusMedian": 75.5,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 943.6423950195312,
+              "Py": 604.652099609375
+            },
+            {
+              "Threshold": 22,
+              "Px": 947.0745849609375,
+              "Py": 601.6212158203125
+            },
+            {
+              "Threshold": 24,
+              "Px": 944.9163208007812,
+              "Py": 595.556396484375
+            },
+            {
+              "Threshold": 26,
+              "Px": 954.5150756835938,
+              "Py": 601.16455078125
+            },
+            {
+              "Threshold": 28,
+              "Px": 953.4241333007812,
+              "Py": 598.671142578125
+            },
+            {
+              "Threshold": 30,
+              "Px": 955.4681396484375,
+              "Py": 602.31787109375
+            },
+            {
+              "Threshold": 32,
+              "Px": 954.0950927734375,
+              "Py": 602.0048828125
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602717.8\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED326\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966419\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F977\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602717.8\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u72EC\u7ACB\u6838\u5BF9_5\u70B9",
+        "ImagePath": "D:\\\u72EC\u7ACB\u6838\u5BF9_5\u70B9.bmp",
+        "X": -148.1999,
+        "Y": -211.0216,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:57:32.8393705+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "96A4454F51D53DD7B582C46228BBB7315E0AAE0C14D5F8045B7B6570C34F76FC",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Rejected",
+      "Candidates": [],
+      "Message": "\u72EC\u7ACB\u6838\u5BF9_5\u70B9 \u672A\u68C0\u51FA\u7A33\u5B9A\u3001\u5B8C\u6574\u7684\u53C2\u8003\u5B54\u3002\u8BF7\u68C0\u67E5\u5B54\u7F18\u3001\u9634\u5F71\u548C\u66DD\u5149\uFF1B\u4E0D\u8981\u653E\u5BBD\u6761\u4EF6\u5F3A\u884C\u53D6\u5FC3\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED325\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966423\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F972\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE",
+        "ImagePath": "D:\\\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE.bmp",
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T16:09:04.3525742+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "9E82586E16A7188ADAAE7307687A9191A76F639EFEEC58909183AC2BAE9EBFF6",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE",
+          "ImagePath": "D:\\\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE.bmp",
+          "Px": 954.3806457519531,
+          "Py": 601.5035400390625,
+          "MachineX": -134.42231146515408,
+          "MachineY": -190.04711689311833,
+          "EllipseWidthPx": 224.0627899169922,
+          "EllipseHeightPx": 275.2203063964844,
+          "EllipseAngleDeg": 143.95082092285156,
+          "CenterSpreadMm": 0.01862338848516822,
+          "CoreMedian": 19,
+          "AnnulusMedian": 73,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 945.0210571289062,
+              "Py": 602.3896484375
+            },
+            {
+              "Threshold": 22,
+              "Px": 947.6771850585938,
+              "Py": 602.3353271484375
+            },
+            {
+              "Threshold": 24,
+              "Px": 945.6513061523438,
+              "Py": 594.8952026367188
+            },
+            {
+              "Threshold": 26,
+              "Px": 955.1766967773438,
+              "Py": 600.6717529296875
+            },
+            {
+              "Threshold": 28,
+              "Px": 954.1400146484375,
+              "Py": 598.5946044921875
+            },
+            {
+              "Threshold": 30,
+              "Px": 956.2152099609375,
+              "Py": 603.3004150390625
+            },
+            {
+              "Threshold": 32,
+              "Px": 954.6212768554688,
+              "Py": 602.3370971679688
+            },
+            {
+              "Threshold": 34,
+              "Px": 961.9595947265625,
+              "Py": 596.6585693359375
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602718.6\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED326\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966418\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F978\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602718.6\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    }
+  ]
+}

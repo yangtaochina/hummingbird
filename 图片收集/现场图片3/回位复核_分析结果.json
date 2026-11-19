@@ -1,0 +1,76 @@
+{
+  "status": "failed_return_consistency_check_pause_motion_and_laser_tests_pending_air_supply_inspection",
+  "sourceSession": "回位复核.json",
+  "program": "HM_CHECK_124023472 / HM_C_RETURN5.MPF",
+  "frameMetadata": [
+    {
+      "name": "回位复核_起点",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 252.1249
+    },
+    {
+      "name": "回位复核_正5度",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 257.1249
+    },
+    {
+      "name": "回位复核_返回",
+      "X": -134.3173,
+      "Y": -190.1853,
+      "Z": -201.56148,
+      "C": 252.1249
+    }
+  ],
+  "panelPlus5": {
+    "X": -134.3173,
+    "Y": -190.1853,
+    "Z": -201.5615,
+    "B": 0.0005,
+    "C": 257.1249,
+    "Z2": -238.4865,
+    "stop": "N40 M0"
+  },
+  "panelReturn": {
+    "X": -134.3173,
+    "Y": -190.1853,
+    "Z": -201.5615,
+    "B": 0.0005,
+    "C": 252.1249,
+    "Z2": -238.4865,
+    "stop": "N60 M0"
+  },
+  "returnPanelAlarm": {
+    "number": 700007,
+    "text": "总气源压力低",
+    "sourceImage": "回位复核_返回.jpg"
+  },
+  "earlierPanelAlarm": {
+    "number": 700020,
+    "text": "X轴次级流量报警"
+  },
+  "userAirSupplyInspectionStatus": "尚未核查",
+  "textureRegistrationStartToReturn": {
+    "method": "SIFT + RANSAC部分仿射，仅描述图像特征之间的关系",
+    "matches": 149,
+    "inliers": 124,
+    "rotationDeg": -2.0269,
+    "scale": 0.99892,
+    "referencePixel": [
+      985,
+      585
+    ],
+    "mappedPixel": [
+      815.966,
+      880.186
+    ]
+  },
+  "conclusion": "XYZ/C读数返回且B、Z2的可读面板值一致，图像未恢复；本次只转C，未编写XY补偿，故不能仅归因于上一版XY跟踪预测。图像相对转角不等同于已经测得C轴机械角度误差。",
+  "rootCause": "尚未确定。气源报警与回位图像变化的因果关系需现场设备人员确认，不能由照片判定是表盘滑动、夹具松动、气路/支承状态、相机固定或C轴传动中的哪一项。",
+  "next": "暂停C轴及出光试验；由现场设备人员按厂家要求核查气源、相关夹持/支承气路及固定状态，处理报警并确认稳定后，再进行回位复验。当前不发布旋转中心或补偿参数。",
+  "sessionCaveat": "原JSON混有前轮C跟踪帧，其C输入曾沿用252.1249，不能直接作为旧轮真实角度；本轮三帧C记录与面板相符。原JSON保存的J仍为旧默认值，本轮不据其验收微米级精度。",
+  "appCodeChanged": false
+}

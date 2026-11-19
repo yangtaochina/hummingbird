@@ -1,0 +1,27 @@
+{
+  "Purpose": "Read-only image quality review of operator-selected camera exposure",
+  "Image": "5000us.bmp",
+  "Sha256": "1E8EC3CFD9DE4DF6DE768EB2B5AEE8D0DC0B8ACE02E4414BD0379BFE15BD0243",
+  "ExposureUsReportedByOperator": 5000,
+  "ActualCameraExposureReadbackAvailable": false,
+  "PositionSnapshotAvailable": false,
+  "Width": 1920,
+  "Height": 1200,
+  "MeanGray": 41.93449131944445,
+  "MaximumGray": 255.0,
+  "P99Gray": 128.0,
+  "NearSaturationThresholdGray": 250,
+  "NearSaturationPixelCount": 25,
+  "NearSaturationFraction": 1.0850694444444445e-05,
+  "Center200PixelsMeanGray": 99.883925,
+  "Center200PixelsP99Gray": 141.01000000000204,
+  "Center200PixelsNearSaturationCount": 0,
+  "Decision": "可固定用户选择的5000us作后续观察基准，不再要求4000/8000逐档演练。",
+  "Notes": [
+    "主体亮度和纹理优于先前2000us演练图，没有大面积过曝，个别反光点接近饱和。",
+    "单张图不能验证激光焦点、落点、材料成分、孔深或微米加工精度。",
+    "5000us为用户说明，本张没有位姿/曝光读回配套记录；不伪造当前MCS或实际硬件设置。",
+    "后续实际试打使用程序当时自动采集的before图，而非直接复用本图。软件相机曝光框也应设为5000并应用，确保请求值归档一致。",
+    "不再改变镜头/相机安装高度，增益保持0。请求出光时长继续留空，直到本次真实试打条件确定。"
+  ]
+}

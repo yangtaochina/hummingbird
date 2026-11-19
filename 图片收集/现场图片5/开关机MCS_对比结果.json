@@ -1,0 +1,84 @@
+{
+  "Purpose": "Read-only before/after power-cycle MCS comparison",
+  "Sources": [
+    {
+      "File": "关机前的位置.jpg",
+      "Sha256": "1603d1853d187ff511dfc715756748b23b817ca0e1be07ecbd548f20c45b9fc4"
+    },
+    {
+      "File": "开机后的位置.jpg",
+      "Sha256": "6eb3a6d3eaba554662ae8285c5b51e73404ab3b7cf474b882cbb4f2bc87d0b6e"
+    }
+  ],
+  "BeforeDisplayedMcs": {
+    "X": -134.4488,
+    "Y": -189.889,
+    "Z": -201.3205,
+    "B": 0.0005,
+    "C": 254.8249,
+    "Z2": -238.4865
+  },
+  "AfterDisplayedMcs": {
+    "X": -131.059,
+    "Y": -191.004,
+    "Z": -201.316,
+    "B": 0.0,
+    "C": 254.824,
+    "Z2": -238.482
+  },
+  "BeforeDecimalPlaces": 4,
+  "AfterDecimalPlaces": 3,
+  "ApproximateDisplayedDifferences": {
+    "X": 3.3898,
+    "Y": -1.115,
+    "Z": 0.0045,
+    "B": -0.0005,
+    "C": -0.0009,
+    "Z2": 0.0045
+  },
+  "ApproximateXYDifferenceMm": 3.568468724817411,
+  "BeforeScreen": {
+    "Mode": "AUTO",
+    "State": "复位",
+    "Alarm": "700020 X轴次级流量报警"
+  },
+  "AfterScreen": {
+    "Mode": "REF.POINT",
+    "State": "中断 / 停止：方式组未就绪",
+    "Alarm": "700020 X轴次级流量报警",
+    "OtherVisibleMessage": "3080 急停"
+  },
+  "ConditionalPrediction": {
+    "IfRealXYAxisDisplacementAndSameOpticsOnly": true,
+    "PixelDisplacement": [
+      2040.3022015718473,
+      -477.605452186903
+    ],
+    "NotProofOfActualPhysicalMotion": true
+  },
+  "CauseDetermined": false,
+  "CoordinateOffsetAutomaticallyApplied": false,
+  "OldAbsoluteTargetsApprovedForUse": false,
+  "Notes": [
+    "X/Y显示变化为毫米量级，不是显示末位差异。",
+    "开机后显示精度只有三位小数，Z/B/C/Z2小变化不能据照片判定精确量或原因。",
+    "待确认拍照前是否已完成厂家规定开机和参考流程，是否已有轴移动，以及光学/装夹是否调整。",
+    "当前方式组未就绪及REF.POINT模式不单独证明参考点丢失，也不证明坐标基准有效。",
+    "先被动记录当前相机原图和MCS读数，不直接回昨天坐标、不修改机床零点或加软件补偿。",
+    "若只是实际位置变化且基准、光学保持，像素标定不因开关机必然作废；绝对孔位需复核。"
+  ],
+  "OperatorConfirmedStartupOperations": "刚上电，尚未回参考点，也未移动轴",
+  "OperatorConfirmedOpticsAndClamping": "表盘移动后放回，可能有微小平移/转动；不能继续按工件未动解释图像。",
+  "NextStep": "先在当前未移动状态保存相机原图和实际XYZC；再由设备人员完成厂家规定开机及参考状态核查，到就绪后重新读取MCS。尚不安排回昨天绝对坐标或激光出光。",
+  "EarlierOperatorStatementSuperseded": "此前回答“均未调整”，后补充表盘实际移动后放回。",
+  "CurrentCameraImage": "开机_当前画面.bmp",
+  "CurrentCameraImageMcs": {
+    "X": -131.05901,
+    "Y": -191.00413,
+    "Z": -201.316,
+    "C": 254.8241
+  },
+  "WorkpiecePoseUnchangedAssumptionValid": false,
+  "SubsequentOperatorConfirmation": "已由设备人员确认机床就绪及参考有效；不能据此判断之前拍照时状态。",
+  "RootCauseDetermined": false
+}

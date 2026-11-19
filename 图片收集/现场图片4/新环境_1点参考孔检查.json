@@ -1,0 +1,142 @@
+{
+  "Kind": "DatumHoleInspection",
+  "GeneratedAt": "2026-11-12T18:11:01.6562769+08:00",
+  "PreviewOnly": true,
+  "Settings": {
+    "HintX": 0,
+    "HintY": 0,
+    "Jxx": 584.955766,
+    "Jxy": -51.49699,
+    "Jyx": 51.553807,
+    "Jyy": 585.078517,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-12 \u955C\u5934/\u76F8\u673A\u9AD8\u5EA6\u8C03\u6574\u540E\uFF0C\u65B0\u73AF\u5883Z=-201.32052mm\u3001C=254.8249\u00B0\uFF1BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\uFF0C\u4E09\u5904\u7EB9\u7406NCC\u002BECC\u5E73\u79FB\u914D\u51C6\uFF0C\u9010\u533A\u57DF\u6263\u9664\u534A\u8FD4\u56DE\u504F\u79FB\u540E\u53D6\u4E2D\u503C\u3002\u4EC5\u5C40\u90E8\u5B9A\u4F4D\u8BD5\u9A8C\u6807\u5B9A\uFF1B\u5F53\u524D\u5706\u5FC3/\u65B9\u5411\u548C\u6FC0\u5149\u843D\u70B9\u5C1A\u5F85\u72EC\u7ACB\u6838\u5BF9\u3002"
+  },
+  "Inspections": [
+    {
+      "Frame": {
+        "Name": "\u65B0\u73AF\u5883_1\u70B9\u53C2\u8003\u5B54",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_Y\u8FD4\u56DE.bmp",
+        "X": -134.4488,
+        "Y": -189.889,
+        "Z": -201.32052,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T18:00:16.1874999+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "3CE662F3478946B6604B7CCE69CA8578A556CDECB9E0710D216D7E51D439B719",
+          "SettingsAtRegistration": {
+            "HintX": 0,
+            "HintY": 0,
+            "Jxx": 582.841,
+            "Jxy": -48.884,
+            "Jyx": 49.023,
+            "Jyy": 583.025,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-09 X/Y \u00B10.100mm \u8BD5\u6D4B\u3002\u5F53\u524D\u9AD8\u5EA6\u548C\u6210\u50CF\u8BBE\u7F6E\u9700\u590D\u6838\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": true
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u65B0\u73AF\u5883_1\u70B9\u53C2\u8003\u5B54",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72474\\\u65B0\u6807\u5B9A_Y\u8FD4\u56DE.bmp",
+          "Px": 769.83154296875,
+          "Py": 566.6785888671875,
+          "MachineX": -134.12215120255462,
+          "MachineY": -189.86168499593103,
+          "EllipseWidthPx": 222.92660522460938,
+          "EllipseHeightPx": 234.3245086669922,
+          "EllipseAngleDeg": 112.82476806640625,
+          "CenterSpreadMm": 0.01304818698610257,
+          "CoreMedian": 18,
+          "AnnulusMedian": 67,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 766.1792602539062,
+              "Py": 566.6785888671875
+            },
+            {
+              "Threshold": 22,
+              "Px": 773.2703247070312,
+              "Py": 571.1961669921875
+            },
+            {
+              "Threshold": 24,
+              "Px": 775.4954223632812,
+              "Py": 571.8404541015625
+            },
+            {
+              "Threshold": 26,
+              "Px": 770.4666748046875,
+              "Py": 567.3143310546875
+            },
+            {
+              "Threshold": 28,
+              "Px": 769.7390747070312,
+              "Py": 565.9656982421875
+            },
+            {
+              "Threshold": 30,
+              "Px": 771.7537231445312,
+              "Py": 566.7141723632812
+            },
+            {
+              "Threshold": 32,
+              "Px": 769.83154296875,
+              "Py": 563.41650390625
+            },
+            {
+              "Threshold": 34,
+              "Px": 762.8421020507812,
+              "Py": 567.90771484375
+            },
+            {
+              "Threshold": 36,
+              "Px": 765.1707763671875,
+              "Py": 564.4862060546875
+            },
+            {
+              "Threshold": 38,
+              "Px": 767.1031494140625,
+              "Py": 564.8509521484375
+            },
+            {
+              "Threshold": 40,
+              "Px": 773.6337280273438,
+              "Py": 564.31298828125
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602713.0\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED333\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966422\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F9711\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602713.0\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    }
+  ]
+}

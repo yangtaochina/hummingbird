@@ -1,0 +1,117 @@
+{
+  "Purpose": "Independent 5 and 7 oclock camera location validation, fixed C, no emission; not an accuracy certificate",
+  "SourceRecord": "5点7点独立核对_单独记录.json",
+  "SourceLocalizationReport": "dial_alignment_preview.json",
+  "LocalizationRecomputed": false,
+  "OriginalFilesModified": false,
+  "ReferenceC": 254.8249,
+  "ReferenceZ": -201.56148,
+  "Checks": [
+    {
+      "Name": "独立核对_5点",
+      "Image": "独立核对_5点.bmp",
+      "Mcs": {
+        "X": -148.1999,
+        "Y": -211.0216,
+        "Z": -201.56148,
+        "C": 254.8249
+      },
+      "ImageHashVerified": true,
+      "VisuallyContainsExpectedHole": true,
+      "AutomaticCenterStatus": "Rejected",
+      "PixelCenter": null,
+      "EstimatedFeatureMcs": null,
+      "Reason": "独立核对_5点 未检出稳定、完整的参考孔。请检查画面中部是否为目标孔、孔缘是否完整以及曝光是否合适。"
+    },
+    {
+      "Name": "独立核对_7点",
+      "Image": "独立核对_7点.bmp",
+      "Mcs": {
+        "X": -160.3097,
+        "Y": -203.1377,
+        "Z": -201.56148,
+        "C": 254.8249
+      },
+      "ImageHashVerified": true,
+      "VisuallyContainsExpectedHole": true,
+      "AutomaticCenterStatus": "Detected",
+      "PixelCenter": [
+        966.0682678222656,
+        600.6965637207031
+      ],
+      "EstimatedFeatureMcs": [
+        -160.3210049068488,
+        -203.13879259111212
+      ],
+      "EstimatedDistanceFromImageCenterUm": 11.357582233844115,
+      "ThresholdCenterSpreadUm": 31.35807776856809,
+      "ThresholdCount": 14
+    },
+    {
+      "Name": "独立核对_1点返回",
+      "Image": "独立核对_1点返回.bmp",
+      "Mcs": {
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249
+      },
+      "ImageHashVerified": true,
+      "VisuallyContainsExpectedHole": true,
+      "AutomaticCenterStatus": "Detected",
+      "PixelCenter": [
+        954.1400146484375,
+        602.3353271484375
+      ],
+      "EstimatedFeatureMcs": [
+        -134.42202333067922,
+        -190.0485585700535
+      ],
+      "EstimatedDistanceFromImageCenterUm": 10.304479197972062,
+      "ThresholdCenterSpreadUm": 43.854756168771466,
+      "ThresholdCount": 9
+    }
+  ],
+  "TextureReturnComparison": {
+    "Method": "SIFT ratio filter and RANSAC partial affine; values rounded from diagnostic output",
+    "AnchorPixel": [
+      985,
+      585
+    ],
+    "AgainstFirst1Oclock": {
+      "Source": "XY复核_1点首次.bmp",
+      "Target": "独立核对_1点返回.bmp",
+      "Matches": 1875,
+      "Inliers": 1874,
+      "RotationDeg": -0.0004,
+      "Scale": 1.000045,
+      "AnchorTargetPixel": [
+        985.65,
+        584.762
+      ],
+      "AnchorDisplacementPixelsApprox": 0.6922022825735263
+    },
+    "AgainstPreviousReturn": {
+      "Source": "XY复核_1点返回.bmp",
+      "Target": "独立核对_1点返回.bmp",
+      "Matches": 1913,
+      "Inliers": 1896,
+      "RotationDeg": 0.0003,
+      "Scale": 1.000023,
+      "AnchorTargetPixel": [
+        985.488,
+        584.765
+      ],
+      "AnchorDisplacementPixelsApprox": 0.5416354862820567
+    }
+  },
+  "Conclusions": [
+    "Both independent predicted positions contain the intended reference holes in the images.",
+    "7 oclock passed the existing automatic hole-center filter. 5 oclock was rejected; no precise center or error is claimed for 5 oclock.",
+    "Return 1 oclock image texture is nearly coincident, under 1 pixel relative to both earlier 1 oclock checks in this observed run.",
+    "Forgetting New Record did not invalidate these separate original images and matching sidecars. A three-frame portable derived record was created.",
+    "UI roles were inherited (Reference1 on all three) and do not encode independent 5/7 roles. This check group must not be fed to automatic localization.",
+    "Do not adjust CAD dimensions to compensate these physical reference holes. Their manufacturing error, optical imaging and localization error are not separated.",
+    "Existing center extraction has tens-of-microns threshold sensitivity. Actual micrometer-level machining accuracy and laser-spot compensation remain unverified."
+  ]
+}

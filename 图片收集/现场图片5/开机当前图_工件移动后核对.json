@@ -1,0 +1,58 @@
+{
+  "Purpose": "Startup image review after operator correction that the dial was moved and put back",
+  "SourceImage": "开机_当前画面.bmp",
+  "ImageHashVerified": true,
+  "CurrentRecordedMcs": {
+    "X": -131.05901,
+    "Y": -191.00413,
+    "Z": -201.316,
+    "C": 254.8241
+  },
+  "PreviousReference1Mcs": {
+    "X": -134.4488,
+    "Y": -189.889,
+    "Z": -201.32052,
+    "C": 254.8249
+  },
+  "SameRecordedMcs": false,
+  "DeltaFromPreviousReference1": {
+    "X": 3.389790000000005,
+    "Y": -1.1151299999999935,
+    "Z": 0.0045199999999852025,
+    "C": -0.0008000000000265572
+  },
+  "UserConfirmedDialMovedAndReplaced": true,
+  "ReclampingPoseMustBeReestablished": true,
+  "ImageRegistration": {
+    "Source": "现场图片4/新定位_1点回位复核.bmp",
+    "Target": "开机_当前画面.bmp",
+    "SiftRatioMatches": 4,
+    "ReliableTransformFound": false,
+    "MotionErrorEstimate": null
+  },
+  "CaptureUsedOldDefaultPixelMatrix": {
+    "Jxx": 582.841,
+    "Jxy": -48.884,
+    "Jyx": 49.023,
+    "Jyy": 583.025
+  },
+  "LastVerifiedOpticalPixelMatrix": {
+    "Jxx": 584.955766,
+    "Jxy": -51.49699,
+    "Jyx": 51.553807,
+    "Jyy": 585.078517
+  },
+  "MachineReferenceValidityConfirmed": true,
+  "AutomaticCoordinateCompensationApplied": false,
+  "Conclusions": [
+    "当前照片不是昨天相同MCS下的回位图，且表盘被挪动后放回，因此不能从图像差计算机床回位误差。",
+    "新补充信息修正了此前“均未调整”的条件。旧表盘圆心、方向及18孔绝对坐标只保留归档，不批准用于当前放回后的工件。",
+    "单纯取放表盘不要求重算相机像素矩阵；仅在镜头、相机安装、成像工作距离未变并经核对时保留光学标定。",
+    "目前只恢复正确的相机参数，不填入旧工件中心/方向，不新增返回/加工NC程序。",
+    "若下一步要换试片确认激光落点，可先不为这块临时放回的表盘重复六帧定位；正式工件最终装夹后再定位。",
+    "后续按确认参考有效后的实际MCS工作；不为凑回旧读数改机床零点，不把显示差直接加到孔位。取放表盘后正式加工前重新识别工件位姿。"
+  ],
+  "ReferenceConfirmationSource": "用户后续确认：已由设备人员确认就绪及参考有效。",
+  "ReferenceConfirmationTiming": "此确认在采图记录之后取得，不推断该照片拍摄前已经就绪。",
+  "CauseOfStartupCoordinateDifferenceDetermined": false
+}

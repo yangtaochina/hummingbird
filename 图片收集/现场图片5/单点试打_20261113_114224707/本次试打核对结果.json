@@ -1,0 +1,79 @@
+{
+  "Source": "trial.json, trial.log, before.bmp, after.bmp, capture sidecars",
+  "Completed": true,
+  "ShutdownReadbackConfirmed": true,
+  "RequestedExposureMs": 100,
+  "CommandWindowMs": 1280.0368,
+  "OpticalExposureMs": null,
+  "PowerRaw": 1200,
+  "PowerPercentFromSoftwareReadback": null,
+  "OperatorReportedNativePowerPercent": 1,
+  "FrequencyKhz": 100,
+  "BurstCount": 1,
+  "XyzStartEqualsEnd": true,
+  "CSource": "ManualPanelEntry",
+  "ImageIntegrity": {
+    "BeforeImage": {
+      "ImageSha256Matches": true,
+      "SidecarMatches": true
+    },
+    "AfterImage": {
+      "ImageSha256Matches": true,
+      "SidecarMatches": true
+    }
+  },
+  "ImageComparison": {
+    "BeforeMean": 41.559793836805554,
+    "AfterMean": 41.65467230902778,
+    "NCC": 0.998464754586064,
+    "RmsDifference": 1.471000049569453,
+    "MeanDifference": 0.09487847222222222,
+    "AbsoluteDifferencePercentiles": {
+      "50": 1.0,
+      "90": 2.0,
+      "99": 4.0,
+      "99.9": 6.0,
+      "100": 11.0
+    },
+    "PixelsAbsDifferenceOver10": 2,
+    "PixelsAbsDifferenceOver20": 0,
+    "LargestRms32PixelBlocks": [
+      {
+        "X": 768,
+        "Y": 656,
+        "MeanDifference": 0.412109375,
+        "RmsDifference": 3.1021036209320925
+      },
+      {
+        "X": 768,
+        "Y": 672,
+        "MeanDifference": 0.4775390625,
+        "RmsDifference": 3.0095875444153473
+      },
+      {
+        "X": 768,
+        "Y": 640,
+        "MeanDifference": 0.3544921875,
+        "RmsDifference": 3.0004882415200362
+      },
+      {
+        "X": 752,
+        "Y": 656,
+        "MeanDifference": 0.3974609375,
+        "RmsDifference": 2.931010118116278
+      },
+      {
+        "X": 752,
+        "Y": 672,
+        "MeanDifference": 0.5361328125,
+        "RmsDifference": 2.9035605835766543
+      }
+    ]
+  },
+  "Conclusion": "软件流程完成且关光寄存器读回为0；前后图像差异需结合图像观察判断，不能仅凭指令完成确认实际光学出光或加工深度。",
+  "Limitations": [
+    "100ms为软件请求值，1280.0368ms为含通信的命令窗口，两者均非实测光学出光时长。",
+    "功率1200为旧协议原始值，不按百分比换算；1%仅为操作者报告的原厂软件设置。",
+    "XYZ快照一致不证明全程无物理位移，C为手填值。"
+  ]
+}

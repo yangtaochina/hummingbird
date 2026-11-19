@@ -1,0 +1,125 @@
+{
+  "Version": 1,
+  "Settings": {
+    "HintX": -147.5454,
+    "HintY": -196.6474,
+    "Jxx": 585.826,
+    "Jxy": -49.827,
+    "Jyx": 49.134,
+    "Jyy": 586.778,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-11 Z=-201.5679mm、C=252.1249度下X/Y各+0.100mm往返初测。三处纹理配准取中值，以往返起点图平均位置作基准。当前参数用于分段定心试验，实际精度及重复性待验证。 3点/6点原记录C=252.1429为手抄错误，用户确认实际C始终252.1249，合并记录按确认值修正。图像路径按实际文件名整理。 历史离线演示数据：只用于验证软件功能，不能用于当前重新装夹后的运动或加工。"
+  },
+  "Frames": [
+    {
+      "Name": "独立核对_5点",
+      "ImagePath": "独立核对_5点.bmp",
+      "X": -148.1999,
+      "Y": -211.0216,
+      "Z": -201.56148,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T15:57:32.8393705+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "96A4454F51D53DD7B582C46228BBB7315E0AAE0C14D5F8045B7B6570C34F76FC",
+        "SettingsAtRegistration": {
+          "HintX": -147.5454,
+          "HintY": -196.6474,
+          "Jxx": 585.826,
+          "Jxy": -49.827,
+          "Jyx": 49.134,
+          "Jyy": 586.778,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-11 Z=-201.5679mm、C=252.1249度下X/Y各+0.100mm往返初测。三处纹理配准取中值，以往返起点图平均位置作基准。当前参数用于分段定心试验，实际精度及重复性待验证。 3点/6点原记录C=252.1429为手抄错误，用户确认实际C始终252.1249，合并记录按确认值修正。图像路径按实际文件名整理。 历史离线演示数据：只用于验证软件功能，不能用于当前重新装夹后的运动或加工。"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "Reference1"
+    },
+    {
+      "Name": "独立核对_7点",
+      "ImagePath": "独立核对_7点.bmp",
+      "X": -160.3097,
+      "Y": -203.1377,
+      "Z": -201.56148,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T16:07:16.5677614+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "4FFCF111DDCAADA253B1F6673AA424801F0E8B7B2F9D63207752237EEDE544BB",
+        "SettingsAtRegistration": {
+          "HintX": -147.5454,
+          "HintY": -196.6474,
+          "Jxx": 585.826,
+          "Jxy": -49.827,
+          "Jyx": 49.134,
+          "Jyy": 586.778,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-11 Z=-201.5679mm、C=252.1249度下X/Y各+0.100mm往返初测。三处纹理配准取中值，以往返起点图平均位置作基准。当前参数用于分段定心试验，实际精度及重复性待验证。 3点/6点原记录C=252.1429为手抄错误，用户确认实际C始终252.1249，合并记录按确认值修正。图像路径按实际文件名整理。 历史离线演示数据：只用于验证软件功能，不能用于当前重新装夹后的运动或加工。"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "Reference1"
+    },
+    {
+      "Name": "独立核对_1点返回",
+      "ImagePath": "独立核对_1点返回.bmp",
+      "X": -134.4307,
+      "Y": -190.043,
+      "Z": -201.56148,
+      "C": 254.8249,
+      "Capture": {
+        "HostCaptureTime": "2026-11-12T16:09:04.3525742+08:00",
+        "ImageWidth": 1920,
+        "ImageHeight": 1200,
+        "XyzSource": "OpcUaReadback",
+        "CSource": "ManualPanelEntry",
+        "CNode": null,
+        "ImageSha256": "9E82586E16A7188ADAAE7307687A9191A76F639EFEEC58909183AC2BAE9EBFF6",
+        "SettingsAtRegistration": {
+          "HintX": -147.5454,
+          "HintY": -196.6474,
+          "Jxx": 585.826,
+          "Jxy": -49.827,
+          "Jyx": 49.134,
+          "Jyy": 586.778,
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "ExpectedRadius": 14.45,
+          "RadiusTolerance": 0.5,
+          "MaxRms": 0.05,
+          "MaxSensitivity": 0.03,
+          "CalibrationNote": "2026-11-11 Z=-201.5679mm、C=252.1249度下X/Y各+0.100mm往返初测。三处纹理配准取中值，以往返起点图平均位置作基准。当前参数用于分段定心试验，实际精度及重复性待验证。 3点/6点原记录C=252.1429为手抄错误，用户确认实际C始终252.1249，合并记录按确认值修正。图像路径按实际文件名整理。 历史离线演示数据：只用于验证软件功能，不能用于当前重新装夹后的运动或加工。"
+        },
+        "Purpose": "FixedCScan",
+        "EditedAfterCapture": false
+      },
+      "Role": "Reference1"
+    }
+  ]
+}

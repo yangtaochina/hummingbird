@@ -1,0 +1,874 @@
+{
+  "Kind": "DatumHoleInspection",
+  "GeneratedAt": "2026-11-12T16:27:42.3623499+08:00",
+  "PreviewOnly": true,
+  "Settings": {
+    "HintX": -147.5454,
+    "HintY": -196.6474,
+    "Jxx": 585.826,
+    "Jxy": -49.827,
+    "Jyx": 49.134,
+    "Jyy": 586.778,
+    "ImageWidth": 1920,
+    "ImageHeight": 1200,
+    "ExpectedRadius": 14.45,
+    "RadiusTolerance": 0.5,
+    "MaxRms": 0.05,
+    "MaxSensitivity": 0.03,
+    "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+  },
+  "Inspections": [
+    {
+      "Frame": {
+        "Name": "\u56FA\u5B9AC_\u8D77\u70B9\u6838\u5BF9",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u56FA\u5B9AC_\u8D77\u70B9\u6838\u5BF9.bmp",
+        "X": -134.3173,
+        "Y": -190.1853,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T14:59:48.560145+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "96A4ED3BA7B9B95BEAEA9A567C1462AB5DB8BF8E56242D3500AD59A1A148AA70",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "RingArc"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u56FA\u5B9AC_\u8D77\u70B9\u6838\u5BF9",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u56FA\u5B9AC_\u8D77\u70B9\u6838\u5BF9.bmp",
+          "Px": 1033.0152587890625,
+          "Py": 521.5906982421875,
+          "MachineX": -134.43068929972256,
+          "MachineY": -190.04303056997642,
+          "EllipseWidthPx": 206.3994140625,
+          "EllipseHeightPx": 214.85968017578125,
+          "EllipseAngleDeg": 63.70351791381836,
+          "CenterSpreadMm": 0.014456782460596862,
+          "CoreMedian": 17,
+          "AnnulusMedian": 50,
+          "Samples": [
+            {
+              "Threshold": 18,
+              "Px": 1033.240234375,
+              "Py": 522.9678344726562
+            },
+            {
+              "Threshold": 20,
+              "Px": 1032.502197265625,
+              "Py": 521.5906982421875
+            },
+            {
+              "Threshold": 22,
+              "Px": 1029.299560546875,
+              "Py": 513.939453125
+            },
+            {
+              "Threshold": 24,
+              "Px": 1034.378662109375,
+              "Py": 521.9357299804688
+            },
+            {
+              "Threshold": 26,
+              "Px": 1033.0152587890625,
+              "Py": 520.533935546875
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602714.5\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED329\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966424\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F975\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602714.5\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u53C2\u800311\u70B9",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u53C2\u800311\u70B9.bmp",
+        "X": -146.6173,
+        "Y": -181.9853,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:22:23.7724794+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "0E992F85EAB89E712887F0887C57368E0239A33199031D3E635D1C9023EFF0F2",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference11"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u53C2\u800311\u70B9",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u53C2\u800311\u70B9.bmp",
+          "Px": 1000.7042236328125,
+          "Py": 703.0985107421875,
+          "MachineX": -146.7020484220411,
+          "MachineY": -182.15475843534287,
+          "EllipseWidthPx": 212.55966186523438,
+          "EllipseHeightPx": 274.654541015625,
+          "EllipseAngleDeg": 39.18958282470703,
+          "CenterSpreadMm": 0.05014654275304301,
+          "CoreMedian": 20,
+          "AnnulusMedian": 64.5,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 1002.4529418945312,
+              "Py": 673.620361328125
+            },
+            {
+              "Threshold": 22,
+              "Px": 1000.7042236328125,
+              "Py": 679.8505249023438
+            },
+            {
+              "Threshold": 24,
+              "Px": 996.9618530273438,
+              "Py": 703.3327026367188
+            },
+            {
+              "Threshold": 26,
+              "Px": 996.1747436523438,
+              "Py": 703.3517456054688
+            },
+            {
+              "Threshold": 28,
+              "Px": 994.4420166015625,
+              "Py": 704.1856689453125
+            },
+            {
+              "Threshold": 30,
+              "Px": 994.4765625,
+              "Py": 704.0501098632812
+            },
+            {
+              "Threshold": 32,
+              "Px": 995.468505859375,
+              "Py": 704.993408203125
+            },
+            {
+              "Threshold": 34,
+              "Px": 1002.1241455078125,
+              "Py": 703.27587890625
+            },
+            {
+              "Threshold": 36,
+              "Px": 1002.6104736328125,
+              "Py": 702.8192138671875
+            },
+            {
+              "Threshold": 38,
+              "Px": 1001.953369140625,
+              "Py": 703.0985107421875
+            },
+            {
+              "Threshold": 40,
+              "Px": 1000.584716796875,
+              "Py": 703.7357177734375
+            },
+            {
+              "Threshold": 42,
+              "Px": 1000.90771484375,
+              "Py": 702.0965576171875
+            },
+            {
+              "Threshold": 44,
+              "Px": 1000.658447265625,
+              "Py": 701.9990844726562
+            },
+            {
+              "Threshold": 46,
+              "Px": 1001.3148193359375,
+              "Py": 701.2940673828125
+            },
+            {
+              "Threshold": 48,
+              "Px": 1001.1848754882812,
+              "Py": 700.9776000976562
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602750.1\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED336\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966421\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F9715\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602750.1\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "XY\u590D\u6838_1\u70B9\u9996\u6B21",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_1\u70B9\u9996\u6B21.bmp",
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:41:06.1978693+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "4B215E04306F33AB3A8C9BF0D6829E2859FDDD22DECC567A2ACA86FB10C7BBB5",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference11"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "XY\u590D\u6838_1\u70B9\u9996\u6B21",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_1\u70B9\u9996\u6B21.bmp",
+          "Px": 953.4241333007812,
+          "Py": 601.6212158203125,
+          "MachineX": -134.42070718951305,
+          "MachineY": -190.04745177319325,
+          "EllipseWidthPx": 226.39987182617188,
+          "EllipseHeightPx": 274.25439453125,
+          "EllipseAngleDeg": 144.07701110839844,
+          "CenterSpreadMm": 0.017772779715716207,
+          "CoreMedian": 19,
+          "AnnulusMedian": 75.5,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 943.6423950195312,
+              "Py": 604.652099609375
+            },
+            {
+              "Threshold": 22,
+              "Px": 947.0745849609375,
+              "Py": 601.6212158203125
+            },
+            {
+              "Threshold": 24,
+              "Px": 944.9163208007812,
+              "Py": 595.556396484375
+            },
+            {
+              "Threshold": 26,
+              "Px": 954.5150756835938,
+              "Py": 601.16455078125
+            },
+            {
+              "Threshold": 28,
+              "Px": 953.4241333007812,
+              "Py": 598.671142578125
+            },
+            {
+              "Threshold": 30,
+              "Px": 955.4681396484375,
+              "Py": 602.31787109375
+            },
+            {
+              "Threshold": 32,
+              "Px": 954.0950927734375,
+              "Py": 602.0048828125
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602717.8\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED326\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966419\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F977\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602717.8\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "XY\u590D\u6838_11\u70B9",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_11\u70B9.bmp",
+        "X": -146.702,
+        "Y": -182.1548,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:42:42.2281447+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "8D5AFFCCC569B00D09632429E7F1F56AA167F7281C72A0BF9B2FF3C36F924542",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference11"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "XY\u590D\u6838_11\u70B9",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_11\u70B9.bmp",
+          "Px": 953.9154663085938,
+          "Py": 595.8544921875,
+          "MachineX": -146.6920099765343,
+          "MachineY": -182.14942376230954,
+          "EllipseWidthPx": 194.39988708496094,
+          "EllipseHeightPx": 242.79898071289062,
+          "EllipseAngleDeg": 34.49749755859375,
+          "CenterSpreadMm": 0.0505895698415802,
+          "CoreMedian": 20,
+          "AnnulusMedian": 75.5,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 958.53076171875,
+              "Py": 566.4205322265625
+            },
+            {
+              "Threshold": 22,
+              "Px": 956.1295776367188,
+              "Py": 572.7545166015625
+            },
+            {
+              "Threshold": 24,
+              "Px": 953.9154663085938,
+              "Py": 583.316650390625
+            },
+            {
+              "Threshold": 26,
+              "Px": 953.5294189453125,
+              "Py": 585.660888671875
+            },
+            {
+              "Threshold": 28,
+              "Px": 951.1845092773438,
+              "Py": 597.0537109375
+            },
+            {
+              "Threshold": 30,
+              "Px": 952.03466796875,
+              "Py": 599.330078125
+            },
+            {
+              "Threshold": 32,
+              "Px": 952.5297241210938,
+              "Py": 599.2686767578125
+            },
+            {
+              "Threshold": 34,
+              "Px": 952.03173828125,
+              "Py": 599.2115478515625
+            },
+            {
+              "Threshold": 36,
+              "Px": 952.3446044921875,
+              "Py": 599.4349365234375
+            },
+            {
+              "Threshold": 38,
+              "Px": 958.6657104492188,
+              "Py": 597.5787353515625
+            },
+            {
+              "Threshold": 40,
+              "Px": 960.26806640625,
+              "Py": 594.976318359375
+            },
+            {
+              "Threshold": 42,
+              "Px": 960.6932983398438,
+              "Py": 595.8544921875
+            },
+            {
+              "Threshold": 44,
+              "Px": 960.4904174804688,
+              "Py": 595.6160888671875
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602750.6\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED321\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u96648\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F9713\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602750.6\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "XY\u590D\u6838_1\u70B9\u8FD4\u56DE",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_1\u70B9\u8FD4\u56DE.bmp",
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:44:24.6689025+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "77C3AABF85BA3A3D9DD29210604BB2D67E3255903C1D485CC1309A6309AAC1D4",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "XY\u590D\u6838_1\u70B9\u8FD4\u56DE",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\XY\u590D\u6838_1\u70B9\u8FD4\u56DE.bmp",
+          "Px": 953.9657592773438,
+          "Py": 601.3453979492188,
+          "MachineX": -134.42158550487824,
+          "MachineY": -190.04690817234547,
+          "EllipseWidthPx": 225.98521423339844,
+          "EllipseHeightPx": 274.662353515625,
+          "EllipseAngleDeg": 144.20742797851562,
+          "CenterSpreadMm": 0.01830510673342883,
+          "CoreMedian": 19,
+          "AnnulusMedian": 74,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 945.77490234375,
+              "Py": 602.2882080078125
+            },
+            {
+              "Threshold": 22,
+              "Px": 947.3018188476562,
+              "Py": 601.6199951171875
+            },
+            {
+              "Threshold": 24,
+              "Px": 945.2124633789062,
+              "Py": 595.0858154296875
+            },
+            {
+              "Threshold": 26,
+              "Px": 954.77001953125,
+              "Py": 601.07080078125
+            },
+            {
+              "Threshold": 28,
+              "Px": 953.6031494140625,
+              "Py": 598.8179931640625
+            },
+            {
+              "Threshold": 30,
+              "Px": 955.7361450195312,
+              "Py": 602.4166259765625
+            },
+            {
+              "Threshold": 32,
+              "Px": 954.328369140625,
+              "Py": 601.97998046875
+            },
+            {
+              "Threshold": 34,
+              "Px": 957.1707153320312,
+              "Py": 594.972900390625
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602718.3\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED328\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966420\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F978\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602718.3\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u72EC\u7ACB\u6838\u5BF9_5\u70B9",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u72EC\u7ACB\u6838\u5BF9_5\u70B9.bmp",
+        "X": -148.1999,
+        "Y": -211.0216,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T15:57:32.8393705+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "96A4454F51D53DD7B582C46228BBB7315E0AAE0C14D5F8045B7B6570C34F76FC",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Rejected",
+      "Candidates": [],
+      "Message": "\u72EC\u7ACB\u6838\u5BF9_5\u70B9 \u672A\u68C0\u51FA\u7A33\u5B9A\u3001\u5B8C\u6574\u7684\u53C2\u8003\u5B54\u3002\u8BF7\u68C0\u67E5\u5B54\u7F18\u3001\u9634\u5F71\u548C\u66DD\u5149\uFF1B\u4E0D\u8981\u653E\u5BBD\u6761\u4EF6\u5F3A\u884C\u53D6\u5FC3\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED325\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966423\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F972\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u72EC\u7ACB\u6838\u5BF9_7\u70B9",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u72EC\u7ACB\u6838\u5BF9_7\u70B9.bmp",
+        "X": -160.3097,
+        "Y": -203.1377,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T16:07:16.5677614+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "4FFCF111DDCAADA253B1F6673AA424801F0E8B7B2F9D63207752237EEDE544BB",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u72EC\u7ACB\u6838\u5BF9_7\u70B9",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u72EC\u7ACB\u6838\u5BF9_7\u70B9.bmp",
+          "Px": 966.0682678222656,
+          "Py": 600.6965637207031,
+          "MachineX": -160.3210049068488,
+          "MachineY": -203.13879259111212,
+          "EllipseWidthPx": 194.79612731933594,
+          "EllipseHeightPx": 294.35382080078125,
+          "EllipseAngleDeg": 173.8528289794922,
+          "CenterSpreadMm": 0.03135807776856809,
+          "CoreMedian": 18,
+          "AnnulusMedian": 76,
+          "Samples": [
+            {
+              "Threshold": 18,
+              "Px": 961.1290283203125,
+              "Py": 583.0264892578125
+            },
+            {
+              "Threshold": 20,
+              "Px": 961.3031005859375,
+              "Py": 582.8656005859375
+            },
+            {
+              "Threshold": 22,
+              "Px": 964.6090087890625,
+              "Py": 598.4850463867188
+            },
+            {
+              "Threshold": 24,
+              "Px": 967.2218017578125,
+              "Py": 601.60693359375
+            },
+            {
+              "Threshold": 26,
+              "Px": 968.6468505859375,
+              "Py": 603.978271484375
+            },
+            {
+              "Threshold": 28,
+              "Px": 968.50634765625,
+              "Py": 605.0841064453125
+            },
+            {
+              "Threshold": 30,
+              "Px": 968.5221557617188,
+              "Py": 607.9205322265625
+            },
+            {
+              "Threshold": 32,
+              "Px": 968.2242431640625,
+              "Py": 608.4014282226562
+            },
+            {
+              "Threshold": 34,
+              "Px": 967.4559326171875,
+              "Py": 610.331787109375
+            },
+            {
+              "Threshold": 36,
+              "Px": 965.897216796875,
+              "Py": 596.71142578125
+            },
+            {
+              "Threshold": 38,
+              "Px": 965.1395263671875,
+              "Py": 594.9688110351562
+            },
+            {
+              "Threshold": 40,
+              "Px": 965.8638305664062,
+              "Py": 595.9136962890625
+            },
+            {
+              "Threshold": 42,
+              "Px": 966.2393188476562,
+              "Py": 601.9778442382812
+            },
+            {
+              "Threshold": 44,
+              "Px": 963.51025390625,
+              "Py": 599.7861938476562
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602731.4\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED334\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966420\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F9714\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602731.4\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    },
+    {
+      "Frame": {
+        "Name": "\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE",
+        "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE.bmp",
+        "X": -134.4307,
+        "Y": -190.043,
+        "Z": -201.56148,
+        "C": 254.8249,
+        "Capture": {
+          "HostCaptureTime": "2026-11-12T16:09:04.3525742+08:00",
+          "ImageWidth": 1920,
+          "ImageHeight": 1200,
+          "XyzSource": "OpcUaReadback",
+          "CSource": "ManualPanelEntry",
+          "CNode": null,
+          "ImageSha256": "9E82586E16A7188ADAAE7307687A9191A76F639EFEEC58909183AC2BAE9EBFF6",
+          "SettingsAtRegistration": {
+            "HintX": -147.5454,
+            "HintY": -196.6474,
+            "Jxx": 585.826,
+            "Jxy": -49.827,
+            "Jyx": 49.134,
+            "Jyy": 586.778,
+            "ImageWidth": 1920,
+            "ImageHeight": 1200,
+            "ExpectedRadius": 14.45,
+            "RadiusTolerance": 0.5,
+            "MaxRms": 0.05,
+            "MaxSensitivity": 0.03,
+            "CalibrationNote": "2026-11-11 Z=-201.5679mm\u3001C=252.1249\u5EA6\u4E0BX/Y\u5404\u002B0.100mm\u5F80\u8FD4\u521D\u6D4B\u3002\u4E09\u5904\u7EB9\u7406\u914D\u51C6\u53D6\u4E2D\u503C\uFF0C\u4EE5\u5F80\u8FD4\u8D77\u70B9\u56FE\u5E73\u5747\u4F4D\u7F6E\u4F5C\u57FA\u51C6\u3002\u5F53\u524D\u53C2\u6570\u7528\u4E8E\u5206\u6BB5\u5B9A\u5FC3\u8BD5\u9A8C\uFF0C\u5B9E\u9645\u7CBE\u5EA6\u53CA\u91CD\u590D\u6027\u5F85\u9A8C\u8BC1\u3002 3\u70B9/6\u70B9\u539F\u8BB0\u5F55C=252.1429\u4E3A\u624B\u6284\u9519\u8BEF\uFF0C\u7528\u6237\u786E\u8BA4\u5B9E\u9645C\u59CB\u7EC8252.1249\uFF0C\u5408\u5E76\u8BB0\u5F55\u6309\u786E\u8BA4\u503C\u4FEE\u6B63\u3002\u56FE\u50CF\u8DEF\u5F84\u6309\u5B9E\u9645\u6587\u4EF6\u540D\u6574\u7406\u3002 \u5386\u53F2\u79BB\u7EBF\u6F14\u793A\u6570\u636E\uFF1A\u53EA\u7528\u4E8E\u9A8C\u8BC1\u8F6F\u4EF6\u529F\u80FD\uFF0C\u4E0D\u80FD\u7528\u4E8E\u5F53\u524D\u91CD\u65B0\u88C5\u5939\u540E\u7684\u8FD0\u52A8\u6216\u52A0\u5DE5\u3002"
+          },
+          "Purpose": "FixedCScan",
+          "EditedAfterCapture": false
+        },
+        "Role": "Reference1"
+      },
+      "Status": "Detected",
+      "Candidates": [
+        {
+          "FrameName": "\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE",
+          "ImagePath": "D:\\zhiyouproject\\hummingbird\\\u73B0\u573A\u56FE\u72473\\\u72EC\u7ACB\u6838\u5BF9_1\u70B9\u8FD4\u56DE.bmp",
+          "Px": 954.3806457519531,
+          "Py": 601.5035400390625,
+          "MachineX": -134.42231146515408,
+          "MachineY": -190.04711689311833,
+          "EllipseWidthPx": 224.0627899169922,
+          "EllipseHeightPx": 275.2203063964844,
+          "EllipseAngleDeg": 143.95082092285156,
+          "CenterSpreadMm": 0.01862338848516822,
+          "CoreMedian": 19,
+          "AnnulusMedian": 73,
+          "Samples": [
+            {
+              "Threshold": 20,
+              "Px": 945.0210571289062,
+              "Py": 602.3896484375
+            },
+            {
+              "Threshold": 22,
+              "Px": 947.6771850585938,
+              "Py": 602.3353271484375
+            },
+            {
+              "Threshold": 24,
+              "Px": 945.6513061523438,
+              "Py": 594.8952026367188
+            },
+            {
+              "Threshold": 26,
+              "Px": 955.1766967773438,
+              "Py": 600.6717529296875
+            },
+            {
+              "Threshold": 28,
+              "Px": 954.1400146484375,
+              "Py": 598.5946044921875
+            },
+            {
+              "Threshold": 30,
+              "Px": 956.2152099609375,
+              "Py": 603.3004150390625
+            },
+            {
+              "Threshold": 32,
+              "Px": 954.6212768554688,
+              "Py": 602.3370971679688
+            },
+            {
+              "Threshold": 34,
+              "Px": 961.9595947265625,
+              "Py": 596.6585693359375
+            }
+          ]
+        }
+      ],
+      "Message": "\u68C0\u51FA1\u4E2A\u53C2\u8003\u5B54\uFF0C\u9608\u503C\u654F\u611F\u602718.6\u00B5m\uFF1B\u901A\u8FC7\u8BD5\u9A8C\u7B5B\u9009\u4E0D\u7B49\u4E8E\u52A0\u5DE5\u7CBE\u5EA6\u5408\u683C\u3002",
+      "Diagnostics": [
+        "\u5F62\u72B6\u4E0E\u4F4D\u7F6E\u521D\u7B5B\u8F6E\u5ED326\u4E2A\uFF1B\u6697\u5B54/\u4EAE\u7F18\u5BF9\u6BD4\u4E0D\u8DB3\u6392\u966418\u4E2A\u3002",
+        "\u540C\u4E00\u5019\u9009\u6700\u591A\u83B7\u5F978\u4E2A\u6709\u6548\u9608\u503C\u652F\u6301\uFF0C\u81F3\u5C11\u9700\u89813\u4E2A\u3002",
+        "\u9608\u503C\u654F\u611F\u6027\u662F\u56FE\u50CF\u7A33\u5B9A\u6027\u6307\u6807\uFF0C\u4E0D\u80FD\u4F5C\u4E3A\u673A\u5E8A\u7CBE\u5EA6\u6216\u5B9E\u9645\u52A0\u5DE5\u8BEF\u5DEE\u3002",
+        "\u5B54\u5FC3\u9608\u503C\u654F\u611F\u602718.6\u00B5m\uFF0C\u8D85\u8FC7\u56FE\u50CF\u9884\u8B66\u503C10.0\u00B5m\uFF1B\u4EC5\u7528\u4E8E\u9884\u89C8\uFF0C\u9700\u6539\u5584\u8BC6\u522B\u7A33\u5B9A\u6027\u3002"
+      ],
+      "PreviewOnly": true,
+      "Algorithm": "\u9010\u8F6E\u5ED3\u6697\u5B54/\u4EAE\u7F18\u7B5B\u9009-v2"
+    }
+  ]
+}

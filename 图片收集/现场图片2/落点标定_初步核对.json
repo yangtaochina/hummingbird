@@ -1,0 +1,43 @@
+{
+  "status": "fixed_axes_trial_confirmed_provisional_offset_requires_independent_repeat",
+  "trialMethodConfirmedByUser": "X/Y/Z/C全程固定，只开启和关闭激光",
+  "images": [
+    "落点标定_打点前.bmp",
+    "落点标定_打点后.bmp"
+  ],
+  "panelBeforeAndAfter": {
+    "X": -140.2173,
+    "Y": -194.8853,
+    "Z": -201.5615,
+    "C": 252.1249
+  },
+  "priorCalibrationZ": -201.5679,
+  "zDifferenceMm": 0.0064,
+  "imageReferencePx": [
+    959.5,
+    599.5
+  ],
+  "observedFeatureCenterApproxPx": [
+    1015,
+    855
+  ],
+  "JpxPerMm": [
+    [
+      585.826,
+      -49.827
+    ],
+    [
+      49.134,
+      586.778
+    ]
+  ],
+  "observedDistanceFromImageCenterApproxMm": 0.45,
+  "conditionalCameraTargetToLaserCommandOffsetApproxMm": [
+    0.13,
+    0.43
+  ],
+  "conditions": "仅当新增孔代表固定轴激光落点或已知以当前坐标为中心的对称加工轨迹，且沿用同一成像与加工平面时，才可将该结果作为粗补偿起点。正式应用前须确认打点过程并独立复验。",
+  "fitLimitation": "暗孔椭圆和外缘径向拟合的中心相差十余像素，方法差异对应数十微米；反光、孔口形状与阴影限制精度，尚不支持微米级补偿。",
+  "stationaryCheck": "三个未加工纹理区域前后图像配准相关系数0.965至0.994，位移约0.005至-0.026px(X)、-0.068至-0.108px(Y)，支持前后画面基本未动。",
+  "appCodeChanged": false
+}

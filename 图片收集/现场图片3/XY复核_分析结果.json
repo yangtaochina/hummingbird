@@ -1,0 +1,76 @@
+{
+  "Purpose": "Fixed C XY camera mapping and one return check; not a machining accuracy certificate",
+  "ReferenceC": 254.8249,
+  "ReferenceZ": -201.56148,
+  "RawImagesHashVerified": true,
+  "SameXYFirstAndReturn": true,
+  "TextureReturnRegistration": {
+    "Method": "OpenCV SIFT + ratio filter + RANSAC partial affine; rounded CLI output",
+    "Matches": 2042,
+    "Inliers": 2039,
+    "RotationDeg": -0.0003,
+    "Scale": 0.999998,
+    "TranslationPixels": [
+      0.156,
+      0.006
+    ],
+    "AnchorPixel": [
+      985,
+      585
+    ],
+    "AnchorReturnPixel": [
+      985.157,
+      585.0
+    ],
+    "AnchorDisplacementPixelsApprox": 0.157
+  },
+  "HoleDetectionsApprox": [
+    {
+      "Name": "XY复核_1点首次",
+      "PixelCenterApprox": [
+        950.25,
+        601.81
+      ],
+      "PixelOffsetFromImageCenterApprox": [
+        -9.25,
+        2.3099999999999454
+      ],
+      "ImageCenterDistanceUmApprox": 16.209626095944817,
+      "ThresholdCenterSpreadUmApprox": 36.900000000000006
+    },
+    {
+      "Name": "XY复核_11点",
+      "PixelCenterApprox": [
+        953.92,
+        595.85
+      ],
+      "PixelOffsetFromImageCenterApprox": [
+        -5.580000000000041,
+        -3.6499999999999773
+      ],
+      "ImageCenterDistanceUmApprox": 11.342515527623586,
+      "ThresholdCenterSpreadUmApprox": 50.6
+    },
+    {
+      "Name": "XY复核_1点返回",
+      "PixelCenterApprox": [
+        953.6,
+        601.62
+      ],
+      "PixelOffsetFromImageCenterApprox": [
+        -5.899999999999977,
+        2.1200000000000045
+      ],
+      "ImageCenterDistanceUmApprox": 10.656906564945855,
+      "ThresholdCenterSpreadUmApprox": 42.9
+    }
+  ],
+  "Notes": [
+    "All three original image hashes match their sidecar metadata. XYZ are OPC UA readback; C is manually entered.",
+    "First 1 oclock sidecar role was Reference11. Corrected to Reference1 only in the derived independent record; marked EditedAfterCapture. Original files preserved.",
+    "Autosave contains the older six localization frames plus these three checks and nonlocal image paths. Do not use it as a fresh localization input.",
+    "Very small texture return displacement is one observation. It does not establish absolute positioning accuracy or guaranteed machine repeatability.",
+    "Hole center threshold sensitivity remains about 37 to 51 um; this is an image algorithm stability concern, not measured axis motion.",
+    "Localization ring RMS is about 40.3 um. Laser spot compensation and machining accuracy are not validated."
+  ]
+}
