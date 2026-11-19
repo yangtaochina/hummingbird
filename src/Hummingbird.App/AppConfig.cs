@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Hummingbird.Core;
 
 namespace Hummingbird.App;
@@ -104,25 +104,6 @@ public sealed class AppConfig
     public int RotaryTimeoutMs { get; set; } = 15000;
     public int RotaryPollIntervalMs { get; set; } = 200;
     public double RotarySimSpeedDegPerSec { get; set; } = 30;
-
-    /// <summary>把配置组装成 Core 层转台参数。</summary>
-    public RotaryTableOptions BuildRotaryOptions() => new()
-    {
-        AxisName = RotaryAxisName,
-        TargetRNumber = RotaryTargetRNumber,
-        TargetRNode = RotaryTargetRNode,
-        TriggerNode = RotaryTriggerNode,
-        DoneNode = RotaryDoneNode,
-        ActualAngleNode = RotaryActualAngleNode,
-        Normalize360 = RotaryNormalize360,
-        MinAngleDeg = RotaryMinAngleDeg,
-        MaxAngleDeg = RotaryMaxAngleDeg,
-        MaxStepDeg = RotaryMaxStepDeg,
-        ToleranceDeg = RotaryToleranceDeg,
-        TimeoutMs = RotaryTimeoutMs,
-        PollIntervalMs = RotaryPollIntervalMs,
-        SimSpeedDegPerSec = RotarySimSpeedDegPerSec
-    };
 
     /// <summary>激光器 232转USB 的串口号（设备管理器里查，如 COM3）。</summary>
     public string LaserComPort { get; set; } = "COM3";
