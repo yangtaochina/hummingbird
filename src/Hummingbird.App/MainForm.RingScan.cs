@@ -986,6 +986,9 @@ public sealed partial class MainForm
                     try{ProductionJobArchive.Save(activeJob,folder,record);}catch(Exception save){_log.Error("本件结果更新失败："+save.Message);}
                 }
                 _reportProductionProgress?.Invoke(record,folder);
+                // 汇总表只是从已保存记录推导的副本；写不进去（例如正被Excel打开）不影响本件记录。
+                try{ProductionSummary.Upsert(Path.GetDirectoryName(activeJob)!,folder);}
+                catch(Exception ex){_log.Warn("加工汇总表未更新，可在“加工记录”页重建："+ex.Message);}
                 RefreshEvidencePackage();UpdateLaserCalibrationButtons();
             }
         }

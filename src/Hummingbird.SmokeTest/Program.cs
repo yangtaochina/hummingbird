@@ -90,6 +90,9 @@ if(args.FirstOrDefault()=="--field-evidence")
 if(args.FirstOrDefault()=="--continuous-production")
     return await ContinuousProductionChecks.Run(args.ElementAtOrDefault(1));
 
+if (args.FirstOrDefault() == "--production-summary")
+    return ProductionSummaryChecks.Run();
+
 if (args.FirstOrDefault() == "--xy-micro")
     return await XyMicroChecks.Run();
 
