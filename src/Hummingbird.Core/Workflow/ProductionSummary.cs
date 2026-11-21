@@ -23,7 +23,7 @@ public static class ProductionSummary
         {
             GeneratedAt = DateTimeOffset.Now,
             SourceFrames = frames,
-            Ring = located is null ? null : new { located.Ring.CenterX, located.Ring.CenterY, located.Ring.RadiusMm, located.Ring.RmsMm, located.Ring.SensitivityMm },
+            Ring = located is null ? null : new { located.Ring.CenterX, located.Ring.CenterY, located.Ring.RadiusMm, located.Ring.RmsMm, located.Ring.SensitivityMm, PointCount = located.Ring.Points.Count },
             Result = located is null ? null : new { located.Direction }
         }, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -34,8 +34,14 @@ public static class ProductionSummary
     /// </summary>
     public static string? LocatingSource(string jobFolder, string runFolder, ProductionRunRecord record)
     {
-        string snapshot = Path.Combine(runFolder, LocatingSnapshotName), report = Path.Combine(jobFolder, JobReportName);
-        if (File.Exists(snapshot)) return snapshot;
+        string snapshot = Path.Combine(runFolder, LocatingSnapshotName);
+        return File.Exists(snapshot) ? snapshot : JobReportOfRun(jobFolder, record);
+    }
+
+    /// <summary>工件目录的检查文件生成于本轮结束之前时返回它的路径，否则返回null。</summary>
+    public static string? JobReportOfRun(string jobFolder, ProductionRunRecord record)
+    {
+        string report = Path.Combine(jobFolder, JobReportName);
         if (!File.Exists(report) || (record.FinishedAt ?? record.UpdatedAt) is not { } end) return null;
         try
         {

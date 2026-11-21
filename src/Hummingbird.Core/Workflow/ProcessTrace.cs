@@ -52,7 +52,13 @@ public static class ProcessTrace
                     "没有保存启动检查文件" + (stopped.StartsWith("Starting") ? Failure() : ""), runFile));
         }
 
-        string reportFile = Path.Combine(jobFolder, "定位检查与预览.json");
+        // 有运行记录时只用属于这一轮的定位数据：工件目录的检查文件内容最全，但事后重新检查会覆盖它，
+        // 那时改用运行目录里收尾时保存的本轮定位结果；两者都没有就如实显示没有数据。
+        string jobReport = Path.Combine(jobFolder, ProductionSummary.JobReportName);
+        string reportFile = record is null ? jobReport
+            : ProductionSummary.JobReportOfRun(jobFolder, record) ?? Path.Combine(runFolder!, ProductionSummary.LocatingSnapshotName);
+        string missing = record is not null && !File.Exists(reportFile) && File.Exists(jobReport)
+            ? "工件目录的检查文件是本轮结束后重新生成的，不代表本轮；本轮没有另存定位结果" : "";
         using var report = File.Exists(reportFile) ? Parse(reportFile) : null;
         var frames = report is not null && Find(report.RootElement, "SourceFrames") is { ValueKind: JsonValueKind.Array } source ? source.EnumerateArray().ToArray() : [];
         var inspections = report is not null && Find(report.RootElement, "ReferenceInspections") is { ValueKind: JsonValueKind.Array } reviews ? reviews.EnumerateArray().ToArray() : [];
@@ -74,7 +80,7 @@ public static class ProcessTrace
             if (attempts > 1) parts.Add($"纠偏重拍 {attempts - 1} 次");
             if (review is { } inspected) parts.Add((Detected(inspected) ? "参考孔已识别" : "参考孔未通过") + (Text(inspected, "Message") is { Length: > 0 } message ? "：" + message : ""));
             var state = failedHere || rejected ? ProcessStepState.Failed : frame is not null || completed ? ProcessStepState.Passed : ProcessStepState.NotRun;
-            steps.Add(new("采图 " + name, state, (parts.Count > 0 ? string.Join("；", parts) : "没有这一处的照片") + (failedHere ? Failure() : ""),
+            steps.Add(new("采图 " + name, state, (parts.Count > 0 ? string.Join("；", parts) : missing.Length > 0 ? missing : "没有这一处的照片") + (failedHere ? Failure() : ""),
                 reportFile is var data && File.Exists(data) ? data : runFile, frame is { } image ? Locate(jobFolder, Text(image, "ImagePath")) : null));
         }
 
@@ -82,15 +88,15 @@ public static class ProcessTrace
         string rejection = report is null ? "" : Text(report.RootElement, "Rejection");
         steps.Add(ring is { ValueKind: JsonValueKind.Object } fit
             ? new("圆环拟合", ProcessStepState.Passed, $"圆心 X={Number(fit, "CenterX"):F4} Y={Number(fit, "CenterY"):F4}；半径 {Number(fit, "RadiusMm"):F4}mm；" +
-                $"取边点 {(Find(fit, "Points") is { ValueKind: JsonValueKind.Array } points ? points.GetArrayLength() : 0)} 个；RMS {Number(fit, "RmsMm") * 1000:F1}µm；敏感性 {Number(fit, "SensitivityMm") * 1000:F1}µm", reportFile)
+                $"取边点 {(Find(fit, "Points") is { ValueKind: JsonValueKind.Array } points ? points.GetArrayLength() : Number(fit, "PointCount") ?? 0)} 个；RMS {Number(fit, "RmsMm") * 1000:F1}µm；敏感性 {Number(fit, "SensitivityMm") * 1000:F1}µm", reportFile)
             : new("圆环拟合", frames.Length >= 4 && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
-                rejection.Length > 0 ? "未得到圆环结果：" + rejection : "还没有圆环拟合结果", File.Exists(reportFile) ? reportFile : null));
+                rejection.Length > 0 ? "未得到圆环结果：" + rejection : missing.Length > 0 ? missing : "还没有圆环拟合结果", File.Exists(reportFile) ? reportFile : null));
 
         var direction = report is null ? null : Find(report.RootElement, "Result", "Direction");
         steps.Add(direction is { ValueKind: JsonValueKind.Object } angle
             ? new("参考孔方向", ProcessStepState.Passed, $"12点方向 {Number(angle, "TwelveAngleDeg"):F4}°；11点参考 {Number(angle, "Reference11AngleDeg"):F4}°", reportFile)
             : new("参考孔方向", ring is not null && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
-                rejection.Length > 0 ? "未得到方向：" + rejection : "还没有方向结果", File.Exists(reportFile) ? reportFile : null));
+                rejection.Length > 0 ? "未得到方向：" + rejection : missing.Length > 0 ? missing : "还没有方向结果", File.Exists(reportFile) ? reportFile : null));
 
         if (record is null) return steps;
         string compensation = Path.Combine(runFolder!, "定位与补偿.json");

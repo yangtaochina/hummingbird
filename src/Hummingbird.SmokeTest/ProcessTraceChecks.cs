@@ -21,7 +21,7 @@ internal static class ProcessTraceChecks
                 foreach (string frame in names.Take(frames)) File.WriteAllBytes(Path.Combine(job, frame + ".bmp"), [1]);
                 File.WriteAllText(Path.Combine(job, "定位检查与预览.json"), JsonSerializer.Serialize(new
                 {
-                    Rejection = rejection,
+                    GeneratedAt = DateTimeOffset.Now.AddMinutes(-4.5), Rejection = rejection,
                     // 记录里是采集电脑上的绝对路径，本机不存在。
                     SourceFrames = names.Take(frames).Select((n, i) => new { Name = n, ImagePath = @"D:\现场\不存在\" + n + ".bmp", X = 10.0 + i, Y = 20.0, Capture = new { RequestedExposureUs = 5000.0 } }),
                     ReferenceInspections = new[] { new { Frame = new { Name = names[0] }, Status = (object)"Detected", Message = "通过" } }
@@ -84,7 +84,7 @@ internal static class ProcessTraceChecks
             string holeJob = Job("工件_孔7中断", 6, true);
             var hole = new ProductionRunRecord
             {
-                DryRun = false, RequestedExposureMs = 3000, Phase = "HoleStarted:7", CapturedSteps = 6, CurrentHoleId = 7, StartedAt = at, Events = [.. Captured(6)],
+                DryRun = false, RequestedExposureMs = 3000, Phase = "HoleStarted:7", CapturedSteps = 6, CurrentHoleId = 7, StartedAt = at, UpdatedAt = at.AddMinutes(1), Events = [.. Captured(6)],
                 Holes = Enumerable.Range(1, 7).ToDictionary(i => i, i => i < 7 ? ProductionHolePhase.Completed : ProductionHolePhase.Started)
             };
             Run(holeJob, hole); steps = ProcessTrace.Read(holeJob);
@@ -100,6 +100,22 @@ internal static class ProcessTraceChecks
             steps = ProcessTrace.Read(partialJob);
             Check(ProcessTrace.DefaultRunFolder(partialJob) == dryRun && ProcessTrace.DefaultRunFolder(goodJob) == goodRun && steps.Count == 29 &&
                 steps[0].State == ProcessStepState.Failed && steps[0].Summary.Contains("人工停止"), "默认取真实加工轮次，否则取最近一次试走；启动阶段停止标在启动检查上");
+            // 这件加工结束后被恢复并重新检查：工件目录的检查文件变成了事后的内容。
+            string goodReport = Path.Combine(goodJob, ProductionSummary.JobReportName);
+            var regenerated = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(goodReport))!;
+            regenerated["GeneratedAt"] = DateTimeOffset.Now.AddHours(1); regenerated["Ring"]!["CenterX"] = -150.0001;
+            File.WriteAllText(goodReport, regenerated.ToJsonString());
+            steps = ProcessTrace.Read(goodJob);
+            Check(steps[7].State == ProcessStepState.NotRun && steps[7].Summary.Contains("不代表本轮") && !steps[7].Summary.Contains("-150") &&
+                steps[1].State == ProcessStepState.Passed && steps[10].State == ProcessStepState.Passed, "检查文件在本轮结束后被重新生成时，不把它显示成本轮的圆环结果");
+            ProductionSummary.SaveLocatingSnapshot(goodRun, names.Select((n, i) => new RingScanFrame(n, Path.Combine(goodJob, n + ".bmp"), 10 + i, 20, 0, 0)).ToArray(),
+                new DialAlignmentPreview(new RingScanResult(-147.2222, -196.4337, 14.4665, 0.0244, 0.0063, 0, 0, [new(0, 1, 1, 0, 0), new(1, 1, 1, 0, 0)], []),
+                    new DatumDirectionResult(91.25, 121.25, 61.25, 60, 0, default!, default!), [], new DatumDirectionOptions(), []));
+            steps = ProcessTrace.Read(goodJob);
+            Check(steps[7].State == ProcessStepState.Passed && steps[7].Summary.Contains("X=-147.2222") && steps[7].Summary.Contains("取边点 2 个") &&
+                steps[8].Summary.Contains("91.2500°") && steps[7].DataFile == Path.Combine(goodRun, ProductionSummary.LocatingSnapshotName) &&
+                steps[1].ImageFile == Path.Combine(goodJob, names[0] + ".bmp"), "此时改用运行目录里保存的本轮定位结果");
+
             string[] Files() => Directory.GetFiles(root, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal).Select(f => f + "|" + File.GetLastWriteTimeUtc(f).Ticks).ToArray();
             var before = Files();
             foreach (string job in Directory.GetDirectories(root)) ProcessTrace.Read(job);
