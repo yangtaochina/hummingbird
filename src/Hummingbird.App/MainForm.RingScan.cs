@@ -208,6 +208,15 @@ public sealed partial class MainForm
                     using var pen = new Pen(Color.Orange, 2) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
                     graphics.DrawEllipse(pen, (float)(seed.Px - seed.RadiusPx), (float)(seed.Py - seed.RadiusPx), (float)seed.RadiusPx * 2, (float)seed.RadiusPx * 2);
                 }
+                // 圆环照片：画出这一帧取到的边缘点和拟合圆，便于核对取边位置。只是显示，不参与计算。
+                if (frame.Role == RingFrameRole.RingArc && fit is not null)
+                {
+                    var overlay = RingFrameOverlay.Build(session.Settings, frame, fit);
+                    using var circle = new Pen(Color.Cyan, 2); using var edge = new Pen(Color.Lime, 2);
+                    foreach (var arc in overlay.FittedArcs) graphics.DrawLines(circle, arc.Select(p => new PointF((float)p.Px, (float)p.Py)).ToArray());
+                    foreach (var (px, py) in overlay.EdgePoints)
+                    { graphics.DrawLine(edge, (float)px - 6, (float)py, (float)px + 6, (float)py); graphics.DrawLine(edge, (float)px, (float)py - 6, (float)px, (float)py + 6); }
+                }
                 photo.Invalidate();
             }
             catch (Exception ex) { output.Text = ex.Message; }

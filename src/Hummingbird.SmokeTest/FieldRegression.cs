@@ -1,4 +1,4 @@
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
 using Hummingbird.Core;
 using Hummingbird.Vision;
@@ -79,6 +79,13 @@ internal static class FieldRegression
                 Frames = data.Frames.Where(f => f.Role == RingFrameRole.RingArc).ToList() });
         }
         catch (InvalidDataException ex) { ringRejection = ex.Message; }
+        if (ring is not null)
+        {
+            // 照片叠加显示用：现场图上每个取边点都应恰好归到一帧，每帧都能画出一段拟合圆。
+            var overlays = data.Frames.Where(f => f.Role == RingFrameRole.RingArc).Select(f => RingFrameOverlay.Build(data.Settings, f, ring)).ToArray();
+            if (overlays.Sum(o => o.EdgePoints.Count) != ring.Points.Count || overlays.Any(o => o.EdgePoints.Count == 0 || o.FittedArcs.Count != 1))
+                throw new InvalidOperationException($"圆环叠加显示与拟合结果不一致：各帧点数 {string.Join("/", overlays.Select(o => o.EdgePoints.Count))}，拟合点数 {ring.Points.Count}");
+        }
         var ringOutcome = ring is null
             ? new RingOutcome(false, ringRejection, 0, 0, 0, 0, 0, 0, false, false, [], [])
             : new RingOutcome(true, null, ring.CenterX, ring.CenterY, ring.RadiusMm, ring.RmsMm, ring.SensitivityMm, LeaveOneViewShift(ring),

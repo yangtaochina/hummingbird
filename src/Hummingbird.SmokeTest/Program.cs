@@ -90,6 +90,9 @@ if(args.FirstOrDefault()=="--field-evidence")
 if(args.FirstOrDefault()=="--continuous-production")
     return await ContinuousProductionChecks.Run(args.ElementAtOrDefault(1));
 
+if (args.FirstOrDefault() == "--ring-overlay")
+    return RingOverlayChecks.Run();
+
 if (args.FirstOrDefault() == "--process-trace")
     return ProcessTraceChecks.Run();
 

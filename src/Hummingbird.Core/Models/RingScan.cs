@@ -54,6 +54,13 @@ public sealed class RingScanSettings
         return (frame.X - (Jyy * dx - Jxy * dy) / determinant,
                 frame.Y - (-Jyx * dx + Jxx * dy) / determinant);
     }
+
+    /// <summary>ToMachine 的逆：机床坐标在这一帧照片上的像素位置。仅用于在照片上叠加显示。</summary>
+    public (double Px, double Py) ToPixel(RingScanFrame frame, double x, double y)
+    {
+        double mx = x - frame.X, my = y - frame.Y;
+        return ((ImageWidth - 1) / 2.0 - (Jxx * mx + Jxy * my), (ImageHeight - 1) / 2.0 - (Jyx * mx + Jyy * my));
+    }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<RingFrameRole>))]
@@ -121,6 +128,38 @@ public sealed record RingScanResult(double CenterX, double CenterY, double Radiu
     public RingScanInitialization? Initialization { get; init; }
     public IReadOnlyList<RingFitVariant> FitVariants {get;init;}=[];
     public RingFitRecovery? CompatibilityRecovery {get;init;}
+}
+
+/// <summary>一帧圆环照片上的叠加内容：这一帧取到的边缘点，以及拟合圆落在画面内的各段。只用于显示。</summary>
+public sealed record RingFrameOverlay(IReadOnlyList<(double Px, double Py)> EdgePoints, IReadOnlyList<IReadOnlyList<(double Px, double Py)>> FittedArcs)
+{
+    public static RingFrameOverlay Build(RingScanSettings settings, RingScanFrame frame, RingScanResult fit)
+    {
+        // 拟合结果里的帧序号是相对参与拟合的那组照片的，这里按“像素换算回机床坐标是否就是这个点”来认这一帧的点。
+        var points = fit.Points.Where(p =>
+        {
+            var (x, y) = settings.ToMachine(frame, p.Px, p.Py);
+            return Math.Abs(x - p.X) < 1e-6 && Math.Abs(y - p.Y) < 1e-6;
+        }).Select(p => (p.Px, p.Py)).ToArray();
+        // 0.02°一步，在半径14.45mm处约5µm（约3像素），连成线足够平滑。
+        const int steps = 18000;
+        var arcs = new List<List<(double Px, double Py)>>(); List<(double Px, double Py)>? current = null;
+        bool startsInside = false, endsInside = false;
+        for (int i = 0; i < steps; i++)
+        {
+            double angle = 2 * Math.PI * i / steps;
+            var (px, py) = settings.ToPixel(frame, fit.CenterX + fit.RadiusMm * Math.Cos(angle), fit.CenterY + fit.RadiusMm * Math.Sin(angle));
+            bool inside = px >= 0 && py >= 0 && px <= settings.ImageWidth - 1 && py <= settings.ImageHeight - 1;
+            if (i == 0) startsInside = inside;
+            if (i == steps - 1) endsInside = inside;
+            if (!inside) { current = null; continue; }
+            if (current is null) arcs.Add(current = []);
+            current.Add((px, py));
+        }
+        // 画面内的一段跨过0°时被拆成了首尾两段，接回去。
+        if (startsInside && endsInside && arcs.Count > 1) { arcs[^1].AddRange(arcs[0]); arcs.RemoveAt(0); }
+        return new(points, arcs.Where(a => a.Count > 1).ToArray());
+    }
 }
 
 public static class RingScanPreview
