@@ -891,6 +891,7 @@ public sealed partial class MainForm
             if(!dryRun)ProductionJobArchive.Begin(activeJob,record);
             StopMonitor();using var cancellation=CancellationTokenSource.CreateLinkedTokenSource(_guidedOperationStop?.Token??CancellationToken.None);_productionStop=cancellation;
             var ct=cancellation.Token;
+            DialAlignmentPreview? locatedForSummary=null;
             var cell=new ConnectedProductionCell(device.VerifyEmissionOffAsync,
                 async(x,y,token)=>
                 {
@@ -941,7 +942,7 @@ public sealed partial class MainForm
                 },
                 async token=>
                 {
-                    token.ThrowIfCancellationRequested();var located=await Task.Run(()=>new DialAlignmentSolver().Analyze(session,_template));
+                    token.ThrowIfCancellationRequested();var located=await Task.Run(()=>new DialAlignmentSolver().Analyze(session,_template));locatedForSummary=located;
                     File.WriteAllText(Path.Combine(folder,"定位稳定性检查.json"),JsonSerializer.Serialize(new{located.Ring.CompatibilityRecovery,located.TargetStability},new JsonSerializerOptions{WriteIndented=true}));
                     var compensated=LaserSpotCompensation.Preview(calibration,session.Settings,located.Ring.ReferenceZ,located.Ring.ReferenceC,located.Targets);
                     if(compensated.Targets.Any(p=>!bounds.Contains(p.LaserCommandX,p.LaserCommandY)))throw new InvalidOperationException("补偿孔位超出核定边界。");
@@ -987,7 +988,7 @@ public sealed partial class MainForm
                 }
                 _reportProductionProgress?.Invoke(record,folder);
                 // 汇总表只是从已保存记录推导的副本；写不进去（例如正被Excel打开）不影响本件记录。
-                try{ProductionSummary.Upsert(Path.GetDirectoryName(activeJob)!,folder);}
+                try{ProductionSummary.SaveLocatingSnapshot(folder,session.Frames,locatedForSummary);ProductionSummary.Upsert(Path.GetDirectoryName(activeJob)!,folder);}
                 catch(Exception ex){_log.Warn("加工汇总表未更新，可在“加工记录”页重建："+ex.Message);}
                 RefreshEvidencePackage();UpdateLaserCalibrationButtons();
             }

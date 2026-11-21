@@ -12,6 +12,38 @@ public static class ProductionSummary
 {
     public const string FileName = "加工汇总.csv";
     public const string RunFolderPrefix = "整件_";
+    /// <summary>运行收尾时保存在运行目录里的本轮定位结果；工件目录的“定位检查与预览.json”之后会被重新检查覆盖，不能代表本轮。</summary>
+    public const string LocatingSnapshotName = "本轮定位结果.json";
+    public const string JobReportName = "定位检查与预览.json";
+
+    /// <summary>运行收尾时调用：把本轮实际使用的采图帧和定位结果存进运行目录。没有完成定位的轮次只有采图帧。</summary>
+    public static void SaveLocatingSnapshot(string runFolder, IReadOnlyList<RingScanFrame> frames, DialAlignmentPreview? located)
+    {
+        File.WriteAllText(Path.Combine(runFolder, LocatingSnapshotName), JsonSerializer.Serialize(new
+        {
+            GeneratedAt = DateTimeOffset.Now,
+            SourceFrames = frames,
+            Ring = located is null ? null : new { located.Ring.CenterX, located.Ring.CenterY, located.Ring.RadiusMm, located.Ring.RmsMm, located.Ring.SensitivityMm },
+            Result = located is null ? null : new { located.Direction }
+        }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    /// <summary>
+    /// 本轮定位数据的来源：优先运行目录里的快照；老记录没有快照时才用工件目录的检查文件，
+    /// 且只有它生成于本轮结束之前才采用——之后重新生成的内容不是这一轮用过的结果。
+    /// </summary>
+    public static string? LocatingSource(string jobFolder, string runFolder, ProductionRunRecord record)
+    {
+        string snapshot = Path.Combine(runFolder, LocatingSnapshotName), report = Path.Combine(jobFolder, JobReportName);
+        if (File.Exists(snapshot)) return snapshot;
+        if (!File.Exists(report) || (record.FinishedAt ?? record.UpdatedAt) is not { } end) return null;
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(report));
+            return document.RootElement.TryGetProperty("GeneratedAt", out var at) && at.TryGetDateTimeOffset(out var generated) && generated <= end ? report : null;
+        }
+        catch (Exception ex) when (ex is JsonException or IOException) { return null; }
+    }
 
     public static readonly string[] Header =
     [
@@ -69,7 +101,7 @@ public static class ProductionSummary
         });
 
         string centerX = "", centerY = "", radius = "", rms = "", sensitivity = "", twelve = "", exposures = "", deviation = "";
-        Optional(Path.Combine(jobFolder, "定位检查与预览.json"), report =>
+        Optional(LocatingSource(jobFolder, runFolder, record), report =>
         {
             if (Find(report, "Ring") is { ValueKind: JsonValueKind.Object } ring)
             {
@@ -184,9 +216,9 @@ public static class ProductionSummary
         return rows;
     }
 
-    private static void Optional(string path, Action<JsonElement> read)
+    private static void Optional(string? path, Action<JsonElement> read)
     {
-        if (!File.Exists(path)) return;
+        if (path is null || !File.Exists(path)) return;
         try { using var document = JsonDocument.Parse(File.ReadAllText(path)); read(document.RootElement); }
         catch (JsonException) { }
     }

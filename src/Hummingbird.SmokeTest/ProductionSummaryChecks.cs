@@ -37,16 +37,19 @@ internal static class ProductionSummaryChecks
                 DeviceMode = "Sim", LaserPreset = new { RequestedExposureMs = 3000, Settings = new { Power = 4200 } },
                 CaptureRoute = new[] { new { X = 10.0, Y = 20.0 }, new { X = 30.0, Y = 40.0 } }
             }));
-            File.WriteAllText(Path.Combine(firstJob, "定位检查与预览.json"), JsonSerializer.Serialize(new
+            object Report(DateTimeOffset generatedAt, double centerX) => new
             {
-                Ring = new { CenterX = -147.222228, CenterY = -196.433674, RadiusMm = 14.466494, RmsMm = 0.0244, SensitivityMm = 0.0063 },
+                GeneratedAt = generatedAt,
+                Ring = new { CenterX = centerX, CenterY = -196.433674, RadiusMm = 14.466494, RmsMm = 0.0244, SensitivityMm = 0.0063 },
                 Result = new { Direction = new { TwelveAngleDeg = 91.25 } },
                 SourceFrames = new object[]
                 {
                     new { X = 10.03, Y = 20.04, Capture = new { RequestedExposureUs = 5000.0 } },
                     new { X = 30.0, Y = 40.0, Capture = new { RequestedExposureUs = 1250.0 } }
                 }
-            }));
+            };
+            string firstReport = Path.Combine(firstJob, ProductionSummary.JobReportName);
+            File.WriteAllText(firstReport, JsonSerializer.Serialize(Report(started.AddSeconds(60), -147.222228)));
             var row = ProductionSummary.Read(firstRun);
             Check(row.Length == ProductionSummary.Header.Length && Column(row, "运行号") == first.RunId.ToString() && Column(row, "工件号") == first.RunId.ToString() &&
                 Column(row, "类型") == "新件加工" && Column(row, "结果") == "完成" && Column(row, "失败分类") == "" && Column(row, "完成孔数") == "18" &&
@@ -57,6 +60,22 @@ internal static class ProductionSummaryChecks
                 Column(row, "六处曝光µs") == "5000;1250", "功率、设备模式、圆环拟合和曝光来自运行来源与定位检查文件");
             Check(Column(row, "纠偏重拍次数") == "3" && Column(row, "采图最大偏离路线µm") == "50.0",
                 "纠偏重拍次数取自事件，纠偏量取实际采图位置与路线之差");
+
+            // 加工结束后恢复这件记录并重新检查（例如改了光学参数），工件目录的检查文件被覆盖成别的结果或清空。
+            File.WriteAllText(firstReport, JsonSerializer.Serialize(Report(started.AddHours(5), -150.0)));
+            var stale = ProductionSummary.Read(firstRun);
+            Check(Column(stale, "圆心X") == "" && Column(stale, "圆环RMSµm") == "" && Column(stale, "六处曝光µs") == "" && Column(stale, "完成孔数") == "18",
+                "工件目录的检查文件在本轮结束后被重新生成时，不把它当作本轮的定位结果");
+            var located = new DialAlignmentPreview(new RingScanResult(-147.222228, -196.433674, 14.466494, 0.0244, 0.0063, 0, 0, [], []),
+                new DatumDirectionResult(91.25, 121.25, 61.25, 60, 0, default!, default!), [], new DatumDirectionOptions(), []);
+            ProductionSummary.SaveLocatingSnapshot(firstRun, [new RingScanFrame("a", "a.bmp", 10.03, 20.04, 0, 0) { Capture = new RingCaptureMetadata(null, 1, 1, default, default, null, "", new RingScanSettings(), "") { RequestedExposureUs = 5000 } },
+                new RingScanFrame("b", "b.bmp", 30, 40, 0, 0)], located);
+            var snapshot = ProductionSummary.Read(firstRun);
+            Check(Column(snapshot, "圆心X") == "-147.2222" && Column(snapshot, "圆环RMSµm") == "24.4" && Column(snapshot, "12点角度") == "91.2500" &&
+                Column(snapshot, "六处曝光µs") == "5000;" && Column(snapshot, "采图最大偏离路线µm") == "50.0",
+                "运行目录里的本轮定位结果优先，之后工件目录的检查文件怎么变都不影响这一行");
+            File.Delete(Path.Combine(firstRun, ProductionSummary.LocatingSnapshotName));
+            File.WriteAllText(firstReport, JsonSerializer.Serialize(Report(started.AddSeconds(60), -147.222228)));
 
             var info = new ProductionReworkInfo(Guid.NewGuid(), first.RunId, first.RunId, 1, "run.json", "00", "manifest.json", "00", 3000, 3000, 1500, 4300, "追加");
             string reworkJob = Job("补加工_20261120_100000000_bbbbbb");
