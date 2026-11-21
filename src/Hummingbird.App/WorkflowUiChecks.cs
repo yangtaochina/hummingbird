@@ -71,7 +71,7 @@ public sealed partial class MainForm
                 inspectedRow.DefaultCellStyle.BackColor!=Color.Empty,"加工记录列表显示参数、完成孔数和检验结果，需补加工的行有底色");
             var archiveTable=(DataGridView)Named(archivePage,"ArchiveRecords");
             archiveTable.Sort(archiveTable.Columns[1],System.ComponentModel.ListSortDirection.Descending);
-            archiveTable.Sort(archiveTable.Columns["检验结果"],System.ComponentModel.ListSortDirection.Descending);
+            archiveTable.Sort(archiveTable.Columns["检验结果"]!,System.ComponentModel.ListSortDirection.Descending);
             check(archiveTable.Rows.Cast<DataGridViewRow>().All(r=>r.Tag is string folder && Path.GetFileName(folder)==r.Cells[1].Value as string),
                 "加工记录列表排序后，每一行仍对应自己的记录目录");
             if(!hadSummary)
