@@ -20,7 +20,7 @@ public sealed partial class MainForm
                 bitmap.Save(Path.Combine(folder,$"layout_{size.Width}_{i+1}.png"));
             }
         }
-        _tabs.SelectedTab=_environmentPage;PerformLayout();
+        SelectPage(_environmentPage);PerformLayout();
         IEnumerable<Control> Descendants(Control root)=>root.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(Descendants(c)));
         var sizes=Descendants(_environmentPage).OfType<TextBox>().Where(c=>c.Name is "EnvironmentReport" or "ConfigurationGuide")
             .Select(c=>new{c.Name,c.Width,c.Height}).ToArray();
@@ -30,14 +30,72 @@ public sealed partial class MainForm
     private async Task CheckWorkflowAdditions(string folder, Action<bool,string> check, string? source, string? calibration)
     {
         check(Text.StartsWith("飞秒创芯") && !Text.Contains("蜂鸟"),"标题使用飞秒创芯");
-        _tabs.SelectedTab=_environmentPage;PerformLayout();
+        SelectPage(_environmentPage);PerformLayout();
         IEnumerable<Control> Descendants(Control root)=>root.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(Descendants(c)));
         check(Descendants(_environmentPage).OfType<TextBox>().Single(c=>c.Name=="EnvironmentReport").Height>=100 &&
             Descendants(_environmentPage).OfType<TextBox>().Single(c=>c.Name=="ConfigurationGuide").Height>=120,
             "环境检查及配置说明的多行文本保持完整高度，不因自适应布局被压成单行");
-        _tabs.SelectedTab=_machiningPage;_captureDetails.SelectedIndex=0;PerformLayout();
+        SelectPage(_machiningPage);_captureDetails.SelectedIndex=0;PerformLayout();
         check(_livePicture.Visible && _livePicture.Width>=350,"定位加工页保留大实时画面");
         check(_reworkActions.Controls.Cast<Control>().Any(c=>c.Name=="PrepareProductionRework"),"补加工准备入口在独立功能页");
+        IEnumerable<Control> All(Control parent)=>parent.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(All(c)));
+        Control Named(Control page,string name)=>All(page).Single(c=>c.Name==name);
+        var archivePage=_tabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="加工记录");
+        check(Named(_reworkPage,"ReworkGuide").Text.Contains("③") && Named(_returnPage,"StationReturnGuide").Text.Contains("③") &&
+            !Named(_reworkPage,"ReworkHelp").Visible && !Named(_returnPage,"StationReturnInstructions").Visible && !Named(archivePage,"ArchiveHelp").Visible,
+            "补加工、工位恢复页显示三步提示，三个日常页的长说明默认收起");
+        foreach(var (page,button,target) in new[]{(_reworkPage,"补加工规则说明","ReworkHelp"),((TabPage)_returnPage,"详细说明 / 维护","StationReturnInstructions"),(archivePage,"记录说明","ArchiveHelp")})
+        {
+            SelectPage(page);PerformLayout();
+            var toggle=All(page).OfType<Button>().Single(x=>x.Text==button);
+            toggle.PerformClick();bool shown=Named(page,target).Visible;
+            toggle.PerformClick();
+            check(shown && !Named(page,target).Visible,$"“{button}”可展开并再次收起说明");
+        }
+        string inspectedJob=Path.Combine(_state.CaptureRoot,"工件_检验登记检查"),summaryFile=Path.Combine(_state.CaptureRoot,ProductionSummary.FileName);
+        bool hadSummary=File.Exists(summaryFile);
+        try
+        {
+            Directory.CreateDirectory(inspectedJob);
+            var inspectedRun=new ProductionRunRecord {DryRun=false,RequestedExposureMs=3000,Phase="Completed",Completed=true,CapturedSteps=6,
+                StartedAt=DateTimeOffset.Now.AddMinutes(-3),FinishedAt=DateTimeOffset.Now,LaserOffConfirmed=true,NcExitConfirmed=true,
+                Holes=Enumerable.Range(1,18).ToDictionary(i=>i,_=>ProductionHolePhase.Completed)};
+            ProductionJobArchive.Begin(inspectedJob,inspectedRun);
+            ProductionJobArchive.SaveRunRecord(Path.Combine(inspectedJob,ProductionSummary.RunFolderPrefix+inspectedRun.RunId.ToString("N")),inspectedRun);
+            ProductionInspection.Save(inspectedJob,InspectionVerdict.NeedsRework,"3号孔偏小");
+            SelectPage(archivePage);PerformLayout();
+            All(archivePage).OfType<Button>().Single(x=>x.Text=="刷新列表").PerformClick();
+            var inspectedRow=((DataGridView)Named(archivePage,"ArchiveRecords")).Rows.Cast<DataGridViewRow>().Single(r=>r.Cells[1].Value as string=="工件_检验登记检查");
+            check(inspectedRow.Cells["检验结果"].Value as string=="需补加工" && inspectedRow.Cells["完成孔"].Value as string=="18/18" &&
+                inspectedRow.Cells["每孔秒 / 功率"].Value as string=="3秒" && inspectedRow.Cells["失败环节"].Value as string=="" &&
+                inspectedRow.DefaultCellStyle.BackColor!=Color.Empty,"加工记录列表显示参数、完成孔数和检验结果，需补加工的行有底色");
+            var archiveTable=(DataGridView)Named(archivePage,"ArchiveRecords");
+            archiveTable.Sort(archiveTable.Columns[1],System.ComponentModel.ListSortDirection.Descending);
+            archiveTable.Sort(archiveTable.Columns["检验结果"]!,System.ComponentModel.ListSortDirection.Descending);
+            check(archiveTable.Rows.Cast<DataGridViewRow>().All(r=>r.Tag is string folder && Path.GetFileName(folder)==r.Cells[1].Value as string),
+                "加工记录列表排序后，每一行仍对应自己的记录目录");
+            archiveTable.CurrentCell=inspectedRow.Cells[0];
+            All(archivePage).OfType<Button>().Single(x=>x.Text=="查看流程检查").PerformClick();
+            var tracePage=((TabControl)_toolsPage.Controls[0]).TabPages.Cast<TabPage>().Single(p=>p.Text=="流程检查");
+            var traceSteps=(ListView)Named(tracePage,"ProcessTraceSteps");
+            check(_tabs.SelectedTab==_toolsPage && ((TabControl)_toolsPage.Controls[0]).SelectedTab==tracePage && Named(tracePage,"ProcessTraceFolder").Text==inspectedJob &&
+                traceSteps.Items.Count==29 && traceSteps.Items[28].SubItems[1].Text=="通过" && traceSteps.Items[10].SubItems[1].Text=="通过" &&
+                traceSteps.Items[1].SubItems[1].Text=="未执行" && traceSteps.SelectedItems.Count==1 && Named(tracePage,"ProcessTraceData").Text.Contains(traceSteps.SelectedItems[0].Text),
+                "从加工记录进入维护的“流程检查”：按顺序列出29步的结果，并显示所选步骤的原始数据");
+            SelectPage(archivePage);PerformLayout();
+            if(!hadSummary)
+            {
+                All(archivePage).OfType<Button>().Single(x=>x.Name=="RebuildProductionSummary").PerformClick();
+                check(File.Exists(summaryFile) && ProductionSummary.Parse(File.ReadAllText(summaryFile)).Any(r=>r[0]==inspectedRun.RunId.ToString() && r.Contains("需补加工")),
+                    "“重建汇总表”把历史目录写入加工汇总.csv并带出检验结果");
+            }
+        }
+        finally
+        {
+            if(Directory.Exists(inspectedJob))Directory.Delete(inspectedJob,true);
+            if(!hadSummary && File.Exists(summaryFile))File.Delete(summaryFile);
+        }
+        SelectPage(_machiningPage);
         string logRoot=Path.Combine(folder,"categorized-logs");var logger=new MemoryLogger(logRoot);
         logger.Info("[整件] 测试进度");logger.Info("[定位采集] 测试视觉");logger.Info("激光只读测试");logger.Warn("数控连接测试异常");
         string day=Path.Combine(logRoot,DateTime.Now.ToString("yyyy-MM-dd"));

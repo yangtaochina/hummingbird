@@ -30,12 +30,12 @@ public sealed partial class MainForm
         var parameters=new Label {AutoSize=true,MaximumSize=new Size(950,0)};
         void RefreshParameters()
         {
-            parameters.Text=$"本次校准试打：{_laserDurationSeconds.Value:0.###}秒 · 原始功率{_laserPowerRaw.Value}；沿用第1页参数，开始时再次核对读回。";
+            parameters.Text=$"本次校准试打：{_laserDurationSeconds.Value:0.###}秒 · 原始功率{_laserPowerRaw.Value}；沿用“维护 → 设备与参数”中的加工参数，开始时再次核对读回。";
         }
         _laserDurationSeconds.ValueChanged+=(_,_)=>RefreshParameters();_laserPowerRaw.ValueChanged+=(_,_)=>RefreshParameters();RefreshParameters();
         flow.Controls.Add(GroupBoxOf("1 在机床面板启动校准程序",Lbl("使用配套HM_OPTICAL.MPF；机床已有对应程序时不需重复上传。结束其他NC，选择该程序（或上传后实际名称），从头Cycle Start一次进入等待。"),
             Btn("没有校准程序：前往上传",(_,_)=>ShowNcUpload("HM_OPTICAL.MPF")),
-            Btn("前往参数与设备连接",(_,_)=>_tabs.SelectedTab=_environmentPage),
+            Btn("前往参数与设备连接",(_,_)=>SelectPage(_environmentPage)),
             Lbl("此程序只执行有界XY位移，不移动Z/C，不自行出光，与主控/回位程序共用R220～229，不能同时运行。")));
         flow.Controls.Add(GroupBoxOf("2 自动检查校准条件",Lbl("程序自动核对工作Z/C、校准程序等待、采样范围及原位图像纹理；缺项会提示处理。仅无法由接口判断的参考有效、区域允许采样及留痕，在开始时集中确认一次。正常换件或回位无需重新校准。"),parameters));
         string? result=null;
@@ -72,7 +72,7 @@ public sealed partial class MainForm
             Btn("查看落点标注并确认",async(_,_)=>await UiAction(()=>{ShowAutomaticOpticsResult();return Task.CompletedTask;})),
             Btn("打开本次资料",async(_,_)=>await UiAction(()=>{if((result??_lastAutomaticOpticsFolder) is {} saved)OpenLocalFolder(saved);return Task.CompletedTask;})),
             Lbl("流程：自动选择一次曝光 → 原位/重复图 → X位移图 → Y位移图 → 返回原位复拍 → XY计算及一致性检查 → 退出NC → 一次试打前后图 → 落点计算及自动载入。"),
-            Lbl("过程和结果自动按轮次保存。光学确实改变后的旧落点与旧六步基准停用；完成后仍按第3页流程建立新光学条件的六步基准，并核对本次落点。失败会显示具体原因，详细资料在维护页查看。")));
+            Lbl("过程和结果自动按轮次保存。光学确实改变后的旧落点与旧六步基准停用；完成后仍在“加工”页建立新光学条件的六步基准，并核对本次落点。失败会显示具体原因，详细资料在维护页查看。")));
         page.Controls.Add(flow);page.Controls.Add(status);return page;
     }
 
@@ -96,7 +96,7 @@ public sealed partial class MainForm
     {
         if(_cfg.DeviceMode!="Real" || _cnc is not ISinumerikVarAccess vars || !_cnc.IsConnected || _camera is not {IsOpen:true} ||
             _laser is not ModbusRtuLaserService device || !device.IsOpen)
-            throw new InvalidOperationException("先在第1页连接现场相机、数控和激光串口；离线模式不能执行自动校准。");
+            throw new InvalidOperationException("先在“维护 → 设备与参数”连接现场相机、数控和激光串口；离线模式不能执行自动校准。");
         if(!_fixedCConfirmed.Checked && !_guidedOperationConfirmed)throw new InvalidOperationException("本次校准尚未完成现场条件确认。");
         string profilePath=Path.Combine(StationProgramFiles.Folder,"自动光学校准配置.json");
         var profile=JsonSerializer.Deserialize<OpticalCalibrationProfile>(File.ReadAllText(profilePath))??throw new InvalidDataException("校准配置为空。");

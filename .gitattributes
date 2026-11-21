@@ -1,0 +1,2 @@
+# 机床程序按现场版本保持CRLF，SHA256核对不依赖本机autocrlf设置
+*.MPF text eol=crlf

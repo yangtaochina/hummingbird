@@ -1,4 +1,4 @@
-namespace Hummingbird.Core;
+﻿namespace Hummingbird.Core;
 
 public sealed record ExposureQuality(double Score, double DarkFraction, double SaturatedFraction,
     double Contrast, bool? FeatureDetected = null, string Detail = "");
@@ -14,6 +14,27 @@ public static class ExposureSelectionPolicy
             throw new ArgumentOutOfRangeException(nameof(basis));
         return new[] { 1.0, .25, .5, 2, 4 }.Select(f => Math.Clamp(basis * f, 20, 1000000)).Distinct().ToArray();
     }
+
+    public const int MaximumExtensions = 2;
+
+    /// <summary>
+    /// 做过特征检查但没有识别出来、且最佳档在已试各档最亮或最暗一端时，返回该方向的下一档；否则返回null。
+    /// 圆环方位不做单张特征检查，固定保留五档，供四方位几何选优（RingScanSolver.SelectExposure）使用。
+    /// </summary>
+    public static double? Extend(double selected, ExposureQuality best, IEnumerable<double> tried, double minimumUs, double maximumUs)
+    {
+        var all = tried.ToArray();
+        if (best.FeatureDetected != false || all.Length < 2) return null;
+        double next = selected >= all.Max() ? selected * 2 : selected <= all.Min() ? selected / 2 : double.NaN;
+        if (double.IsNaN(next)) return null;
+        next = Math.Clamp(next, Math.Max(20, minimumUs), Math.Min(1000000, maximumUs));
+        return all.Any(v => Math.Abs(v - next) < 1e-9) ? null : next;
+    }
+
+    /// <summary>给操作员看的画面明暗说明；只用于提示，不参与任何通过/拒绝判断。</summary>
+    public static string Describe(ExposureQuality quality) =>
+        quality.SaturatedFraction > .2 ? $"画面过曝（{quality.SaturatedFraction:P0}的区域发白）" :
+        quality.Contrast < 60 ? $"画面偏暗或明暗差太小（亮暗只差{quality.Contrast:F0}级，满量程255）" : "画面明暗正常";
 
     public static ExposureQuality Measure(CameraFrame frame, DatumCircleSeed? region = null)
     {

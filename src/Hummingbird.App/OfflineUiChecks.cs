@@ -48,7 +48,8 @@ public sealed partial class MainForm
             if (!ok) throw new InvalidOperationException(name);
         }
         IEnumerable<Control> Children(Control parent) => parent.Controls.Cast<Control>().SelectMany(c => new[] { c }.Concat(Children(c)));
-        Check(_tabs.TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "1 环境与参数", "2 工位恢复", "3 定位与加工", "4 同件补加工", "5 光学与落点", "加工资料与日志", "维护与辅助" }), "按日常操作顺序组织七个入口");
+        Check(_tabs.TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "加工", "补加工", "工位恢复", "加工记录", "维护" }), "日常只保留四个操作入口，其余收进维护");
+        Check(((TabControl)_toolsPage.Controls[0]).TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "设备与参数", "光学与落点", "采图与定位诊断", "单点试打", "NC文件", "设备维护", "整件流程演练", "现场取证", "流程检查" }), "设备参数、光学校准、诊断和取证统一放在维护入口");
         Check(!Children(this).OfType<Button>().Any(b => b.Text.Contains("九点") || b.Text.Contains("转台")) &&
             Children(this).OfType<Button>().Single(b=>b.Name=="OneClickProductionStart").Text=="一键加工", "旧标定入口移除，日常加工使用新一键入口");
         Check(!_fixedCConfirmed.Checked, "不恢复装夹有效确认");
@@ -75,7 +76,7 @@ public sealed partial class MainForm
             _laserPreset.Settings.Power==2800 && !_laser.IsOpen,"客户设置秒数和功率后持久保存，不自动连接或写激光");
         Check(!_spotTrialExposureButton!.Enabled && _laserDurationSeconds.Maximum==600 && _laserPowerRaw.Maximum==10000,
             "模拟模式禁止出光，界面显示有界的客户参数范围");
-        _tabs.SelectedTab=_environmentPage;
+        SelectPage(_environmentPage);
         Children(this).OfType<Button>().Single(b=>b.Text=="载入历史设置").PerformVisibleClick();
         Check(_laserDurationSeconds.Value==2 && _laserPowerRaw.Value==3950 && !_laser.IsOpen,"历史参数只回填界面，不自动应用或出光");
         Children(this).OfType<Button>().Single(b=>b.Text=="载入客户参数（60秒／4420）").PerformVisibleClick();
@@ -86,7 +87,7 @@ public sealed partial class MainForm
         using(var processImage=new Bitmap(Width,Height))
         {DrawToBitmap(processImage,new Rectangle(0,0,Width,Height));processImage.Save(Path.Combine(folder,"ui_process_parameters.png"));}
         Check(!_camera!.IsOpen && !_cnc.IsConnected, "启动不连接设备");
-        _tabs.SelectedTab=_machiningPage;
+        SelectPage(_machiningPage);
         _captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text=="手动采图");
         Children(this).OfType<Button>().Single(b=>b.Text=="停稳拍照（自动存档）").PerformVisibleClick();
         while(_workspaceBusy)await Task.Delay(20);
@@ -100,7 +101,7 @@ public sealed partial class MainForm
         var returnTab=_returnPage;
         Check(!Children(_machiningPage).OfType<Button>().Any(b=>b.Name=="StationReturnShortcut" || b.Text=="工位恢复"),
             "定位与加工页移除工位恢复按钮，保留独立第2页");
-        _tabs.SelectedTab=returnTab;
+        SelectPage(returnTab);
         Check(!Children(returnTab).OfType<Button>().Single(b=>b.Name=="StationReturnStart").Enabled,
             "离线界面禁用自动回位，不连接或写机床");
         string returnProfile=Path.Combine(folder,"station-return-profile.json");
@@ -115,7 +116,7 @@ public sealed partial class MainForm
         _loadStationReturnProfile(returnProfile);
         Check(!returnConfirmation.Checked && !_fixedCConfirmed.Checked,
             "重新载入回位配置不恢复本次参考确认，也不自动确认装夹固定C");
-        _tabs.SelectedTab=_machiningPage;_captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text=="手动采图");
+        SelectPage(_machiningPage);_captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text=="手动采图");
         var captureChoice=Children(this).OfType<ComboBox>().Single(c=>c.Items.Count==6);
         var captureGrid=Children(this).OfType<DataGridView>().Single(t=>t.Rows.Count==6);
         foreach(bool enabled in new[]{true,false})
@@ -140,7 +141,7 @@ public sealed partial class MainForm
         foreach(int step in Enumerable.Range(0,6))
         foreach(int column in new[]{1,2,3,0})
         {
-            _tabs.SelectedTab=_machiningPage;_captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text=="手动采图");
+            SelectPage(_machiningPage);_captureDetails.SelectedTab=_captureDetails.TabPages.Cast<TabPage>().Single(p=>p.Text=="手动采图");
             evidenceTabs.PerformLayout();captureGrid.PerformLayout();
             var cell=captureGrid.GetCellDisplayRectangle(column,step,false);
             var down=new MouseEventArgs(MouseButtons.Left,1,cell.Left+Math.Max(2,cell.Width/2),cell.Top+cell.Height/2,0);
@@ -149,7 +150,7 @@ public sealed partial class MainForm
                 $"鼠标点击步骤{step+1}第{column+1}列不重入且保留实际点击单元格");
         }
         _selectCaptureStep!(0);
-        _tabs.SelectedTab=_toolsPage;evidenceTabs.SelectedTab=evidenceTabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="现场取证");
+        SelectPage(_toolsPage);evidenceTabs.SelectedTab=evidenceTabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="现场取证");
         _state.CaptureRoot=folder;
         Children(evidenceTabs.SelectedTab!).OfType<Button>().Single(b=>b.Text=="开始现场自动取证").PerformVisibleClick();
         while(_workspaceBusy)await Task.Delay(20);
@@ -319,7 +320,7 @@ public sealed partial class MainForm
                 using var bitmap = new Bitmap(Width, Height); DrawToBitmap(bitmap, new Rectangle(0, 0, Width, Height));
                 bitmap.Save(Path.Combine(folder, $"ui_{size.Width}_{i + 1}.png"));
             }
-            _tabs.SelectedTab=_machiningPage;
+            SelectPage(_machiningPage);
             var detailTabs = _captureDetails;
             for (int i = 1; i < detailTabs.TabPages.Count; i++)
             {
@@ -348,10 +349,17 @@ public sealed partial class MainForm
         bool propagated=false;
         try{await RunSingleSpotTrial(false,propagateErrors:true);}catch(InvalidOperationException){propagated=true;}
         Check(propagated,"单孔工序可将失败传播给整件调度，不吞掉错误继续下一孔");
-        _tabs.SelectedTab=_machiningPage;
+        SelectPage(_machiningPage);
         var imageReviewTabs=Children(_machiningPage).OfType<TabControl>().Single(t=>t.TabPages.Cast<TabPage>().Any(p=>p.Text=="已采照片／框选"));
+        var captureFeedback=Children(_machiningPage).OfType<Label>().Single(l=>l.Name=="CaptureFeedback");
+        var (feedbackColor,feedbackText)=(captureFeedback.ForeColor,captureFeedback.Text);
+        imageReviewTabs.SelectedIndex=0;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成：离线检查";
         imageReviewTabs.SelectedTab=imageReviewTabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="已采照片／框选");
         PerformLayout();
+        var backToProduction=Children(_machiningPage).OfType<Button>().Single(b=>b.Text=="返回一键加工");
+        Check(backToProduction.Visible && backToProduction.Parent!.Height>=backToProduction.Height && backToProduction.Height>0,
+            $"加工失败提示仍显示时进入诊断视图，返回和工件资料按钮所在行不被压成零高（行高={backToProduction.Parent!.Height}）");
+        captureFeedback.ForeColor=feedbackColor;captureFeedback.Text=feedbackText;
         Check(_liveEnabled.Checked && _livePicture.Image is not null && _lastPreviewAt is not null,"连接相机后自动产生实时画面");
         var previewTime=_lastPreviewAt;
         for(int i=0;i<30 && _lastPreviewAt<=previewTime;i++)await Task.Delay(100);
@@ -420,7 +428,7 @@ public sealed partial class MainForm
                 var settings = _ringSettingsSnapshot!();
                 simulated.Width = settings.ImageWidth; simulated.Height = settings.ImageHeight; simulated.FreezePose = true;
             }
-            _tabs.SelectedTab=_machiningPage;
+            SelectPage(_machiningPage);
             Check(Children(this).OfType<CheckBox>().Single(c => c.Text == "自动选择曝光").Checked, "默认启用采图自动曝光选优");
             Children(this).OfType<Button>().Single(b => b.Text == "停稳拍照（自动存档）").PerformVisibleClick();
             var deadline = DateTime.UtcNow.AddSeconds(45);
@@ -438,7 +446,7 @@ public sealed partial class MainForm
             Check(LaserSpotCalibration.Hash(candidatePath) == frame.Capture!.ImageSha256,
                 "正式归档照片就是实际评分获选照片");
         }
-        _tabs.SelectedTab=_machiningPage;
+        SelectPage(_machiningPage);
         _state.CaptureRoot=Path.Combine(folder,"pinned-step-captures");Directory.CreateDirectory(_state.CaptureRoot);
         Children(this).OfType<Button>().Single(b=>b.Text=="新工件").PerformVisibleClick();
         while(_workspaceBusy)await Task.Delay(20);
@@ -463,7 +471,7 @@ public sealed partial class MainForm
             }
             finally{_productionStop=null;_workspaceBusy=false;exposureChoice.Checked=oldExposureChoice;}
         }
-        _tabs.SelectedTab=_toolsPage;
+        SelectPage(_toolsPage);
         var productionTabs=(TabControl)_toolsPage.Controls[0];
         productionTabs.SelectedTab=productionTabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="整件流程演练");
         Children(productionTabs.SelectedTab!).OfType<NumericUpDown>().Single().Value=8000;
@@ -528,7 +536,7 @@ public sealed partial class MainForm
             await _loadWorkspace!(reworkSession);
             Check(_activeReworkPlan?.Info?.PlanId==plan.Info!.PlanId && Children(this).OfType<Button>().Any(b=>b.Text=="一键补加工") && !_fixedCConfirmed.Checked,
                 "恢复待补加工记录保留来源及专用模式，但不恢复装夹确认或自动开始");
-            _tabs.SelectedTab=_machiningPage;Children(this).OfType<Button>().Single(b=>b.Text=="新工件").PerformVisibleClick();
+            SelectPage(_machiningPage);Children(this).OfType<Button>().Single(b=>b.Text=="新工件").PerformVisibleClick();
             while(_workspaceBusy)await Task.Delay(20);
             Check(_activeReworkPlan is null && Children(this).OfType<Button>().Single(b=>b.Name=="OneClickProductionStart").Text=="一键加工" &&
                 File.Exists(Path.Combine(Path.GetDirectoryName(reworkSession)!,"补加工计划.json")),

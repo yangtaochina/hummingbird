@@ -24,6 +24,7 @@ public sealed partial class MainForm : Form
     private OperatorWorkspaceState _state;
     private readonly TabControl _tabs = new() { Dock = DockStyle.Fill };
     private readonly RichTextBox _rtbLog = new() { Dock = DockStyle.Fill, ReadOnly = true, Font = new Font("Consolas", 9F) };
+    private readonly Label _latestLog = new() { Name="LatestLogLine", Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft, Text = "日志：暂无" };
     private readonly PictureBox _livePicture = new() { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black };
     private readonly Label _liveStatus = new() { Dock = DockStyle.Bottom, Height = 38, Text = "相机未连接", AutoEllipsis=true };
     private DateTimeOffset? _lastPreviewAt;
@@ -122,9 +123,9 @@ public sealed partial class MainForm : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,55));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,45));
         var flow = WorkflowFlow();
-        flow.Controls.Add(Lbl("单点仅用于现场选定位置的试打和落点采样。加工参数在第1步统一设置。"));
+        flow.Controls.Add(Lbl("单点仅用于现场选定位置的试打和落点采样。加工参数在“维护 → 设备与参数”统一设置。"));
         flow.Controls.Add(BuildSingleSpotTrialControls());
-        flow.Controls.Add(Btn("前往参数设置", (_,_)=>_tabs.SelectedTab=_environmentPage));
+        flow.Controls.Add(Btn("前往参数设置", (_,_)=>SelectPage(_environmentPage)));
         layout.Controls.Add(flow,0,0); layout.Controls.Add(_trialPicture,1,0);
         tab.Controls.Add(layout); return tab;
     }
@@ -294,6 +295,7 @@ public sealed partial class MainForm : Form
                 BeginInvoke(() =>
                 {
                     if (IsDisposed) return; _rtbLog.AppendText($"[{DateTime.Now:HH:mm:ss}] [{level}] {message}\n");
+                    _latestLog.Text=$"[{DateTime.Now:HH:mm:ss}] {message.ReplaceLineEndings(" ")}";_latestLog.ForeColor=level.Contains("ERR",StringComparison.OrdinalIgnoreCase)?Color.DarkRed:SystemColors.ControlText;
                     if (_rtbLog.TextLength > 150000) _rtbLog.Text = _rtbLog.Text[^100000..]; _rtbLog.SelectionStart = _rtbLog.TextLength; _rtbLog.ScrollToCaret();
                 });
             }

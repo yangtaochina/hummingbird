@@ -10,7 +10,7 @@ public sealed partial class MainForm
     private Func<RingScanSession?>? _readReusableCaptureBaseline;
     private TabPage BuildRingScanTab()
     {
-        var tab = new TabPage("3 定位与加工");
+        var tab = new TabPage("加工");
         _machiningPage=tab;
         var session = new RingScanSession { DirectionOptions = new() { BoundaryMode = DatumBoundaryMode.CircularFaceEdge } };
         _ringSettingsSnapshot = () => JsonSerializer.Deserialize<RingScanSettings>(JsonSerializer.Serialize(session.Settings))!;
@@ -29,7 +29,7 @@ public sealed partial class MainForm
         Action showPhoto = () => { };
         Action showPreview = () => { };
         var photo = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black };
-        var liveHost = new GroupBox { Dock=DockStyle.Fill,Text="实时画面 · 自动定位与加工",Padding=new Padding(6) };
+        var liveHost = new GroupBox { Dock=DockStyle.Fill,Text="实时画面",Padding=new Padding(6) };
         var enlarge=Btn("放大实时画面",(_,_)=>ShowLiveMagnifier());enlarge.Dock=DockStyle.Top;
         liveHost.Controls.Add(_livePicture);liveHost.Controls.Add(_liveStatus);liveHost.Controls.Add(enlarge);
         var photoTab = new TabPage("已采照片／框选"); photoTab.Controls.Add(photo);
@@ -184,7 +184,7 @@ public sealed partial class MainForm
             _liveStatus.ForeColor=Color.DarkOrange;_liveStatus.Text="正在采图／检查，实时预览暂停；请保持机床位置不动。";
             captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=_stationReturnUiAction?"正在处理工位恢复操作，请勿手动操作轴……":"正在处理，请保持位置不动……";
             try { _workspaceTask = action(); await _workspaceTask; }
-            catch (Exception ex) { StopMonitor(); output.Text = ex.Message;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成："+ex.Message;if(_stationReturnUiAction)_selectStationReturnPanel?.Invoke();else if(_productionUiAction)_selectProductionPanel?.Invoke();else if(_opticalUiAction)_tabs.SelectedTab=_opticsPage;else showDetails(); _log.Error("[定位采集] " + ex.Message); if(_fieldEvidence is not null){AddEvidenceIssue("Acquisition",ex);RefreshEvidencePackage();} }
+            catch (Exception ex) { StopMonitor(); output.Text = ex.Message;captureFeedback.ForeColor=Color.DarkRed;captureFeedback.Text="操作未完成："+ex.Message;if(_stationReturnUiAction)_selectStationReturnPanel?.Invoke();else if(_productionUiAction)_selectProductionPanel?.Invoke();else if(_opticalUiAction)SelectPage(_opticsPage);else showDetails(); _log.Error("[定位采集] " + ex.Message); if(_fieldEvidence is not null){AddEvidenceIssue("Acquisition",ex);RefreshEvidencePackage();} }
             finally
             {
                 _workspaceTask = null; _workspaceBusy = false;
@@ -207,6 +207,15 @@ public sealed partial class MainForm
                 {
                     using var pen = new Pen(Color.Orange, 2) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
                     graphics.DrawEllipse(pen, (float)(seed.Px - seed.RadiusPx), (float)(seed.Py - seed.RadiusPx), (float)seed.RadiusPx * 2, (float)seed.RadiusPx * 2);
+                }
+                // 圆环照片：画出这一帧取到的边缘点和拟合圆，便于核对取边位置。只是显示，不参与计算。
+                if (frame.Role == RingFrameRole.RingArc && fit is not null)
+                {
+                    var overlay = RingFrameOverlay.Build(session.Settings, frame, fit);
+                    using var circle = new Pen(Color.Cyan, 2); using var edge = new Pen(Color.Lime, 2);
+                    foreach (var arc in overlay.FittedArcs) graphics.DrawLines(circle, arc.Select(p => new PointF((float)p.Px, (float)p.Py)).ToArray());
+                    foreach (var (px, py) in overlay.EdgePoints)
+                    { graphics.DrawLine(edge, (float)px - 6, (float)py, (float)px + 6, (float)py); graphics.DrawLine(edge, (float)px, (float)py - 6, (float)px, (float)py + 6); }
                 }
                 photo.Invalidate();
             }
@@ -405,7 +414,7 @@ public sealed partial class MainForm
             Stable(before, await ReadMachine(), c1.Value, (await ReadFixedCAsync()).Value);
             if (session.Frames.FirstOrDefault() is { } reference && (Math.Abs(before.PosZ - reference.Z) > .010 ||
                 Math.Abs(Math.IEEERemainder(c1.Value - reference.C, 360)) > .005)) throw new InvalidOperationException("当前Z/C与这组记录不同，请核对装夹与光学条件后新建工件。");
-            CameraFrame image;
+            CameraFrame image; string exposureNote = "";
             if (autoExposure.Checked)
             {
                 double gain = (double)_numGain.Value;
@@ -460,6 +469,10 @@ public sealed partial class MainForm
                     _state.CameraExposureUs = selected.ExposureUs;
                     _state.StepExposureUs[step.Name] = selected.ExposureUs; SaveOperatorState();
                     _cameraStatus.Text = $"{step.Name} 自动曝光：{selected.ExposureUs:F0}µs（{selected.Trials.Count}档）";
+                    var chosen = selected.Trials.First(t => t.ExposureUs == selected.ExposureUs).Quality;
+                    exposureNote = $"已自动试拍{selected.Trials.Count}档曝光（{selected.Trials.Min(t => t.ExposureUs):F0}～{selected.Trials.Max(t => t.ExposureUs):F0}µs），" +
+                        (chosen.FeatureDetected == false ? "都没有识别出参考孔；" : "") + $"选用{selected.ExposureUs:F0}µs，{ExposureSelectionPolicy.Describe(chosen)}。";
+                    _log.Info($"[定位采集] {step.Name} {exposureNote}");
                     File.WriteAllText(Path.Combine(trialFolder, "选优结果.json"), JsonSerializer.Serialize(new {
                         SelectedExposureUs = selected.ExposureUs, Gain = gain, selected.Trials,
                         Purpose = step.Role==RingFrameRole.RingArc?"ProvisionalImageQuality_FourViewGeometryReselectsWhenComplete":"ReferenceBoundarySelection_FinalPositioningChecksStillRequired"
@@ -533,7 +546,7 @@ public sealed partial class MainForm
             captureFeedback.Text=$"{step.Name}照片已保存；当前已保存{session.Frames.Count}/6张。检查结果见右侧。";
             _log.Info($"[定位采集] {step.Name}已保存：{path}");
             if (step.Role != RingFrameRole.RingArc && (!inspections.TryGetValue(path, out var q) || q.Status != DatumHoleInspectionStatus.Detected))
-            { StopMonitor(); SelectStep(index, true);captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=$"{step.Name}照片已保存，但参考边界未通过／需要框选；不是未采集。"; output.AppendText("\r\n此参考图需要框选／检查，自动采图已暂停。"); }
+            { StopMonitor(); SelectStep(index, true);captureFeedback.ForeColor=Color.DarkOrange;captureFeedback.Text=$"{step.Name}照片已保存，但参考边界未通过／需要框选；不是未采集。{exposureNote}"; output.AppendText("\r\n此参考图需要框选／检查，自动采图已暂停。"); }
             RefreshEvidencePackage();
             var archived=Frame(index)??throw new InvalidDataException($"步骤{index+1}（{step.Name}）未在当前记录中找到；照片目录：{jobFolder}");
             if(GuidedCapture.Index(archived)!=index)throw new InvalidDataException("采图归档用途与指定步骤不一致，已停止。");
@@ -887,6 +900,7 @@ public sealed partial class MainForm
             if(!dryRun)ProductionJobArchive.Begin(activeJob,record);
             StopMonitor();using var cancellation=CancellationTokenSource.CreateLinkedTokenSource(_guidedOperationStop?.Token??CancellationToken.None);_productionStop=cancellation;
             var ct=cancellation.Token;
+            DialAlignmentPreview? locatedForSummary=null;
             var cell=new ConnectedProductionCell(device.VerifyEmissionOffAsync,
                 async(x,y,token)=>
                 {
@@ -937,7 +951,7 @@ public sealed partial class MainForm
                 },
                 async token=>
                 {
-                    token.ThrowIfCancellationRequested();var located=await Task.Run(()=>new DialAlignmentSolver().Analyze(session,_template));
+                    token.ThrowIfCancellationRequested();var located=await Task.Run(()=>new DialAlignmentSolver().Analyze(session,_template));locatedForSummary=located;
                     File.WriteAllText(Path.Combine(folder,"定位稳定性检查.json"),JsonSerializer.Serialize(new{located.Ring.CompatibilityRecovery,located.TargetStability},new JsonSerializerOptions{WriteIndented=true}));
                     var compensated=LaserSpotCompensation.Preview(calibration,session.Settings,located.Ring.ReferenceZ,located.Ring.ReferenceC,located.Targets);
                     if(compensated.Targets.Any(p=>!bounds.Contains(p.LaserCommandX,p.LaserCommandY)))throw new InvalidOperationException("补偿孔位超出核定边界。");
@@ -982,6 +996,9 @@ public sealed partial class MainForm
                     try{ProductionJobArchive.Save(activeJob,folder,record);}catch(Exception save){_log.Error("本件结果更新失败："+save.Message);}
                 }
                 _reportProductionProgress?.Invoke(record,folder);
+                // 汇总表只是从已保存记录推导的副本；写不进去（例如正被Excel打开）不影响本件记录。
+                try{ProductionSummary.SaveLocatingSnapshot(folder,session.Frames,locatedForSummary);ProductionSummary.Upsert(Path.GetDirectoryName(activeJob)!,folder);}
+                catch(Exception ex){_log.Warn("加工汇总表未更新，可在“加工记录”页重建："+ex.Message);}
                 RefreshEvidencePackage();UpdateLaserCalibrationButtons();
             }
         }
@@ -991,13 +1008,13 @@ public sealed partial class MainForm
         right.Multiline=true;
         right.TabPages.AddRange([productionTab,photoTab,previewTab,detailsTab,routeTab]);
         _captureDetails=right;
-        _selectProductionPanel=()=>{_tabs.SelectedTab=tab;right.SelectedTab=productionTab;};
-        _returnPage=BuildStationReturnTab(()=>route,Run); _returnPage.Text="2 工位恢复";
-        _selectStationReturnPanel=()=>_tabs.SelectedTab=_returnPage;
+        _selectProductionPanel=()=>{SelectPage(tab);right.SelectedTab=productionTab;};
+        _returnPage=BuildStationReturnTab(()=>route,Run); _returnPage.Text="工位恢复";
+        _selectStationReturnPanel=()=>SelectPage(_returnPage);
         _opticsPage=BuildOpticalWorkflowPage(laserTab,settingsTab,Run);
-        _toolsPage=new TabPage("维护与辅助");
+        _toolsPage=new TabPage("维护");
         var tools=new TabControl {Dock=DockStyle.Fill,Multiline=true};
-        tools.TabPages.AddRange([BuildSpotTrialTab(),BuildNcFilesTab(),BuildMaintenanceTab(),BuildProductionDemoTab(Run),BuildFieldEvidenceTab(ReadSession,()=>stepChoice.SelectedIndex,Run)]);
+        tools.TabPages.AddRange([BuildSpotTrialTab(),BuildNcFilesTab(),BuildMaintenanceTab(),BuildProductionDemoTab(Run),BuildFieldEvidenceTab(ReadSession,()=>stepChoice.SelectedIndex,Run),BuildProcessTraceTab()]);
         _toolsPage.Controls.Add(tools);
         var left=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=2};
         left.RowStyles.Add(new RowStyle(SizeType.Percent,100));left.RowStyles.Add(new RowStyle(SizeType.Absolute,175));
@@ -1012,9 +1029,10 @@ public sealed partial class MainForm
         manualLayout.Controls.Add(Lbl("整件加工会自动完成六处采图、拟合圆心和18孔定位。手动入口用于建基准或排查失败照片。"),0,2);
         manual.Controls.Add(manualLayout);right.TabPages.Add(manual);
         project.Visible=false;
-        var projectToggle=Btn("工件与资料（维护）",(_,_)=>project.Visible=!project.Visible);
-        var viewToggle=Btn("照片与定位诊断（维护）",(_,_)=>
-        {if(right.SelectedTab==productionTab)right.SelectedTab=photoTab;else right.SelectedTab=productionTab;});
+        // 日常只显示一键加工；工件资料、六步表和诊断页签从“维护 → 采图与定位诊断”进入后才出现。
+        var viewToggle=Btn("返回一键加工",(_,_)=>right.SelectedTab=productionTab);
+        var projectToggle=Btn("工件与资料",(_,_)=>project.Visible=!project.Visible);
+        var viewActions=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoSize=true,WrapContents=true};viewActions.Controls.AddRange([viewToggle,projectToggle]);
         void UpdateProductionView()
         {
             bool production=right.SelectedIndex<=0 || right.SelectedTab==productionTab;
@@ -1022,20 +1040,22 @@ public sealed partial class MainForm
             right.SizeMode=production?TabSizeMode.Fixed:TabSizeMode.Normal;
             right.ItemSize=production?new Size(1,1):new Size(0,22);
             right.Multiline=!production;right.TabStop=!production;
-            viewToggle.Text=production?"照片与定位诊断（维护）":"返回一键加工";
+            viewActions.Visible=table.Visible=!production;
+            if(production)project.Visible=false;
+            left.RowStyles[1].Height=production?0:175;
             captureFeedback.Visible=!production || captureFeedback.ForeColor==Color.DarkRed;
         }
         right.SelectedIndexChanged+=(_,_)=>UpdateProductionView();captureFeedback.TextChanged+=(_,_)=>UpdateProductionView();
-        var viewActions=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoSize=true,WrapContents=true};viewActions.Controls.AddRange([projectToggle,viewToggle]);
         var top = new TableLayoutPanel { Dock=DockStyle.Fill, AutoSize=true, ColumnCount=1, RowCount=4 };
         top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
         for(int row=0;row<4;row++)top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         void FitMaintenanceRows()
         {
+            top.RowStyles[0].SizeType=viewActions.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[0].Height=0;
             top.RowStyles[1].SizeType=project.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[1].Height=0;
             top.RowStyles[3].SizeType=captureFeedback.Visible?SizeType.AutoSize:SizeType.Absolute;top.RowStyles[3].Height=0;
         }
-        project.VisibleChanged+=(_,_)=>FitMaintenanceRows();captureFeedback.VisibleChanged+=(_,_)=>FitMaintenanceRows();
+        project.VisibleChanged+=(_,_)=>FitMaintenanceRows();captureFeedback.VisibleChanged+=(_,_)=>FitMaintenanceRows();viewActions.VisibleChanged+=(_,_)=>FitMaintenanceRows();
         top.Controls.Add(viewActions,0,0);top.Controls.Add(project,0,1);top.Controls.Add(jobLabel,0,2);top.Controls.Add(captureFeedback,0,3);
         var layout = new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=2 };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
