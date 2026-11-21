@@ -52,6 +52,35 @@ public sealed partial class MainForm
             toggle.PerformClick();
             check(shown && !Named(page,target).Visible,$"“{button}”可展开并再次收起说明");
         }
+        string inspectedJob=Path.Combine(_state.CaptureRoot,"工件_检验登记检查"),summaryFile=Path.Combine(_state.CaptureRoot,ProductionSummary.FileName);
+        bool hadSummary=File.Exists(summaryFile);
+        try
+        {
+            Directory.CreateDirectory(inspectedJob);
+            var inspectedRun=new ProductionRunRecord {DryRun=false,RequestedExposureMs=3000,Phase="Completed",Completed=true,CapturedSteps=6,
+                StartedAt=DateTimeOffset.Now.AddMinutes(-3),FinishedAt=DateTimeOffset.Now,LaserOffConfirmed=true,NcExitConfirmed=true,
+                Holes=Enumerable.Range(1,18).ToDictionary(i=>i,_=>ProductionHolePhase.Completed)};
+            ProductionJobArchive.Begin(inspectedJob,inspectedRun);
+            ProductionJobArchive.SaveRunRecord(Path.Combine(inspectedJob,ProductionSummary.RunFolderPrefix+inspectedRun.RunId.ToString("N")),inspectedRun);
+            ProductionInspection.Save(inspectedJob,InspectionVerdict.NeedsRework,"3号孔偏小");
+            SelectPage(archivePage);PerformLayout();
+            All(archivePage).OfType<Button>().Single(x=>x.Text=="刷新列表").PerformClick();
+            var inspectedRow=((DataGridView)Named(archivePage,"ArchiveRecords")).Rows.Cast<DataGridViewRow>().Single(r=>(string)r.Cells[1].Value!=null && (string)r.Cells[1].Value=="工件_检验登记检查");
+            check((string)inspectedRow.Cells["检验结果"].Value=="需补加工" && (string)inspectedRow.Cells["完成孔"].Value=="18/18" &&
+                (string)inspectedRow.Cells["每孔秒 / 功率"].Value=="3秒" && (string)inspectedRow.Cells["失败环节"].Value=="" &&
+                inspectedRow.DefaultCellStyle.BackColor!=Color.Empty,"加工记录列表显示参数、完成孔数和检验结果，需补加工的行有底色");
+            if(!hadSummary)
+            {
+                All(archivePage).OfType<Button>().Single(x=>x.Name=="RebuildProductionSummary").PerformClick();
+                check(File.Exists(summaryFile) && ProductionSummary.Parse(File.ReadAllText(summaryFile)).Any(r=>r[0]==inspectedRun.RunId.ToString() && r.Contains("需补加工")),
+                    "“重建汇总表”把历史目录写入加工汇总.csv并带出检验结果");
+            }
+        }
+        finally
+        {
+            if(Directory.Exists(inspectedJob))Directory.Delete(inspectedJob,true);
+            if(!hadSummary && File.Exists(summaryFile))File.Delete(summaryFile);
+        }
         SelectPage(_machiningPage);
         string logRoot=Path.Combine(folder,"categorized-logs");var logger=new MemoryLogger(logRoot);
         logger.Info("[整件] 测试进度");logger.Info("[定位采集] 测试视觉");logger.Info("激光只读测试");logger.Warn("数控连接测试异常");

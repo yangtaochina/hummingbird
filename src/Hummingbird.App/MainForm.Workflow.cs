@@ -155,7 +155,8 @@ public sealed partial class MainForm
         var type=new ComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Width=160};
         type.Items.AddRange(["全部","新件加工","同件补加工","工位恢复","光学标定","现场取证","单点与演练"]);type.SelectedIndex=0;
         var table=new DataGridView {Name="ArchiveRecords",Dock=DockStyle.Fill,ReadOnly=true,AllowUserToAddRows=false,AllowUserToDeleteRows=false,RowHeadersVisible=false,SelectionMode=DataGridViewSelectionMode.FullRowSelect,MultiSelect=false,AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill};
-        foreach(string title in new[]{"分类","记录目录","状态 / 关联轮次"})table.Columns.Add(title,title);
+        foreach(string title in new[]{"分类","记录目录","状态 / 关联轮次","开始时间","每孔秒 / 功率","完成孔","检验结果","失败环节"})table.Columns.Add(title,title);
+        foreach(int narrow in new[]{0,4,5,6,7})table.Columns[narrow].FillWeight=45;
         var paths=new List<string>();
         void RefreshRecords()
         {
@@ -166,7 +167,8 @@ public sealed partial class MainForm
                 string name=Path.GetFileName(path);
                 string category=name.StartsWith("补加工_")?"同件补加工":name.StartsWith("工件_")?"新件加工":name.StartsWith("工位恢复_")?"工位恢复":name.StartsWith("光学标定_")?"光学标定":name.StartsWith("现场取证_")?"现场取证":name.StartsWith("单点")||name.StartsWith("整件模拟_")?"单点与演练":"";
                 if(category.Length==0 || type.SelectedIndex>0 && category!=(string)type.SelectedItem!)continue;
-                string status="资料保留";
+                string status="资料保留";string[]? summary=null;
+                string Cell(string column)=>summary?[Array.IndexOf(ProductionSummary.Header,column)]??"";
                 string record=Path.Combine(path,ProductionJobArchive.MachiningRecordName);
                 try
                 {
@@ -175,10 +177,17 @@ public sealed partial class MainForm
                         var run=JsonSerializer.Deserialize<ProductionRunRecord>(File.ReadAllText(record))!;
                         status=$"{ProductionJobArchive.PhaseText(ProductionJobArchive.ReviewAfterRestart(run))} · {run.RunId.ToString()[..8]}";
                         if(run.Rework is {} rw)status+=$" · 第{rw.Round}轮 · 来源{rw.ParentRunId.ToString()[..8]}";
+                        string runFolder=Path.Combine(path,ProductionSummary.RunFolderPrefix+run.RunId.ToString("N"));
+                        if(File.Exists(Path.Combine(runFolder,"run.json")))summary=ProductionSummary.Read(runFolder);
                     }
                 }
                 catch(Exception ex){status="记录需核对："+ex.Message;}
-                table.Rows.Add(category,name,status);paths.Add(path);
+                var inspection=ProductionInspection.Latest(path);
+                int added=table.Rows.Add(category,name,status,Cell("开始时间"),
+                    Cell("每孔请求秒").Length>0?Cell("每孔请求秒")+"秒"+(Cell("功率原始值").Length>0?" / "+Cell("功率原始值"):""):"",Cell("完成孔数").Length>0?Cell("完成孔数")+"/18":"",
+                    inspection is null?"":ProductionInspection.Text(inspection.Verdict),Cell("失败分类"));
+                if(inspection?.Verdict==InspectionVerdict.NeedsRework)table.Rows[added].DefaultCellStyle.BackColor=Color.FromArgb(255,236,204);
+                paths.Add(path);
             }
         }
         string Selected()=>table.CurrentRow is {} row && row.Index<paths.Count?paths[row.Index]:throw new InvalidOperationException("先选择一份记录。");
@@ -188,6 +197,28 @@ public sealed partial class MainForm
             Btn("恢复采集与加工状态",async(_,_)=>await UiAction(async()=>{await _loadWorkspace!(Path.Combine(Selected(),RingCaptureArchive.AutosaveName));_selectProductionPanel?.Invoke();})),
             Btn("作为补加工来源",async(_,_)=>await UiAction(async()=>{if(_workspaceBusy || _laserExposureTask is {IsCompleted:false})throw new InvalidOperationException("请等待当前操作结束。");string selected=Selected();await _runWorkspaceAction!(async()=>{await _prepareProductionRework!(Path.Combine(selected,ProductionJobArchive.MachiningRecordName));SelectPage(_reworkPage);});})),
             Btn("打开分类运行日志",(_,_)=>UiArchive(()=>OpenLocalFolder(Path.Combine(AppContext.BaseDirectory,"logs")))),
+            Btn("登记检验结果",(_,_)=>UiArchive(()=>
+            {
+                string job=Selected();
+                using var dialog=new Form {Text="登记检验结果",StartPosition=FormStartPosition.CenterParent,FormBorderStyle=FormBorderStyle.FixedDialog,
+                    MinimizeBox=false,MaximizeBox=false,ClientSize=new Size(420,230)};
+                var verdict=new ComboBox {DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(16,40),Width=388};
+                verdict.Items.AddRange(Enum.GetValues<InspectionVerdict>().Select(v=>(object)ProductionInspection.Text(v)).ToArray());
+                var notes=new TextBox {Multiline=true,Location=new Point(16,98),Size=new Size(388,76),MaxLength=ProductionInspection.MaximumNotesLength};
+                var ok=new Button {Text="保存",DialogResult=DialogResult.OK,Location=new Point(228,186),Size=new Size(84,30),Enabled=false};
+                var cancel=new Button {Text="取消",DialogResult=DialogResult.Cancel,Location=new Point(320,186),Size=new Size(84,30)};
+                verdict.SelectedIndexChanged+=(_,_)=>ok.Enabled=verdict.SelectedIndex>=0;
+                dialog.Controls.AddRange([new Label {Text=Path.GetFileName(job)+" 的检验结果",AutoSize=true,Location=new Point(16,14)},verdict,
+                    new Label {Text="备注（可写孔号，选填）",AutoSize=true,Location=new Point(16,74)},notes,ok,cancel]);
+                dialog.AcceptButton=ok;dialog.CancelButton=cancel;
+                if(dialog.ShowDialog(this)!=DialogResult.OK)return;
+                var entry=ProductionInspection.Save(job,Enum.GetValues<InspectionVerdict>()[verdict.SelectedIndex],notes.Text);
+                _log.Info($"检验结果已登记：{Path.GetFileName(job)} {ProductionInspection.Text(entry.Verdict)}"+(entry.Notes.Length>0?"（"+entry.Notes+"）":""));
+                try{foreach(string run in Directory.EnumerateDirectories(job,ProductionSummary.RunFolderPrefix+"*").Where(r=>File.Exists(Path.Combine(r,"run.json"))))
+                    ProductionSummary.Upsert(_state.CaptureRoot,run);}
+                catch(Exception ex){_log.Warn("加工汇总表未更新，可稍后重建："+ex.Message);}
+                RefreshRecords();
+            })),
             Btn("打开汇总表",(_,_)=>UiArchive(()=>
             {
                 string summary=Path.Combine(_state.CaptureRoot,ProductionSummary.FileName);
