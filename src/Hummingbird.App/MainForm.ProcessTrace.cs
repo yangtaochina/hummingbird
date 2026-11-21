@@ -70,9 +70,8 @@ public sealed partial class MainForm
         var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true };
         bar.Controls.Add(Btn("最新一件", (_, _) =>
         {
-            string? latest = Directory.Exists(_state.CaptureRoot)
-                ? Directory.EnumerateDirectories(_state.CaptureRoot).OrderByDescending(Directory.GetLastWriteTimeUtc).FirstOrDefault() : null;
-            if (latest is null) summary.Text = "采图目录下还没有记录。"; else Load(latest);
+            string? latest = ProcessTrace.LatestJobFolder(_state.CaptureRoot);
+            if (latest is null) summary.Text = "采图目录下还没有工件记录。"; else Load(latest);
         }));
         bar.Controls.Add(Btn("选择记录…", (_, _) =>
         {
