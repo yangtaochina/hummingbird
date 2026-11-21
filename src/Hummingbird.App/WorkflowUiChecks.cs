@@ -74,6 +74,15 @@ public sealed partial class MainForm
             archiveTable.Sort(archiveTable.Columns["检验结果"]!,System.ComponentModel.ListSortDirection.Descending);
             check(archiveTable.Rows.Cast<DataGridViewRow>().All(r=>r.Tag is string folder && Path.GetFileName(folder)==r.Cells[1].Value as string),
                 "加工记录列表排序后，每一行仍对应自己的记录目录");
+            archiveTable.CurrentCell=inspectedRow.Cells[0];
+            All(archivePage).OfType<Button>().Single(x=>x.Text=="查看流程检查").PerformClick();
+            var tracePage=((TabControl)_toolsPage.Controls[0]).TabPages.Cast<TabPage>().Single(p=>p.Text=="流程检查");
+            var traceSteps=(ListView)Named(tracePage,"ProcessTraceSteps");
+            check(_tabs.SelectedTab==_toolsPage && ((TabControl)_toolsPage.Controls[0]).SelectedTab==tracePage && Named(tracePage,"ProcessTraceFolder").Text==inspectedJob &&
+                traceSteps.Items.Count==29 && traceSteps.Items[28].SubItems[1].Text=="通过" && traceSteps.Items[10].SubItems[1].Text=="通过" &&
+                traceSteps.Items[1].SubItems[1].Text=="未执行" && traceSteps.SelectedItems.Count==1 && Named(tracePage,"ProcessTraceData").Text.Contains(traceSteps.SelectedItems[0].Text),
+                "从加工记录进入维护的“流程检查”：按顺序列出29步的结果，并显示所选步骤的原始数据");
+            SelectPage(archivePage);PerformLayout();
             if(!hadSummary)
             {
                 All(archivePage).OfType<Button>().Single(x=>x.Name=="RebuildProductionSummary").PerformClick();

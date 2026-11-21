@@ -49,7 +49,7 @@ public sealed partial class MainForm
         }
         IEnumerable<Control> Children(Control parent) => parent.Controls.Cast<Control>().SelectMany(c => new[] { c }.Concat(Children(c)));
         Check(_tabs.TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "加工", "补加工", "工位恢复", "加工记录", "维护" }), "日常只保留四个操作入口，其余收进维护");
-        Check(((TabControl)_toolsPage.Controls[0]).TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "设备与参数", "光学与落点", "采图与定位诊断", "单点试打", "NC文件", "设备维护", "整件流程演练", "现场取证" }), "设备参数、光学校准、诊断和取证统一放在维护入口");
+        Check(((TabControl)_toolsPage.Controls[0]).TabPages.Cast<TabPage>().Select(t => t.Text).SequenceEqual(new[] { "设备与参数", "光学与落点", "采图与定位诊断", "单点试打", "NC文件", "设备维护", "整件流程演练", "现场取证", "流程检查" }), "设备参数、光学校准、诊断和取证统一放在维护入口");
         Check(!Children(this).OfType<Button>().Any(b => b.Text.Contains("九点") || b.Text.Contains("转台")) &&
             Children(this).OfType<Button>().Single(b=>b.Name=="OneClickProductionStart").Text=="一键加工", "旧标定入口移除，日常加工使用新一键入口");
         Check(!_fixedCConfirmed.Checked, "不恢复装夹有效确认");

@@ -1005,7 +1005,7 @@ public sealed partial class MainForm
         _opticsPage=BuildOpticalWorkflowPage(laserTab,settingsTab,Run);
         _toolsPage=new TabPage("维护");
         var tools=new TabControl {Dock=DockStyle.Fill,Multiline=true};
-        tools.TabPages.AddRange([BuildSpotTrialTab(),BuildNcFilesTab(),BuildMaintenanceTab(),BuildProductionDemoTab(Run),BuildFieldEvidenceTab(ReadSession,()=>stepChoice.SelectedIndex,Run)]);
+        tools.TabPages.AddRange([BuildSpotTrialTab(),BuildNcFilesTab(),BuildMaintenanceTab(),BuildProductionDemoTab(Run),BuildFieldEvidenceTab(ReadSession,()=>stepChoice.SelectedIndex,Run),BuildProcessTraceTab()]);
         _toolsPage.Controls.Add(tools);
         var left=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=1,RowCount=2};
         left.RowStyles.Add(new RowStyle(SizeType.Percent,100));left.RowStyles.Add(new RowStyle(SizeType.Absolute,175));

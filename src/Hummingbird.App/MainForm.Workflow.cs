@@ -197,6 +197,7 @@ public sealed partial class MainForm
             Btn("恢复采集与加工状态",async(_,_)=>await UiAction(async()=>{await _loadWorkspace!(Path.Combine(Selected(),RingCaptureArchive.AutosaveName));_selectProductionPanel?.Invoke();})),
             Btn("作为补加工来源",async(_,_)=>await UiAction(async()=>{if(_workspaceBusy || _laserExposureTask is {IsCompleted:false})throw new InvalidOperationException("请等待当前操作结束。");string selected=Selected();await _runWorkspaceAction!(async()=>{await _prepareProductionRework!(Path.Combine(selected,ProductionJobArchive.MachiningRecordName));SelectPage(_reworkPage);});})),
             Btn("打开分类运行日志",(_,_)=>UiArchive(()=>OpenLocalFolder(Path.Combine(AppContext.BaseDirectory,"logs")))),
+            Btn("查看流程检查",(_,_)=>UiArchive(()=>_showProcessTrace!(Selected()))),
             Btn("登记检验结果",(_,_)=>UiArchive(()=>
             {
                 string job=Selected();
