@@ -90,6 +90,9 @@ if(args.FirstOrDefault()=="--field-evidence")
 if(args.FirstOrDefault()=="--continuous-production")
     return await ContinuousProductionChecks.Run(args.ElementAtOrDefault(1));
 
+if (args.FirstOrDefault() == "--process-trace")
+    return ProcessTraceChecks.Run();
+
 if (args.FirstOrDefault() == "--production-summary")
     return ProductionSummaryChecks.Run();
 
