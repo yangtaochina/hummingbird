@@ -127,14 +127,17 @@ internal static class ProcessTraceChecks
                 steps[1].ImageFile == Path.Combine(goodJob, names[0] + ".bmp"), "此时改用运行目录里保存的本轮定位结果");
 
             string mixed = Path.Combine(root, "混合根目录");
-            foreach (string name in new[] { "工件_20261120_090000000_aaaaaa", "补加工_20261120_103000000_bbbbbb", "工件_20261120_100000000_cccccc",
+            foreach (string name in new[] { "工件_20261120_090000000_aaaaaa", "补加工_f3a91c07_20261120_103000000", "补加工_00000001_20261120_083000000", "工件_20261120_100000000_cccccc",
                 "工位恢复_20261121_080000000_dddddd", "光学标定_20261121_090000000", "现场取证_20261121_100000000" })
                 Directory.CreateDirectory(Path.Combine(mixed, name));
             // 之后在老工件目录里写入文件（如登记检验结果）不应让它变成“最新一件”。
             File.WriteAllText(Path.Combine(mixed, "工件_20261120_090000000_aaaaaa", ProductionInspection.FileName), "[]");
-            Check(Path.GetFileName(ProcessTrace.LatestJobFolder(mixed)) == "补加工_20261120_103000000_bbbbbb" &&
+            Check(Path.GetFileName(ProcessTrace.LatestJobFolder(mixed)) == "补加工_f3a91c07_20261120_103000000" &&
                 ProcessTrace.LatestJobFolder(Path.Combine(mixed, "不存在")) is null && ProcessTrace.LatestJobFolder(Path.Combine(mixed, "光学标定_20261121_090000000")) is null,
                 "“最新一件”只在新件和补加工目录里按目录名时间选，工位恢复、标定、取证目录不算");
+            // 补加工目录名是“补加工_来源运行号_时间”，来源运行号不参与先后。
+            Directory.Delete(Path.Combine(mixed, "补加工_f3a91c07_20261120_103000000"));
+            Check(Path.GetFileName(ProcessTrace.LatestJobFolder(mixed)) == "工件_20261120_100000000_cccccc", "补加工目录名里的来源运行号不影响先后");
             Directory.Delete(mixed, true);
 
             string[] Files() => Directory.GetFiles(root, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal).Select(f => f + "|" + File.GetLastWriteTimeUtc(f).Ticks).ToArray();

@@ -34,13 +34,15 @@ public static class ProcessTrace
 
     /// <summary>
     /// 采图根目录下最新的一件（新件或同件补加工）。同一根目录里还有工位恢复、光学标定、取证等记录，它们不是工件；
-    /// 按目录名里的时间排序，事后登记检验结果等写入不会改变先后。
+    /// 按目录名里的时间（yyyyMMdd_HHmmssfff）排序，事后登记检验结果等写入不会改变先后。
+    /// 补加工目录的时间前面还有一段来源运行号，所以按格式找时间，不按位置截取。
     /// </summary>
     public static string? LatestJobFolder(string captureRoot) => !Directory.Exists(captureRoot) ? null
         : Directory.EnumerateDirectories(captureRoot)
             .Select(path => (Path: path, Name: Path.GetFileName(path)))
             .Where(d => d.Name.StartsWith("工件_", StringComparison.Ordinal) || d.Name.StartsWith("补加工_", StringComparison.Ordinal))
-            .OrderByDescending(d => d.Name[(d.Name.IndexOf('_') + 1)..], StringComparer.Ordinal).Select(d => d.Path).FirstOrDefault();
+            .OrderByDescending(d => System.Text.RegularExpressions.Regex.Match(d.Name, @"(?<!\d)\d{8}_\d{9}(?!\d)").Value, StringComparer.Ordinal)
+            .Select(d => d.Path).FirstOrDefault();
 
     public static IReadOnlyList<ProcessStep> Read(string jobFolder, string? runFolder = null)
     {
