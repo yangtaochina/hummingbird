@@ -157,10 +157,9 @@ public sealed partial class MainForm
         var table=new DataGridView {Name="ArchiveRecords",Dock=DockStyle.Fill,ReadOnly=true,AllowUserToAddRows=false,AllowUserToDeleteRows=false,RowHeadersVisible=false,SelectionMode=DataGridViewSelectionMode.FullRowSelect,MultiSelect=false,AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill};
         foreach(string title in new[]{"分类","记录目录","状态 / 关联轮次","开始时间","每孔秒 / 功率","完成孔","检验结果","失败环节"})table.Columns.Add(title,title);
         foreach(int narrow in new[]{0,4,5,6,7})table.Columns[narrow].FillWeight=45;
-        var paths=new List<string>();
         void RefreshRecords()
         {
-            table.Rows.Clear();paths.Clear();
+            table.Rows.Clear();
             if(!Directory.Exists(_state.CaptureRoot))return;
             foreach(string path in Directory.EnumerateDirectories(_state.CaptureRoot).OrderByDescending(Path.GetFileName))
             {
@@ -187,10 +186,11 @@ public sealed partial class MainForm
                     Cell("每孔请求秒").Length>0?Cell("每孔请求秒")+"秒"+(Cell("功率原始值").Length>0?" / "+Cell("功率原始值"):""):"",Cell("完成孔数").Length>0?Cell("完成孔数")+"/18":"",
                     inspection is null?"":ProductionInspection.Text(inspection.Verdict),Cell("失败分类"));
                 if(inspection?.Verdict==InspectionVerdict.NeedsRework)table.Rows[added].DefaultCellStyle.BackColor=Color.FromArgb(255,236,204);
-                paths.Add(path);
+                // 表头可点击排序，行号会变；目录跟着行走。
+                table.Rows[added].Tag=path;
             }
         }
-        string Selected()=>table.CurrentRow is {} row && row.Index<paths.Count?paths[row.Index]:throw new InvalidOperationException("先选择一份记录。");
+        string Selected()=>table.CurrentRow?.Tag as string??throw new InvalidOperationException("先选择一份记录。");
         var actions=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=true};
         actions.Controls.AddRange([type,Btn("刷新列表",(_,_)=>UiArchive(RefreshRecords)),
             Btn("打开原始资料",(_,_)=>UiArchive(()=>OpenLocalFolder(Selected()))),

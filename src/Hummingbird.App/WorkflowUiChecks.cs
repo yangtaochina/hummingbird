@@ -69,6 +69,11 @@ public sealed partial class MainForm
             check((string)inspectedRow.Cells["检验结果"].Value=="需补加工" && (string)inspectedRow.Cells["完成孔"].Value=="18/18" &&
                 (string)inspectedRow.Cells["每孔秒 / 功率"].Value=="3秒" && (string)inspectedRow.Cells["失败环节"].Value=="" &&
                 inspectedRow.DefaultCellStyle.BackColor!=Color.Empty,"加工记录列表显示参数、完成孔数和检验结果，需补加工的行有底色");
+            var archiveTable=(DataGridView)Named(archivePage,"ArchiveRecords");
+            archiveTable.Sort(archiveTable.Columns[1],System.ComponentModel.ListSortDirection.Descending);
+            archiveTable.Sort(archiveTable.Columns["检验结果"],System.ComponentModel.ListSortDirection.Descending);
+            check(archiveTable.Rows.Cast<DataGridViewRow>().All(r=>r.Tag is string folder && Path.GetFileName(folder)==(string)r.Cells[1].Value!),
+                "加工记录列表排序后，每一行仍对应自己的记录目录");
             if(!hadSummary)
             {
                 All(archivePage).OfType<Button>().Single(x=>x.Name=="RebuildProductionSummary").PerformClick();
