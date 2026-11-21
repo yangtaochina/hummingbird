@@ -18,7 +18,7 @@ public static class ProductionSummary
         "运行号", "工件号", "开始时间", "结束时间", "耗时秒", "类型", "设备模式", "补加工轮次", "来源运行号",
         "每孔请求秒", "功率原始值", "累计每孔请求秒", "采图完成数", "完成孔数", "待核对孔", "结果", "失败分类", "停止阶段", "异常信息",
         "关光确认", "主控退出确认", "圆心X", "圆心Y", "圆环半径mm", "圆环RMSµm", "圆环敏感性µm", "12点角度",
-        "六处曝光µs", "纠偏重拍次数", "采图最大偏离路线µm", "工件目录", "运行目录"
+        "六处曝光µs", "纠偏重拍次数", "采图最大偏离路线µm", "检验结果", "检验备注", "检验时间", "工件目录", "运行目录"
     ];
 
     /// <summary>失败发生在哪一类步骤；完成返回空串。</summary>
@@ -94,6 +94,8 @@ public static class ProductionSummary
             int.TryParse(p[2], NumberStyles.None, CultureInfo.InvariantCulture, out _)).Sum(p => int.Parse(p[2], CultureInfo.InvariantCulture) > 0 ? 1 : 0);
         double? seconds = record.StartedAt is { } start && record.FinishedAt is { } finish ? (finish - start).TotalSeconds : null;
         long? cumulative = record.Rework?.CumulativeRequestedMs ?? record.RequestedExposureMs;
+        // 检验登记属于本目录的真实加工轮次；无出光试走的行不带检验结果。
+        var inspection = ProductionInspection.Latest(jobFolder) is { } latest && latest.RunId == record.RunId ? latest : null;
         return
         [
             record.RunId.ToString(), (record.Rework?.PhysicalWorkpieceId ?? record.RunId).ToString(),
@@ -108,6 +110,7 @@ public static class ProductionSummary
             record.LaserOffConfirmed?.ToString() ?? "", record.NcExitConfirmed.ToString(),
             centerX, centerY, radius, rms, sensitivity, twelve, exposures,
             recaptures.ToString(CultureInfo.InvariantCulture), deviation,
+            inspection is null ? "" : ProductionInspection.Text(inspection.Verdict), inspection?.Notes.ReplaceLineEndings(" ") ?? "", Time(inspection?.At),
             Path.GetFileName(jobFolder), Path.GetFileName(runFolder)
         ];
     }

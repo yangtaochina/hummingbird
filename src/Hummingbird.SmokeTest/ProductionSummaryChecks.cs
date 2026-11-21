@@ -115,6 +115,26 @@ internal static class ProductionSummaryChecks
             table = ProductionSummary.Parse(File.ReadAllText(path));
             Check(table.Count == 5 && table[0].SequenceEqual(ProductionSummary.Header), "表头与当前版本不同时整表重建，不把新旧格式混在一张表里");
 
+            bool Rejects(Action action) { try { action(); return false; } catch (Exception ex) when (ex is InvalidOperationException or ArgumentException) { return true; } }
+            Check(ProductionInspection.Latest(firstJob) is null && Rejects(() => ProductionInspection.Save(firstJob, InspectionVerdict.Passed, "")) &&
+                !File.Exists(Path.Combine(firstJob, ProductionInspection.FileName)), "没有真实加工记录的目录不能登记检验结果");
+            ProductionJobArchive.Begin(firstJob, first);
+            Check(Rejects(() => ProductionInspection.Save(firstJob, InspectionVerdict.Passed, new string('长', ProductionInspection.MaximumNotesLength + 1))) &&
+                Rejects(() => ProductionInspection.Save(firstJob, (InspectionVerdict)9, "")), "过长备注和无效结果被拒绝");
+            ProductionInspection.Save(firstJob, InspectionVerdict.NeedsRework, " 3号、7号孔偏小 ");
+            var latestInspection = ProductionInspection.Save(firstJob, InspectionVerdict.Passed, "复检合格");
+            Check(ProductionInspection.History(firstJob).Count == 2 && ProductionInspection.History(firstJob)[0].Notes == "3号、7号孔偏小" &&
+                ProductionInspection.Latest(firstJob) == latestInspection && latestInspection.RunId == first.RunId,
+                "检验登记保留历史，最后一次为当前结果，并记下对应的运行号");
+            row = ProductionSummary.Read(firstRun);
+            Check(Column(row, "检验结果") == "合格" && Column(row, "检验备注") == "复检合格" && Column(row, "检验时间").Length == 19 &&
+                Column(ProductionSummary.Read(failedRun), "检验结果") == "", "汇总表带出当前检验结果，未登记的留空");
+            string dryRun = Save(firstJob, new ProductionRunRecord { DryRun = true, Phase = "Completed", Completed = true, StartedAt = started.AddMinutes(-5) });
+            Check(Column(ProductionSummary.Read(dryRun), "检验结果") == "" && Column(ProductionSummary.Read(dryRun), "类型") == "无出光试走",
+                "同一目录里的无出光试走不带检验结果");
+            Directory.Delete(dryRun, true); File.Delete(Path.Combine(firstJob, ProductionInspection.FileName));
+            File.Delete(Path.Combine(firstJob, ProductionJobArchive.MachiningRecordName));
+
             string before = File.ReadAllText(Path.Combine(firstRun, "run.json"));
             ProductionSummary.Rebuild(root);
             Check(File.ReadAllText(Path.Combine(firstRun, "run.json")) == before && Directory.GetFiles(firstRun).Length == 4 &&
