@@ -38,6 +38,21 @@ public sealed partial class MainForm
         SelectPage(_machiningPage);_captureDetails.SelectedIndex=0;PerformLayout();
         check(_livePicture.Visible && _livePicture.Width>=350,"定位加工页保留大实时画面");
         check(_reworkActions.Controls.Cast<Control>().Any(c=>c.Name=="PrepareProductionRework"),"补加工准备入口在独立功能页");
+        IEnumerable<Control> All(Control parent)=>parent.Controls.Cast<Control>().SelectMany(c=>new[]{c}.Concat(All(c)));
+        Control Named(Control page,string name)=>All(page).Single(c=>c.Name==name);
+        var archivePage=_tabs.TabPages.Cast<TabPage>().Single(p=>p.Text=="加工记录");
+        check(Named(_reworkPage,"ReworkGuide").Text.Contains("③") && Named(_returnPage,"StationReturnGuide").Text.Contains("③") &&
+            !Named(_reworkPage,"ReworkHelp").Visible && !Named(_returnPage,"StationReturnInstructions").Visible && !Named(archivePage,"ArchiveHelp").Visible,
+            "补加工、工位恢复页显示三步提示，三个日常页的长说明默认收起");
+        foreach(var (page,button,target) in new[]{(_reworkPage,"补加工规则说明","ReworkHelp"),((TabPage)_returnPage,"详细说明 / 维护","StationReturnInstructions"),(archivePage,"记录说明","ArchiveHelp")})
+        {
+            SelectPage(page);PerformLayout();
+            var toggle=All(page).OfType<Button>().Single(x=>x.Text==button);
+            toggle.PerformClick();bool shown=Named(page,target).Visible;
+            toggle.PerformClick();
+            check(shown && !Named(page,target).Visible,$"“{button}”可展开并再次收起说明");
+        }
+        SelectPage(_machiningPage);
         string logRoot=Path.Combine(folder,"categorized-logs");var logger=new MemoryLogger(logRoot);
         logger.Info("[整件] 测试进度");logger.Info("[定位采集] 测试视觉");logger.Info("激光只读测试");logger.Warn("数控连接测试异常");
         string day=Path.Combine(logRoot,DateTime.Now.ToString("yyyy-MM-dd"));
