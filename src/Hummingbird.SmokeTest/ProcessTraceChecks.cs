@@ -92,6 +92,16 @@ internal static class ProcessTraceChecks
                 steps.Skip(17).Take(11).All(s => s.State == ProcessStepState.NotRun) && steps[28].State == ProcessStepState.Failed && steps[28].Summary.Contains("中断"),
                 "加工到孔7时程序中断：前6孔通过，孔7标红为待核对，后面的孔未执行，收尾标红");
 
+            // 没拍完时检查文件的Rejection会列出还缺哪几处，这不是计算失败。
+            var four = ProcessTrace.Read(Job("工件_拍了四处", 4, false, "圆环9点未采集；参考11点未采集"));
+            var five = ProcessTrace.Read(Job("工件_拍了五处", 5, true, "参考11点未采集"));
+            Check(four[6].State == ProcessStepState.NotRun && four[6].Summary.Contains("还没拍齐") && four[7].State == ProcessStepState.NotRun &&
+                five[6].State == ProcessStepState.Passed && five[7].State == ProcessStepState.NotRun && five[7].Summary.Contains("还没拍齐") &&
+                four.Concat(five).All(s => s.State != ProcessStepState.Failed), "照片没拍齐时，圆环拟合和方向显示未执行而不是未通过");
+            var ringFailed = ProcessTrace.Read(Job("工件_圆环未通过", 6, false, "圆环检查未通过：有效边缘点不足"));
+            Check(ringFailed[6].State == ProcessStepState.Failed && ringFailed[6].Summary.Contains("有效边缘点不足") && ringFailed[7].State == ProcessStepState.NotRun,
+                "六处拍齐但圆环没有结果：圆环标为未通过，方向为未执行");
+
             string partialJob = Job("工件_只拍了三处", 3, false);
             steps = ProcessTrace.Read(partialJob);
             Check(steps.Count == 8 && steps.Take(3).All(s => s.State == ProcessStepState.Passed) && steps.Skip(3).All(s => s.State == ProcessStepState.NotRun) &&

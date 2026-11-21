@@ -84,19 +84,24 @@ public static class ProcessTrace
                 reportFile is var data && File.Exists(data) ? data : runFile, frame is { } image ? Locate(jobFolder, Text(image, "ImagePath")) : null));
         }
 
+        // 检查文件在没拍完时也会写明“还缺哪几处”；只有该步需要的照片都在、却没有结果，才算这一步失败。
+        bool Has(RingFrameRole role) => GuidedCapture.Steps.Where(s => s.Role == role).All(s => frames.Any(f => Text(f, "Name") == s.Name));
+        bool arcsReady = Has(RingFrameRole.RingArc), allReady = arcsReady && Has(RingFrameRole.Reference1) && Has(RingFrameRole.Reference11);
         var ring = report is null ? null : Find(report.RootElement, "Ring");
         string rejection = report is null ? "" : Text(report.RootElement, "Rejection");
         steps.Add(ring is { ValueKind: JsonValueKind.Object } fit
             ? new("圆环拟合", ProcessStepState.Passed, $"圆心 X={Number(fit, "CenterX"):F4} Y={Number(fit, "CenterY"):F4}；半径 {Number(fit, "RadiusMm"):F4}mm；" +
                 $"取边点 {(Find(fit, "Points") is { ValueKind: JsonValueKind.Array } points ? points.GetArrayLength() : Number(fit, "PointCount") ?? 0)} 个；RMS {Number(fit, "RmsMm") * 1000:F1}µm；敏感性 {Number(fit, "SensitivityMm") * 1000:F1}µm", reportFile)
-            : new("圆环拟合", frames.Length >= 4 && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
-                rejection.Length > 0 ? "未得到圆环结果：" + rejection : missing.Length > 0 ? missing : "还没有圆环拟合结果", File.Exists(reportFile) ? reportFile : null));
+            : new("圆环拟合", arcsReady && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
+                !arcsReady && frames.Length > 0 ? "四处圆环照片还没拍齐，未进行拟合" : rejection.Length > 0 ? "未得到圆环结果：" + rejection
+                    : missing.Length > 0 ? missing : "还没有圆环拟合结果", File.Exists(reportFile) ? reportFile : null));
 
         var direction = report is null ? null : Find(report.RootElement, "Result", "Direction");
         steps.Add(direction is { ValueKind: JsonValueKind.Object } angle
             ? new("参考孔方向", ProcessStepState.Passed, $"12点方向 {Number(angle, "TwelveAngleDeg"):F4}°；11点参考 {Number(angle, "Reference11AngleDeg"):F4}°", reportFile)
-            : new("参考孔方向", ring is not null && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
-                rejection.Length > 0 ? "未得到方向：" + rejection : missing.Length > 0 ? missing : "还没有方向结果", File.Exists(reportFile) ? reportFile : null));
+            : new("参考孔方向", allReady && ring is not null && rejection.Length > 0 ? ProcessStepState.Failed : ProcessStepState.NotRun,
+                !allReady && frames.Length > 0 ? "六处照片还没拍齐，未计算方向" : ring is null && frames.Length > 0 ? "圆环拟合没有结果，未计算方向"
+                    : rejection.Length > 0 ? "未得到方向：" + rejection : missing.Length > 0 ? missing : "还没有方向结果", File.Exists(reportFile) ? reportFile : null));
 
         if (record is null) return steps;
         string compensation = Path.Combine(runFolder!, "定位与补偿.json");
